@@ -5,25 +5,14 @@ import { FilterBar } from './FilterBar'
 import { ChartConfig, ChartCategory, ComplexityLevel } from '../../types/chart'
 
 const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  padding: 24px;
 `
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 32px;
-  padding: 0 24px 24px;
-  
-  @media (max-width: 1200px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
 `
 
 interface GalleryGridProps {

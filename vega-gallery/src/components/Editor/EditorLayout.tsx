@@ -3,6 +3,7 @@ import { CodeEditor } from './CodeEditor'
 import { Preview } from './Preview'
 import { chartSpecs } from '../../utils/vegaHelper'
 import { useState } from 'react'
+import { TemplateEditor } from './TemplateEditor'
 
 const Container = styled.div`
   display: grid;
@@ -15,7 +16,28 @@ const Container = styled.div`
 `
 
 const BackButton = styled.button`
-  margin-bottom: 16px;
+  margin-bottom: 24px;
+  padding: 10px 20px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f1f3f5;
+    color: #2c3e50;
+  }
+
+  &::before {
+    content: "←";
+    font-size: 1.2em;
+  }
 `
 
 interface EditorLayoutProps {
@@ -29,10 +51,7 @@ export const EditorLayout = ({ chartId, onBack }: EditorLayoutProps) => {
   return (
     <div>
       <BackButton onClick={onBack}>← Back to Gallery</BackButton>
-      <Container>
-        <CodeEditor value={spec} onChange={setSpec} />
-        <Preview spec={spec} />
-      </Container>
+      <TemplateEditor spec={spec} onChange={setSpec} />
     </div>
   )
 }
