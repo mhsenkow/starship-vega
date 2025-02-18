@@ -291,37 +291,66 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
         )
 
       case 'area':
-        return (
-          <>
-            <Control>
-              <Label>Area Opacity</Label>
-              <Input 
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={typeof spec.mark === 'object' ? spec.mark.opacity || 0.7 : 0.7}
-                onChange={e => updateMarkStyle({ opacity: parseFloat(e.target.value) })}
-              />
-            </Control>
-            <Control>
-              <Label>Line Color</Label>
-              <Input 
-                type="color"
-                value={typeof spec.mark === 'object' ? spec.mark.stroke || '#4c78a8' : '#4c78a8'}
-                onChange={e => updateMarkStyle({ stroke: e.target.value })}
-              />
-            </Control>
-            <Control>
-              <Label>Fill Color</Label>
-              <Input 
-                type="color"
-                value={typeof spec.mark === 'object' ? spec.mark.fill || '#4c78a8' : '#4c78a8'}
-                onChange={e => updateMarkStyle({ fill: e.target.value })}
-              />
-            </Control>
-          </>
-        )
+        if (spec.transform?.[0]?.density) { // For violin plot
+          return (
+            <>
+              <Control>
+                <Label>Smoothing</Label>
+                <Input 
+                  type="range"
+                  min="1"
+                  max="100"
+                  value={spec.transform[0].steps || 100}
+                  onChange={e => {
+                    const newSpec = {...spec};
+                    if (newSpec.transform?.[0]) {
+                      newSpec.transform[0] = {
+                        ...newSpec.transform[0],
+                        steps: parseInt(e.target.value)
+                      };
+                      onChange(newSpec);
+                    }
+                  }}
+                />
+              </Control>
+              <Control>
+                <Label>Color Scheme</Label>
+                <Select
+                  value={spec.encoding?.color?.scale?.scheme || 'category10'}
+                  onChange={e => {
+                    onChange({
+                      ...spec,
+                      encoding: {
+                        ...spec.encoding,
+                        color: {
+                          ...spec.encoding.color,
+                          scale: { scheme: e.target.value }
+                        }
+                      }
+                    });
+                  }}
+                >
+                  <option value="category10">Category 10</option>
+                  <option value="set3">Set 3</option>
+                  <option value="tableau10">Tableau 10</option>
+                  <option value="paired">Paired</option>
+                </Select>
+              </Control>
+              <Control>
+                <Label>Opacity</Label>
+                <Input 
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={typeof spec.mark === 'object' ? spec.mark.opacity || 0.7 : 0.7}
+                  onChange={e => updateMarkStyle({ opacity: parseFloat(e.target.value) })}
+                />
+              </Control>
+            </>
+          );
+        }
+        break;
 
       case 'boxplot':
         return (
@@ -598,47 +627,177 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
         )
 
       case 'rect':
-        return (
-          <>
-            <Control>
-              <Label>Fill Color</Label>
-              <Input 
-                type="color"
-                value={typeof spec.mark === 'object' ? spec.mark.fill || '#4c78a8' : '#4c78a8'}
-                onChange={e => updateMarkStyle({ fill: e.target.value })}
-              />
-            </Control>
-            <Control>
-              <Label>Stroke Color</Label>
-              <Input 
-                type="color"
-                value={typeof spec.mark === 'object' ? spec.mark.stroke || '#000000' : '#000000'}
-                onChange={e => updateMarkStyle({ stroke: e.target.value })}
-              />
-            </Control>
-            <Control>
-              <Label>Stroke Width</Label>
-              <Input 
-                type="number"
-                min="0"
-                max="5"
-                value={typeof spec.mark === 'object' ? spec.mark.strokeWidth || 0 : 0}
-                onChange={e => updateMarkStyle({ strokeWidth: parseInt(e.target.value) })}
-              />
-            </Control>
-            <Control>
-              <Label>Opacity</Label>
-              <Input 
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={typeof spec.mark === 'object' ? spec.mark.opacity || 1 : 1}
-                onChange={e => updateMarkStyle({ opacity: parseFloat(e.target.value) })}
-              />
-            </Control>
-          </>
-        )
+        if (spec.encoding?.color?.field === 'correlation' || spec.name === 'Correlation Heatmap') {
+          return (
+            <>
+              <Control>
+                <Label>Color Scheme</Label>
+                <Select
+                  value={spec.encoding?.color?.scale?.scheme || 'blueorange'}
+                  onChange={e => {
+                    onChange({
+                      ...spec,
+                      encoding: {
+                        ...spec.encoding,
+                        color: {
+                          ...spec.encoding.color,
+                          scale: { 
+                            ...spec.encoding.color.scale,
+                            scheme: e.target.value,
+                            domain: [-1, 1]
+                          }
+                        }
+                      }
+                    });
+                  }}
+                >
+                  <option value="blueorange">Blue-Orange</option>
+                  <option value="viridis">Viridis</option>
+                  <option value="magma">Magma</option>
+                  <option value="inferno">Inferno</option>
+                  <option value="plasma">Plasma</option>
+                  <option value="redblue">Red-Blue</option>
+                </Select>
+              </Control>
+              <Control>
+                <Label>Cell Border</Label>
+                <Input 
+                  type="number"
+                  min="0"
+                  max="2"
+                  step="0.5"
+                  value={typeof spec.mark === 'object' ? spec.mark.strokeWidth || 0 : 0}
+                  onChange={e => updateMarkStyle({ strokeWidth: parseFloat(e.target.value) })}
+                />
+              </Control>
+              <Control>
+                <Label>Cell Padding</Label>
+                <Input 
+                  type="number"
+                  min="0"
+                  max="10"
+                  value={typeof spec.mark === 'object' ? spec.mark.padding || 2 : 2}
+                  onChange={e => updateMarkStyle({ padding: parseInt(e.target.value) })}
+                />
+              </Control>
+            </>
+          );
+        }
+        break;
+
+      case 'layer':
+        if (spec.name === 'Histogram with KDE') {
+          return (
+            <>
+              <Control>
+                <Label>Bar Color</Label>
+                <Input 
+                  type="color"
+                  value={spec.layer?.[0]?.encoding?.color?.value || '#85C5A6'}
+                  onChange={e => {
+                    const newSpec = {...spec};
+                    if (newSpec.layer?.[0]?.encoding?.color) {
+                      newSpec.layer[0].encoding.color.value = e.target.value;
+                      onChange(newSpec);
+                    }
+                  }}
+                />
+              </Control>
+              <Control>
+                <Label>Line Color</Label>
+                <Input 
+                  type="color"
+                  value={spec.layer?.[1]?.mark?.color || '#FF7F0E'}
+                  onChange={e => {
+                    const newSpec = {...spec};
+                    if (newSpec.layer?.[1]?.mark) {
+                      newSpec.layer[1].mark = {
+                        ...newSpec.layer[1].mark,
+                        color: e.target.value
+                      };
+                      onChange(newSpec);
+                    }
+                  }}
+                />
+              </Control>
+              <Control>
+                <Label>Bandwidth</Label>
+                <Input 
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={spec.layer?.[1]?.transform?.[0]?.bandwidth || 5}
+                  onChange={e => {
+                    const newSpec = {...spec};
+                    if (newSpec.layer?.[1]?.transform?.[0]) {
+                      newSpec.layer[1].transform[0] = {
+                        ...newSpec.layer[1].transform[0],
+                        bandwidth: parseInt(e.target.value)
+                      };
+                      onChange(newSpec);
+                    }
+                  }}
+                />
+              </Control>
+            </>
+          );
+        } else if (spec.name === 'Error Bars') {
+          return (
+            <>
+              <Control>
+                <Label>Bar Color</Label>
+                <Input 
+                  type="color"
+                  value={spec.layer?.[0]?.encoding?.color?.value || '#4C78A8'}
+                  onChange={e => {
+                    const newSpec = {...spec};
+                    if (newSpec.layer?.[0]?.encoding?.color) {
+                      newSpec.layer[0].encoding.color.value = e.target.value;
+                      onChange(newSpec);
+                    }
+                  }}
+                />
+              </Control>
+              <Control>
+                <Label>Error Bar Color</Label>
+                <Input 
+                  type="color"
+                  value={spec.layer?.[1]?.mark?.color || '#000000'}
+                  onChange={e => {
+                    const newSpec = {...spec};
+                    if (newSpec.layer?.[1]?.mark) {
+                      newSpec.layer[1].mark = {
+                        ...newSpec.layer[1].mark,
+                        color: e.target.value
+                      };
+                      onChange(newSpec);
+                    }
+                  }}
+                />
+              </Control>
+              <Control>
+                <Label>Error Bar Thickness</Label>
+                <Input 
+                  type="number"
+                  min="1"
+                  max="5"
+                  value={spec.layer?.[1]?.mark?.thickness || 2}
+                  onChange={e => {
+                    const newSpec = {...spec};
+                    if (newSpec.layer?.[1]?.mark) {
+                      newSpec.layer[1].mark = {
+                        ...newSpec.layer[1].mark,
+                        thickness: parseInt(e.target.value)
+                      };
+                      onChange(newSpec);
+                    }
+                  }}
+                />
+              </Control>
+            </>
+          );
+        }
+        break;
     }
   }
 

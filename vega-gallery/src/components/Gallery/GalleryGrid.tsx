@@ -1,9 +1,10 @@
 import styled from 'styled-components'
 import { ChartCard } from './ChartCard'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { FilterBar } from './FilterBar'
 import { ChartConfig, ChartCategory, ComplexityLevel } from '../../types/chart'
 import { chartSpecs } from '../../utils/vegaHelper'
+import { ChartFilter } from './ChartFilter'
 
 const Container = styled.div`
   padding: 24px;
@@ -69,33 +70,126 @@ const sampleCharts: ChartConfig[] = [
     category: 'Time Series',
     complexity: 'Intermediate',
     spec: chartSpecs['area-growth']
+  },
+  {
+    id: 'heatmap-correlation',
+    title: 'Correlation Heatmap',
+    description: 'Interactive heatmap showing correlation between variables',
+    category: 'Statistical',
+    complexity: 'Intermediate',
+    spec: chartSpecs['heatmap-correlation']
+  },
+  {
+    id: 'stream-graph',
+    title: 'Stream Graph',
+    description: 'Flowing visualization of temporal patterns',
+    category: 'Time Series',
+    complexity: 'Advanced',
+    spec: chartSpecs['stream-graph']
+  },
+  {
+    id: 'radial-plot',
+    title: 'Radial Plot',
+    description: 'Circular visualization of periodic patterns',
+    category: 'Time Series',
+    complexity: 'Advanced',
+    spec: chartSpecs['radial-plot']
+  },
+  {
+    id: 'interactive-multiline',
+    title: 'Interactive Multi-Line',
+    description: 'Multi-series line chart with interactive highlighting',
+    category: 'Time Series',
+    complexity: 'Intermediate',
+    spec: chartSpecs['interactive-multiline']
+  },
+  {
+    id: 'violin-plot',
+    title: 'Violin Plot',
+    description: 'Density-based distribution visualization',
+    category: 'Statistical',
+    complexity: 'Advanced',
+    spec: chartSpecs['violin-plot']
+  },
+  {
+    id: 'histogram-kde',
+    title: 'Histogram with KDE',
+    description: 'Distribution with kernel density estimation',
+    category: 'Statistical',
+    complexity: 'Advanced',
+    spec: chartSpecs['histogram-kde']
+  },
+  {
+    id: 'qq-plot',
+    title: 'Q-Q Plot',
+    description: 'Quantile comparison for distributions',
+    category: 'Statistical',
+    complexity: 'Advanced',
+    spec: chartSpecs['qq-plot']
+  },
+  {
+    id: 'error-bars',
+    title: 'Error Bars',
+    description: 'Visualization with confidence intervals',
+    category: 'Statistical',
+    complexity: 'Intermediate',
+    spec: chartSpecs['error-bars']
   }
 ]
 
 export const GalleryGrid = ({ onChartSelect }: GalleryGridProps) => {
   const [category, setCategory] = useState<ChartCategory | 'All'>('All')
   const [complexity, setComplexity] = useState<ComplexityLevel | 'All'>('All')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sortBy, setSortBy] = useState<'category' | 'complexity'>('category')
 
-  const filteredCharts = sampleCharts.filter(chart => {
-    const categoryMatch = category === 'All' || chart.category === category
-    const complexityMatch = complexity === 'All' || chart.complexity === complexity
-    return categoryMatch && complexityMatch
-  })
+  const filteredCharts = useMemo(() => {
+    return sampleCharts.filter(chart => {
+      if (category !== 'All' && chart.category !== category) return false
+      if (complexity !== 'All' && chart.complexity !== complexity) return false
+      if (searchTerm) {
+        const search = searchTerm.toLowerCase()
+        return (
+          chart.title.toLowerCase().includes(search) ||
+          chart.description.toLowerCase().includes(search)
+        )
+      }
+      return true
+    })
+  }, [category, complexity, searchTerm])
+
+  const sortedCharts = useMemo(() => {
+    return [...filteredCharts].sort((a, b) => {
+      switch (sortBy) {
+        case 'category':
+          return a.category.localeCompare(b.category)
+        case 'complexity':
+          const order = { 'Beginner': 0, 'Intermediate': 1, 'Advanced': 2 }
+          return order[a.complexity] - order[b.complexity]
+        default:
+          return 0
+      }
+    })
+  }, [filteredCharts, sortBy])
 
   return (
     <Container>
-      <FilterBar 
+      <FilterBar
         category={category}
         complexity={complexity}
+        searchTerm={searchTerm}
+        sortBy={sortBy}
         onCategoryChange={setCategory}
         onComplexityChange={setComplexity}
+        onSearchChange={setSearchTerm}
+        onSortChange={setSortBy}
       />
       <Grid>
-        {filteredCharts.map(chart => (
+        {sortedCharts.map(chart => (
           <ChartCard 
-            key={chart.id}
+            key={chart.id} 
             chart={chart}
-            onClick={onChartSelect}
+            onClick={() => onChartSelect(chart.id)}
           />
         ))}
       </Grid>

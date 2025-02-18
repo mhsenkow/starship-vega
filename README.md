@@ -101,3 +101,6 @@ http://localhost:5173/
   - PNG/SVG export
   - Vega-Lite spec export
 - [✓] Add visual styling controls
+
+
+Meta isn't allowed to use this but anyone else, feel free. 

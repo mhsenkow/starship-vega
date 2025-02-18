@@ -47,18 +47,35 @@ const Select = styled.select`
 interface FilterBarProps {
   category: ChartCategory | 'All'
   complexity: ComplexityLevel | 'All'
+  searchTerm: string
   onCategoryChange: (category: ChartCategory | 'All') => void
   onComplexityChange: (complexity: ComplexityLevel | 'All') => void
+  onSearchChange: (term: string) => void
+  sortBy: 'category' | 'complexity'
+  onSortChange: (sort: 'category' | 'complexity') => void
 }
 
 export const FilterBar = ({
   category,
   complexity,
+  searchTerm,
   onCategoryChange,
-  onComplexityChange
+  onComplexityChange,
+  onSearchChange,
+  sortBy,
+  onSortChange
 }: FilterBarProps) => {
   return (
     <FilterContainer>
+      <SearchGroup>
+        <SearchInput
+          type="search"
+          placeholder="Search charts..."
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+        />
+      </SearchGroup>
+
       <FilterGroup>
         <Label>Category:</Label>
         <Select 
@@ -68,24 +85,71 @@ export const FilterBar = ({
           <option value="All">All Categories</option>
           <option value="Statistical">Statistical</option>
           <option value="Time Series">Time Series</option>
+          <option value="Distribution">Distribution</option>
+          <option value="Correlation">Correlation</option>
+          <option value="Part-to-Whole">Part-to-Whole</option>
           <option value="Hierarchical">Hierarchical</option>
-          <option value="Geographic">Geographic</option>
-          <option value="Other">Other</option>
         </Select>
       </FilterGroup>
 
       <FilterGroup>
         <Label>Complexity:</Label>
+        <ComplexityButtons>
+          {['Beginner', 'Intermediate', 'Advanced'].map(level => (
+            <ComplexityButton
+              key={level}
+              $active={complexity === level}
+              onClick={() => onComplexityChange(complexity === level ? 'All' : level as ComplexityLevel)}
+            >
+              {level}
+            </ComplexityButton>
+          ))}
+        </ComplexityButtons>
+      </FilterGroup>
+
+      <FilterGroup>
+        <Label>Sort by:</Label>
         <Select
-          value={complexity}
-          onChange={(e) => onComplexityChange(e.target.value as ComplexityLevel | 'All')}
+          value={sortBy}
+          onChange={(e) => onSortChange(e.target.value as 'category' | 'complexity')}
         >
-          <option value="All">All Levels</option>
-          <option value="Beginner">Beginner</option>
-          <option value="Intermediate">Intermediate</option>
-          <option value="Advanced">Advanced</option>
+          <option value="category">Category</option>
+          <option value="complexity">Complexity</option>
         </Select>
       </FilterGroup>
     </FilterContainer>
   )
 }
+
+const SearchGroup = styled.div`
+  display: flex;
+  align-items: center;
+  flex: 1;
+`
+
+const SearchInput = styled.input`
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 100%;
+  max-width: 300px;
+`
+
+const ComplexityButtons = styled.div`
+  display: flex;
+  gap: 8px;
+`
+
+const ComplexityButton = styled.button<{ $active: boolean }>`
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: none;
+  background: ${props => props.$active ? '#4C78A8' : '#f0f0f0'};
+  color: ${props => props.$active ? 'white' : 'black'};
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: ${props => props.$active ? '#4C78A8' : '#e0e0e0'};
+  }
+`
