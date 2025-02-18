@@ -65,7 +65,38 @@ export const TemplateEditor = ({ spec, onChange }: TemplateEditorProps) => {
   const handleVisualChange = (updates: Partial<TopLevelSpec>) => {
     try {
       const currentSpec = JSON.parse(spec)
-      const newSpec = { ...currentSpec, ...updates }
+      const newSpec = {
+        ...currentSpec,
+        // Handle data updates
+        ...(updates.data && { data: updates.data }),
+        // Handle encoding updates
+        ...(updates.encoding && { encoding: {
+          ...currentSpec.encoding,
+          ...updates.encoding
+        }}),
+        // Handle mark updates
+        ...(updates.mark && { mark: {
+          ...(typeof currentSpec.mark === 'object' ? currentSpec.mark : { type: currentSpec.mark }),
+          ...updates.mark
+        }}),
+        // Handle config updates
+        ...(updates.config && { config: {
+          ...currentSpec.config,
+          ...updates.config,
+          axis: {
+            ...currentSpec.config?.axis,
+            ...updates.config.axis
+          },
+          legend: {
+            ...currentSpec.config?.legend,
+            ...updates.config.legend
+          },
+          title: {
+            ...currentSpec.config?.title,
+            ...updates.config.title
+          }
+        }})
+      }
       onChange(JSON.stringify(newSpec, null, 2))
     } catch (err) {
       console.error('Failed to update specification:', err)

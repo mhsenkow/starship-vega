@@ -30,8 +30,13 @@ export const renderVegaLite = async (
         }
       }),
       config: {
+        ...spec.config,
         view: {
+          ...spec.config?.view,
           stroke: null
+        },
+        boxplot: {
+          ...spec.config?.boxplot
         }
       }
     }

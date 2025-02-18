@@ -18,9 +18,10 @@ const Section = styled.div`
 
 const SectionTitle = styled.h3`
   margin: 0 0 16px 0;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   color: #2c3e50;
   font-weight: 600;
+  font-family: 'IBM Plex Sans', sans-serif;
   border-bottom: 2px solid #e9ecef;
   padding-bottom: 8px;
 `
@@ -60,21 +61,42 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
   const [config, setConfig] = useState(spec.config || {})
   const markType = typeof spec.mark === 'string' ? spec.mark : spec.mark?.type
 
+  const updateStyle = (updates: any) => {
+    // Handle nested config updates properly
+    const newConfig = {
+      ...spec.config
+    }
+    
+    // Recursively merge updates into config
+    const mergeUpdates = (target: any, source: any) => {
+      Object.keys(source).forEach(key => {
+        if (source[key] && typeof source[key] === 'object') {
+          target[key] = target[key] || {};
+          mergeUpdates(target[key], source[key]);
+        } else {
+          target[key] = source[key];
+        }
+      });
+    };
+
+    if (updates.config) {
+      mergeUpdates(newConfig, updates.config);
+    }
+
+    onChange({
+      ...spec,
+      config: newConfig
+    });
+  }
+
   const updateMarkStyle = (updates: any) => {
-    const newSpec = {
+    onChange({
       ...spec,
       mark: {
         ...(typeof spec.mark === 'object' ? spec.mark : { type: spec.mark }),
         ...updates
       }
-    }
-    onChange(newSpec)
-  }
-
-  const updateConfig = (updates: any) => {
-    const newConfig = { ...config, ...updates }
-    setConfig(newConfig)
-    onChange({ config: newConfig })
+    })
   }
 
   const getMarkControls = () => {
@@ -110,6 +132,21 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
                 value={typeof spec.mark === 'object' ? spec.mark.color || '#4c78a8' : '#4c78a8'}
                 onChange={e => updateMarkStyle({ color: e.target.value })}
               />
+            </Control>
+            <Control>
+              <Label>Line Interpolation</Label>
+              <Select
+                value={typeof spec.mark === 'object' ? spec.mark.interpolate || 'linear' : 'linear'}
+                onChange={e => updateMarkStyle({ interpolate: e.target.value })}
+              >
+                <option value="linear">Linear</option>
+                <option value="step">Step</option>
+                <option value="stepAfter">Step After</option>
+                <option value="stepBefore">Step Before</option>
+                <option value="basis">Basis</option>
+                <option value="cardinal">Cardinal</option>
+                <option value="monotone">Monotone</option>
+              </Select>
             </Control>
           </>
         )
@@ -152,8 +189,8 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
               <Label>Bar Color</Label>
               <Input 
                 type="color"
-                value={typeof spec.mark === 'object' ? spec.mark.color || '#4c78a8' : '#4c78a8'}
-                onChange={e => updateMarkStyle({ color: e.target.value })}
+                value={typeof spec.mark === 'object' ? spec.mark.fill || '#4c78a8' : '#4c78a8'}
+                onChange={e => updateMarkStyle({ fill: e.target.value })}
               />
             </Control>
           </>
@@ -290,11 +327,49 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
         return (
           <>
             <Control>
-              <Label>Box Color</Label>
+              <Label>Box Fill Color</Label>
               <Input 
                 type="color"
-                value={typeof spec.mark === 'object' ? spec.mark.color || '#4c78a8' : '#4c78a8'}
-                onChange={e => updateMarkStyle({ color: e.target.value })}
+                value={typeof spec.mark === 'object' ? spec.mark.fill || '#4c78a8' : '#4c78a8'}
+                onChange={e => {
+                  onChange({
+                    ...spec,
+                    mark: {
+                      ...(typeof spec.mark === 'object' ? spec.mark : { type: spec.mark }),
+                      fill: e.target.value
+                    },
+                    config: {
+                      ...spec.config,
+                      boxplot: {
+                        ...spec.config?.boxplot,
+                        box: { fill: e.target.value }
+                      }
+                    }
+                  });
+                }}
+              />
+            </Control>
+            <Control>
+              <Label>Box Stroke Color</Label>
+              <Input 
+                type="color"
+                value={typeof spec.mark === 'object' ? spec.mark.stroke || '#000000' : '#000000'}
+                onChange={e => {
+                  onChange({
+                    ...spec,
+                    mark: {
+                      ...(typeof spec.mark === 'object' ? spec.mark : { type: spec.mark }),
+                      stroke: e.target.value
+                    },
+                    config: {
+                      ...spec.config,
+                      boxplot: {
+                        ...spec.config?.boxplot,
+                        box: { stroke: e.target.value }
+                      }
+                    }
+                  });
+                }}
               />
             </Control>
             <Control>
@@ -302,7 +377,18 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
               <Input 
                 type="color"
                 value={typeof spec.mark === 'object' ? spec.mark.medianColor || '#000000' : '#000000'}
-                onChange={e => updateMarkStyle({ medianColor: e.target.value })}
+                onChange={e => {
+                  onChange({
+                    ...spec,
+                    config: {
+                      ...spec.config,
+                      boxplot: {
+                        ...spec.config?.boxplot,
+                        median: { color: e.target.value }
+                      }
+                    }
+                  });
+                }}
               />
             </Control>
             <Control>
@@ -313,6 +399,55 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
                 max="100"
                 value={typeof spec.mark === 'object' ? spec.mark.size || 50 : 50}
                 onChange={e => updateMarkStyle({ size: parseInt(e.target.value) })}
+              />
+            </Control>
+            <Control>
+              <Label>Stroke Width</Label>
+              <Input 
+                type="number"
+                min="0"
+                max="5"
+                value={typeof spec.mark === 'object' ? spec.mark.strokeWidth || 1 : 1}
+                onChange={e => updateMarkStyle({ strokeWidth: parseInt(e.target.value) })}
+              />
+            </Control>
+            <Control>
+              <Label>Corner Radius</Label>
+              <Input 
+                type="number"
+                min="0"
+                max="20"
+                value={typeof spec.mark === 'object' ? spec.mark.cornerRadius || 0 : 0}
+                onChange={e => {
+                  onChange({
+                    ...spec,
+                    mark: {
+                      ...(typeof spec.mark === 'object' ? spec.mark : { type: spec.mark }),
+                      cornerRadius: parseInt(e.target.value)
+                    },
+                    config: {
+                      ...spec.config,
+                      boxplot: {
+                        ...spec.config?.boxplot,
+                        box: { 
+                          ...spec.config?.boxplot?.box,
+                          cornerRadius: parseInt(e.target.value) 
+                        }
+                      }
+                    }
+                  });
+                }}
+              />
+            </Control>
+            <Control>
+              <Label>Opacity</Label>
+              <Input 
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={typeof spec.mark === 'object' ? spec.mark.opacity || 1 : 1}
+                onChange={e => updateMarkStyle({ opacity: parseFloat(e.target.value) })}
               />
             </Control>
           </>
@@ -442,6 +577,23 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
                 onChange={e => updateMarkStyle({ color: e.target.value })}
               />
             </Control>
+            <Control>
+              <Label>Line Cap Style</Label>
+              <Select
+                value={spec.config?.axis?.tickCap || 'butt'}
+                onChange={e => updateStyle({
+                  config: {
+                    axis: {
+                      tickCap: e.target.value
+                    }
+                  }
+                })}
+              >
+                <option value="butt">Butt</option>
+                <option value="round">Round</option>
+                <option value="square">Square</option>
+              </Select>
+            </Control>
           </>
         )
 
@@ -502,41 +654,98 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
         <Control>
           <Label>Font Family</Label>
           <Select
-            value={typeof spec.config?.style === 'object' ? spec.config.style.text?.font || 'sans-serif' : 'sans-serif'}
-            onChange={e => onChange({
-              ...spec,
-              config: {
-                ...spec.config,
-                style: {
-                  ...spec.config?.style,
-                  text: { font: e.target.value }
+            value={spec.config?.font || 'sans-serif'}
+            onChange={e => {
+              updateStyle({
+                config: {
+                  font: e.target.value,
+                  axis: { font: e.target.value },
+                  legend: { font: e.target.value },
+                  title: { font: e.target.value }
                 }
-              }
-            })}
+              });
+            }}
           >
             <option value="sans-serif">Sans Serif</option>
             <option value="serif">Serif</option>
             <option value="monospace">Monospace</option>
+            <option value="IBM Plex Sans">IBM Plex Sans</option>
           </Select>
         </Control>
         <Control>
-          <Label>Font Size</Label>
+          <Label>Base Font Size</Label>
           <Input 
             type="number"
             min="8"
             max="24"
-            value={typeof spec.config?.style === 'object' ? spec.config.style.text?.fontSize || 12 : 12}
-            onChange={e => onChange({
-              ...spec,
+            value={spec.config?.fontSize || 12}
+            onChange={e => {
+              const size = parseInt(e.target.value);
+              const titleSize = size + 2; // Title is typically slightly larger
+              updateStyle({
+                config: {
+                  fontSize: size,
+                  axis: { fontSize: size },
+                  legend: { fontSize: size },
+                  title: { 
+                    fontSize: titleSize,
+                    subtitleFontSize: size
+                  }
+                }
+              });
+            }}
+          />
+        </Control>
+        <Control>
+          <Label>Title Font Size</Label>
+          <Input 
+            type="number"
+            min="8"
+            max="24"
+            value={spec.config?.title?.fontSize || 14}
+            onChange={e => updateStyle({
               config: {
-                ...spec.config,
-                style: {
-                  ...spec.config?.style,
-                  text: { fontSize: parseInt(e.target.value) }
+                title: {
+                  fontSize: parseInt(e.target.value)
                 }
               }
             })}
           />
+        </Control>
+        <Control>
+          <Label>Label Font Size</Label>
+          <Input 
+            type="number"
+            min="8"
+            max="20"
+            value={spec.config?.axis?.labelFontSize || 11}
+            onChange={e => updateStyle({
+              config: {
+                axis: {
+                  labelFontSize: parseInt(e.target.value)
+                }
+              }
+            })}
+          />
+        </Control>
+        <Control>
+          <Label>Title Alignment</Label>
+          <Select
+            value={spec.config?.title?.align || 'left'}
+            onChange={e => updateStyle({
+              config: {
+                title: {
+                  ...spec.config?.title,
+                  align: e.target.value,
+                  anchor: e.target.value
+                }
+              }
+            })}
+          >
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+          </Select>
         </Control>
       </Section>
 
@@ -547,12 +756,9 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
           <Input 
             type="color"
             value={spec.config?.axis?.gridColor || '#dddddd'}
-            onChange={e => onChange({
-              ...spec,
+            onChange={e => updateStyle({
               config: {
-                ...spec.config,
                 axis: {
-                  ...spec.config?.axis,
                   gridColor: e.target.value
                 }
               }
@@ -567,12 +773,9 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
             max="1"
             step="0.1"
             value={spec.config?.axis?.gridOpacity || 0.5}
-            onChange={e => onChange({
-              ...spec,
+            onChange={e => updateStyle({
               config: {
-                ...spec.config,
                 axis: {
-                  ...spec.config?.axis,
                   gridOpacity: parseFloat(e.target.value)
                 }
               }
@@ -580,38 +783,143 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
           />
         </Control>
         <Control>
-          <Label>Title Font Size</Label>
+          <Label>Tick Color</Label>
           <Input 
-            type="number"
-            min="8"
-            max="24"
-            value={spec.config?.axis?.titleFontSize || 14}
-            onChange={e => onChange({
-              ...spec,
+            type="color"
+            value={spec.config?.axis?.tickColor || '#000000'}
+            onChange={e => updateStyle({
               config: {
-                ...spec.config,
                 axis: {
-                  ...spec.config?.axis,
-                  titleFontSize: parseInt(e.target.value)
+                  tickColor: e.target.value
                 }
               }
             })}
           />
         </Control>
         <Control>
-          <Label>Label Font Size</Label>
+          <Label>Tick Width</Label>
           <Input 
             type="number"
-            min="8"
-            max="20"
-            value={spec.config?.axis?.labelFontSize || 11}
-            onChange={e => onChange({
-              ...spec,
+            min="0"
+            max="5"
+            value={spec.config?.axis?.tickWidth || 1}
+            onChange={e => updateStyle({
               config: {
-                ...spec.config,
                 axis: {
-                  ...spec.config?.axis,
-                  labelFontSize: parseInt(e.target.value)
+                  tickWidth: parseInt(e.target.value)
+                }
+              }
+            })}
+          />
+        </Control>
+        <Control>
+          <Label>Tick Opacity</Label>
+          <Input 
+            type="range"
+            min="0"
+            max="1"
+            step="0.1"
+            value={spec.config?.axis?.tickOpacity || 1}
+            onChange={e => updateStyle({
+              config: {
+                axis: {
+                  tickOpacity: parseFloat(e.target.value)
+                }
+              }
+            })}
+          />
+        </Control>
+        <Control>
+          <Label>Baseline Color</Label>
+          <Input 
+            type="color"
+            value={spec.config?.axis?.domainColor || '#000000'}
+            onChange={e => updateStyle({
+              config: {
+                axis: {
+                  domainColor: e.target.value
+                }
+              }
+            })}
+          />
+        </Control>
+        <Control>
+          <Label>Baseline Width</Label>
+          <Input 
+            type="number"
+            min="0"
+            max="5"
+            value={spec.config?.axis?.domainWidth || 1}
+            onChange={e => updateStyle({
+              config: {
+                axis: {
+                  domainWidth: parseInt(e.target.value)
+                }
+              }
+            })}
+          />
+        </Control>
+        <Control>
+          <Label>Baseline Opacity</Label>
+          <Input 
+            type="range"
+            min="0"
+            max="1"
+            step="0.1"
+            value={spec.config?.axis?.domainOpacity || 1}
+            onChange={e => updateStyle({
+              config: {
+                axis: {
+                  domainOpacity: parseFloat(e.target.value)
+                }
+              }
+            })}
+          />
+        </Control>
+        <Control>
+          <Label>Background Color</Label>
+          <Input 
+            type="color"
+            value={spec.config?.view?.fill || '#ffffff'}
+            onChange={e => updateStyle({
+              config: {
+                view: {
+                  ...spec.config?.view,
+                  fill: e.target.value
+                }
+              }
+            })}
+          />
+        </Control>
+        <Control>
+          <Label>Background Opacity</Label>
+          <Input 
+            type="range"
+            min="0"
+            max="1"
+            step="0.1"
+            value={spec.config?.view?.fillOpacity || 1}
+            onChange={e => updateStyle({
+              config: {
+                view: {
+                  ...spec.config?.view,
+                  fillOpacity: parseFloat(e.target.value)
+                }
+              }
+            })}
+          />
+        </Control>
+        <Control>
+          <Label>Chart Padding</Label>
+          <Input 
+            type="number"
+            min="0"
+            max="50"
+            value={spec.config?.view?.padding || 5}
+            onChange={e => updateStyle({
+              config: {
+                view: {
+                  padding: parseInt(e.target.value)
                 }
               }
             })}
@@ -628,12 +936,9 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
             min="8"
             max="24"
             value={spec.config?.legend?.titleFontSize || 14}
-            onChange={e => onChange({
-              ...spec,
+            onChange={e => updateStyle({
               config: {
-                ...spec.config,
                 legend: {
-                  ...spec.config?.legend,
                   titleFontSize: parseInt(e.target.value)
                 }
               }
@@ -647,12 +952,9 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
             min="8"
             max="20"
             value={spec.config?.legend?.labelFontSize || 11}
-            onChange={e => onChange({
-              ...spec,
+            onChange={e => updateStyle({
               config: {
-                ...spec.config,
                 legend: {
-                  ...spec.config?.legend,
                   labelFontSize: parseInt(e.target.value)
                 }
               }
