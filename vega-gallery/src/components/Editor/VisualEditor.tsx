@@ -190,7 +190,7 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
         case 'bar':
           return ['x', 'y', 'color', 'tooltip', 'order']
         case 'line':
-          return ['x', 'y', 'color', 'tooltip', 'order', 'size']
+          return ['x', 'y', 'color', 'strokeWidth', 'tooltip', 'order']
         case 'point':
           return ['x', 'y', 'size', 'color', 'tooltip', 'shape']
         case 'circle':
@@ -267,10 +267,37 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
 
       case 'line':
         if (timeFields.length && quantFields.length) {
-          encodings.x = { field: timeFields[0], type: 'temporal' }
-          encodings.y = { field: quantFields[0], type: 'quantitative' }
+          encodings.x = { 
+            field: timeFields[0], 
+            type: 'temporal',
+            scale: { zero: false }
+          }
+          encodings.y = { 
+            field: quantFields[0], 
+            type: 'quantitative',
+            scale: { zero: false }
+          }
           if (catFields.length) {
             encodings.color = { field: catFields[0], type: 'nominal' }
+          }
+          // Add stroke width encoding if there's an additional quantitative field
+          if (quantFields.length > 1) {
+            encodings.strokeWidth = { 
+              field: quantFields[1], 
+              type: 'quantitative',
+              scale: { range: [0.5, 8] } // Customize the stroke width range
+            }
+          }
+        } else if (quantFields.length >= 2) {
+          encodings.x = { 
+            field: quantFields[0], 
+            type: 'quantitative',
+            scale: { zero: false }
+          }
+          encodings.y = { 
+            field: quantFields[1], 
+            type: 'quantitative',
+            scale: { zero: false }
           }
         }
         break;

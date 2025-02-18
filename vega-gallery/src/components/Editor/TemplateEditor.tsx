@@ -2,6 +2,7 @@ import { useState } from 'react'
 import styled from 'styled-components'
 import { CodeEditor } from './CodeEditor'
 import { VisualEditor } from './VisualEditor'
+import { StyleEditor } from './StyleEditor'
 import { TopLevelSpec } from 'vega-lite'
 
 const Container = styled.div`
@@ -58,7 +59,7 @@ interface TemplateEditorProps {
 }
 
 export const TemplateEditor = ({ spec, onChange }: TemplateEditorProps) => {
-  const [mode, setMode] = useState<'visual' | 'code'>('visual')
+  const [mode, setMode] = useState<'visual' | 'code' | 'style'>('visual')
   const [previewHeight, setPreviewHeight] = useState(600)
   
   const handleVisualChange = (updates: Partial<TopLevelSpec>) => {
@@ -77,6 +78,9 @@ export const TemplateEditor = ({ spec, onChange }: TemplateEditorProps) => {
         <Tab $active={mode === 'visual'} onClick={() => setMode('visual')}>
           Visual Editor
         </Tab>
+        <Tab $active={mode === 'style'} onClick={() => setMode('style')}>
+          Style Editor
+        </Tab>
         <Tab $active={mode === 'code'} onClick={() => setMode('code')}>
           Code Editor
         </Tab>
@@ -86,6 +90,8 @@ export const TemplateEditor = ({ spec, onChange }: TemplateEditorProps) => {
         <EditorPanel>
           {mode === 'code' ? (
             <CodeEditor value={spec} onChange={onChange} />
+          ) : mode === 'style' ? (
+            <StyleEditor spec={JSON.parse(spec)} onChange={handleVisualChange} />
           ) : (
             <VisualEditor spec={JSON.parse(spec)} onChange={handleVisualChange} />
           )}
