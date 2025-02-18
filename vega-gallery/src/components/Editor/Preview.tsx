@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
 import { renderVegaLite } from '../../utils/vegaHelper'
 
-const PreviewContainer = styled.div`
+const PreviewContainer = styled.div<{ $height: number }>`
   border: 1px solid #eee;
   border-radius: 4px;
   padding: 16px;
-  height: 600px;
+  height: ${props => props.$height}px;
   overflow: auto;
   display: flex;
   flex-direction: column;
@@ -28,9 +28,10 @@ const ErrorMessage = styled.div`
 
 interface PreviewProps {
   spec: string;
+  height: number;
 }
 
-export const Preview = ({ spec }: PreviewProps) => {
+export const Preview = ({ spec, height }: PreviewProps) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -61,11 +62,11 @@ export const Preview = ({ spec }: PreviewProps) => {
     return () => {
       resizeObserver.disconnect()
     }
-  }, [spec])
+  }, [spec, height])
 
   return (
-    <PreviewContainer>
-      <ChartContainer ref={containerRef} />
+    <PreviewContainer $height={height}>
+      <div ref={containerRef} style={{ flex: 1 }} />
       {error && <ErrorMessage>{error}</ErrorMessage>}
     </PreviewContainer>
   )

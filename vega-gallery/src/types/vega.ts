@@ -1,6 +1,6 @@
 import { TopLevelSpec } from 'vega-lite'
 
-export type EncodingChannel = 'x' | 'y' | 'color' | 'size' | 'theta' | 'tooltip'
+export type EncodingChannel = 'x' | 'y' | 'color' | 'size' | 'theta' | 'radius' | 'tooltip' | 'order' | 'text' | 'shape'
 export type MarkType = 'bar' | 'line' | 'point' | 'area' | 'circle' | 'arc'
 
 export interface EncodingUpdate {

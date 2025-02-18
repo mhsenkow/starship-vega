@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import styled from 'styled-components'
+import styled, { ThemeProvider } from 'styled-components'
 import { Layout } from './components/common/Layout'
 import { GalleryGrid } from './components/Gallery/GalleryGrid'
 import { EditorLayout } from './components/Editor/EditorLayout'
+import { theme } from './types/theme'
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -13,18 +14,20 @@ function App() {
   const [selectedChart, setSelectedChart] = useState<string | null>(null)
 
   return (
-    <AppContainer>
-      <Layout>
-        {!selectedChart ? (
-          <GalleryGrid onChartSelect={setSelectedChart} />
-        ) : (
-          <EditorLayout 
-            chartId={selectedChart} 
-            onBack={() => setSelectedChart(null)} 
-          />
-        )}
-      </Layout>
-    </AppContainer>
+    <ThemeProvider theme={theme}>
+      <AppContainer>
+        <Layout>
+          {!selectedChart ? (
+            <GalleryGrid onChartSelect={setSelectedChart} />
+          ) : (
+            <EditorLayout 
+              chartId={selectedChart} 
+              onBack={() => setSelectedChart(null)} 
+            />
+          )}
+        </Layout>
+      </AppContainer>
+    </ThemeProvider>
   )
 }
 

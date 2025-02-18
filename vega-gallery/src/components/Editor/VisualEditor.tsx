@@ -1,15 +1,13 @@
 import styled from 'styled-components'
 import { TopLevelSpec } from 'vega-lite'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { EncodingChannel, MarkType, EncodingUpdate } from '../../types/vega'
+import { sampleDatasets } from '../../utils/sampleData'
 
 const Container = styled.div`
-  padding: 24px;
-  background: white;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  height: 600px;
-  overflow: auto;
+  padding: 16px;
+  height: 100%;
+  overflow-y: auto;
 `
 
 const Section = styled.div`
@@ -78,15 +76,82 @@ const EncodingControl = styled.div`
   gap: 8px;
 `
 
+const DatasetGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+`
+
+const DatasetCard = styled.button<{ $active: boolean; $disabled: boolean }>`
+  padding: 12px;
+  border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
+  border-radius: 6px;
+  background: ${props => props.$active ? `${props.theme.colors.primary}10` : 'white'};
+  text-align: left;
+  cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
+  opacity: ${props => props.$disabled ? 0.5 : 1};
+  
+  &:hover {
+    border-color: ${props => !props.$disabled && props.theme.colors.primary};
+  }
+`
+
+const DatasetName = styled.div`
+  font-weight: 500;
+  margin-bottom: 4px;
+`
+
+const DatasetDescription = styled.div`
+  font-size: 0.9rem;
+  color: ${props => props.theme.text.secondary};
+`
+
 interface VisualEditorProps {
   spec: TopLevelSpec;
   onChange: (updates: Partial<TopLevelSpec>) => void;
 }
 
 export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
+  const [currentDataset, setCurrentDataset] = useState(Object.keys(sampleDatasets)[0])
+  const currentMark = typeof spec.mark === 'string' ? spec.mark : spec.mark?.type
+  
+  const handleDatasetChange = (datasetId: string) => {
+    const dataset = sampleDatasets[datasetId]
+    const shouldResetMark = currentMark && !dataset.compatibleCharts.includes(currentMark as MarkType)
+    
+    // Detect data types
+    const dataTypes = detectDataTypes(dataset.values)
+    
+    // Determine best mark type if needed
+    const markType = shouldResetMark ? dataset.compatibleCharts[0] : currentMark
+    
+    // Get suggested encodings
+    const suggestedEncodings = suggestEncodings(dataTypes, markType as MarkType)
+    
+    onChange({
+      ...spec,
+      data: { values: dataset.values },
+      mark: markType,
+      encoding: suggestedEncodings
+    })
+    
+    setCurrentDataset(datasetId)
+  }
+
   const handleMarkTypeChange = (type: MarkType) => {
     try {
-      onChange({ mark: type })
+      const dataset = sampleDatasets[currentDataset]
+      if (!dataset.compatibleCharts.includes(type)) {
+        return // Don't allow incompatible chart types
+      }
+      
+      // When changing mark type, reset encodings to prevent invalid states
+      onChange({ 
+        ...spec,
+        mark: type,
+        encoding: {}
+      })
     } catch (err) {
       console.error('Error updating mark type:', err)
     }
@@ -123,13 +188,23 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
       const mark = typeof spec.mark === 'string' ? spec.mark : spec.mark?.type
       switch (mark) {
         case 'bar':
-          return ['x', 'y', 'color', 'tooltip']
+          return ['x', 'y', 'color', 'tooltip', 'order']
         case 'line':
-          return ['x', 'y', 'color', 'tooltip']
+          return ['x', 'y', 'color', 'tooltip', 'order', 'size']
         case 'point':
+          return ['x', 'y', 'size', 'color', 'tooltip', 'shape']
+        case 'circle':
+          return ['x', 'y', 'size', 'color', 'tooltip']
+        case 'square':
           return ['x', 'y', 'size', 'color', 'tooltip']
         case 'arc':
-          return ['theta', 'color', 'tooltip']
+          return ['theta', 'radius', 'color', 'tooltip']
+        case 'area':
+          return ['x', 'y', 'color', 'tooltip', 'order']
+        case 'boxplot':
+          return ['x', 'y', 'color', 'tooltip']
+        case 'text':
+          return ['x', 'y', 'text', 'color', 'size']
         default:
           return ['x', 'y', 'color', 'tooltip']
       }
@@ -139,6 +214,99 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
     }
   }
 
+  const detectDataTypes = (values: any[]): Record<string, string> => {
+    if (!values.length) return {}
+    
+    const sampleRow = values[0]
+    const types: Record<string, string> = {}
+    
+    Object.entries(sampleRow).forEach(([field, value]) => {
+      if (typeof value === 'number') {
+        types[field] = 'quantitative'
+      } else if (value instanceof Date || !isNaN(Date.parse(value as string))) {
+        types[field] = 'temporal'
+      } else if (typeof value === 'string') {
+        // Check if it's ordinal (numbers as strings) or nominal
+        const isNumeric = !isNaN(Number(value))
+        types[field] = isNumeric ? 'ordinal' : 'nominal'
+      }
+    })
+    
+    return types
+  }
+
+  const suggestEncodings = (dataTypes: Record<string, string>, markType: MarkType) => {
+    const encodings: Record<string, any> = {}
+    
+    // Find fields by type
+    const quantFields = Object.entries(dataTypes)
+      .filter(([_, type]) => type === 'quantitative')
+      .map(([field]) => field)
+    
+    const catFields = Object.entries(dataTypes)
+      .filter(([_, type]) => type === 'nominal' || type === 'ordinal')
+      .map(([field]) => field)
+    
+    const timeFields = Object.entries(dataTypes)
+      .filter(([_, type]) => type === 'temporal')
+      .map(([field]) => field)
+
+    switch (markType) {
+      case 'bar':
+        if (catFields.length && quantFields.length) {
+          encodings.x = { field: catFields[0], type: 'nominal' }
+          encodings.y = { field: quantFields[0], type: 'quantitative' }
+          if (catFields.length > 1) {
+            encodings.color = { field: catFields[1], type: 'nominal' }
+          }
+        } else if (timeFields.length && quantFields.length) {
+          encodings.x = { field: timeFields[0], type: 'temporal' }
+          encodings.y = { field: quantFields[0], type: 'quantitative' }
+        }
+        break;
+
+      case 'line':
+        if (timeFields.length && quantFields.length) {
+          encodings.x = { field: timeFields[0], type: 'temporal' }
+          encodings.y = { field: quantFields[0], type: 'quantitative' }
+          if (catFields.length) {
+            encodings.color = { field: catFields[0], type: 'nominal' }
+          }
+        }
+        break;
+
+      case 'point':
+        if (quantFields.length >= 2) {
+          encodings.x = { field: quantFields[0], type: 'quantitative' }
+          encodings.y = { field: quantFields[1], type: 'quantitative' }
+          if (catFields.length) {
+            encodings.color = { field: catFields[0], type: 'nominal' }
+          }
+          if (quantFields.length > 2) {
+            encodings.size = { field: quantFields[2], type: 'quantitative' }
+          }
+        }
+        break;
+
+      case 'arc':
+        if (catFields.length && quantFields.length) {
+          encodings.theta = { field: quantFields[0], type: 'quantitative' }
+          encodings.color = { field: catFields[0], type: 'nominal' }
+        }
+        break;
+    }
+    
+    // Add tooltip for all chart types
+    if (quantFields.length) {
+      encodings.tooltip = [
+        ...catFields.map(field => ({ field, type: 'nominal' })),
+        ...quantFields.map(field => ({ field, type: 'quantitative' }))
+      ]
+    }
+    
+    return encodings
+  }
+
   if (!spec) {
     return <div>Invalid specification</div>
   }
@@ -146,19 +314,35 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
   return (
     <Container>
       <Section>
+        <SectionTitle>Dataset</SectionTitle>
+        <DatasetGrid>
+          {Object.entries(sampleDatasets).map(([id, dataset]) => (
+            <DatasetCard
+              key={id}
+              $active={currentDataset === id}
+              $disabled={currentMark ? !dataset.compatibleCharts.includes(currentMark as MarkType) : false}
+              onClick={() => !dataset.compatibleCharts.includes(currentMark as MarkType) ? null : handleDatasetChange(id)}
+            >
+              <DatasetName>{dataset.name}</DatasetName>
+              <DatasetDescription>{dataset.description}</DatasetDescription>
+            </DatasetCard>
+          ))}
+        </DatasetGrid>
+      </Section>
+
+      <Section>
         <SectionTitle>Chart Type</SectionTitle>
         <Control>
           <Label>Mark Type</Label>
           <Select 
-            value={typeof spec.mark === 'string' ? spec.mark : spec.mark?.type || ''}
+            value={currentMark || ''}
             onChange={(e) => handleMarkTypeChange(e.target.value as MarkType)}
           >
-            <option value="bar">Bar</option>
-            <option value="line">Line</option>
-            <option value="point">Point</option>
-            <option value="area">Area</option>
-            <option value="circle">Circle</option>
-            <option value="arc">Pie/Arc</option>
+            {sampleDatasets[currentDataset].compatibleCharts.map(chartType => (
+              <option key={chartType} value={chartType}>
+                {chartType.charAt(0).toUpperCase() + chartType.slice(1)}
+              </option>
+            ))}
           </Select>
         </Control>
       </Section>
