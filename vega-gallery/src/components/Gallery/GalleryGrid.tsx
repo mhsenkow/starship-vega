@@ -3,6 +3,7 @@ import { ChartCard } from './ChartCard'
 import { useState } from 'react'
 import { FilterBar } from './FilterBar'
 import { ChartConfig, ChartCategory, ComplexityLevel } from '../../types/chart'
+import { chartSpecs } from '../../utils/vegaHelper'
 
 const Container = styled.div`
   padding: 24px;
@@ -52,6 +53,22 @@ const sampleCharts: ChartConfig[] = [
     category: 'Statistical',
     complexity: 'Intermediate',
     spec: {}
+  },
+  {
+    id: 'boxplot-distribution',
+    title: 'Box Plot',
+    description: 'Statistical distribution across categories',
+    category: 'Statistical',
+    complexity: 'Intermediate',
+    spec: chartSpecs['boxplot-distribution']
+  },
+  {
+    id: 'area-growth',
+    title: 'Area Chart',
+    description: 'Area chart showing cumulative growth',
+    category: 'Time Series',
+    complexity: 'Intermediate',
+    spec: chartSpecs['area-growth']
   }
 ]
 

@@ -205,6 +205,14 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
           return ['x', 'y', 'color', 'tooltip']
         case 'text':
           return ['x', 'y', 'text', 'color', 'size']
+        case 'rect':
+          return ['x', 'y', 'color', 'size', 'tooltip']
+        case 'rule':
+          return ['x', 'y', 'color', 'size', 'tooltip']
+        case 'tick':
+          return ['x', 'y', 'color', 'size', 'tooltip']
+        case 'trail':
+          return ['x', 'y', 'color', 'size', 'tooltip', 'order']
         default:
           return ['x', 'y', 'color', 'tooltip']
       }
@@ -319,6 +327,71 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
         if (catFields.length && quantFields.length) {
           encodings.theta = { field: quantFields[0], type: 'quantitative' }
           encodings.color = { field: catFields[0], type: 'nominal' }
+        }
+        break;
+
+      case 'area':
+        if (timeFields.length && quantFields.length) {
+          encodings.x = { field: timeFields[0], type: 'temporal' }
+          encodings.y = { field: quantFields[0], type: 'quantitative' }
+          if (catFields.length) {
+            encodings.color = { field: catFields[0], type: 'nominal' }
+          }
+        }
+        break;
+
+      case 'boxplot':
+        if (catFields.length && quantFields.length) {
+          encodings.x = { field: catFields[0], type: 'nominal' }
+          encodings.y = { field: quantFields[0], type: 'quantitative' }
+          if (catFields.length > 1) {
+            encodings.color = { field: catFields[1], type: 'nominal' }
+          }
+        }
+        break;
+
+      case 'text':
+        if (quantFields.length) {
+          encodings.x = { field: quantFields[0], type: 'quantitative' }
+          encodings.text = { field: quantFields[0], type: 'quantitative' }
+          if (quantFields.length > 1) {
+            encodings.y = { field: quantFields[1], type: 'quantitative' }
+            encodings.size = { field: quantFields[1], type: 'quantitative' }
+          }
+        }
+        break;
+
+      case 'rule':
+        if (quantFields.length >= 2) {
+          encodings.x = { field: quantFields[0], type: 'quantitative' }
+          encodings.y = { field: quantFields[1], type: 'quantitative' }
+          if (catFields.length) {
+            encodings.color = { field: catFields[0], type: 'nominal' }
+          }
+        }
+        break;
+
+      case 'tick':
+        if (quantFields.length) {
+          encodings.x = { field: quantFields[0], type: 'quantitative' }
+          if (catFields.length) {
+            encodings.y = { field: catFields[0], type: 'nominal' }
+            encodings.color = { field: catFields[0], type: 'nominal' }
+          }
+        }
+        break;
+
+      case 'trail':
+        if (timeFields.length && quantFields.length) {
+          encodings.x = { field: timeFields[0], type: 'temporal' }
+          encodings.y = { field: quantFields[0], type: 'quantitative' }
+          if (quantFields.length > 1) {
+            encodings.size = { 
+              field: quantFields[1], 
+              type: 'quantitative',
+              scale: { range: [1, 8] }
+            }
+          }
         }
         break;
     }

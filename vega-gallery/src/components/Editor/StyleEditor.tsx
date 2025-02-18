@@ -252,6 +252,241 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
             </Control>
           </>
         )
+
+      case 'area':
+        return (
+          <>
+            <Control>
+              <Label>Area Opacity</Label>
+              <Input 
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={typeof spec.mark === 'object' ? spec.mark.opacity || 0.7 : 0.7}
+                onChange={e => updateMarkStyle({ opacity: parseFloat(e.target.value) })}
+              />
+            </Control>
+            <Control>
+              <Label>Line Color</Label>
+              <Input 
+                type="color"
+                value={typeof spec.mark === 'object' ? spec.mark.stroke || '#4c78a8' : '#4c78a8'}
+                onChange={e => updateMarkStyle({ stroke: e.target.value })}
+              />
+            </Control>
+            <Control>
+              <Label>Fill Color</Label>
+              <Input 
+                type="color"
+                value={typeof spec.mark === 'object' ? spec.mark.fill || '#4c78a8' : '#4c78a8'}
+                onChange={e => updateMarkStyle({ fill: e.target.value })}
+              />
+            </Control>
+          </>
+        )
+
+      case 'boxplot':
+        return (
+          <>
+            <Control>
+              <Label>Box Color</Label>
+              <Input 
+                type="color"
+                value={typeof spec.mark === 'object' ? spec.mark.color || '#4c78a8' : '#4c78a8'}
+                onChange={e => updateMarkStyle({ color: e.target.value })}
+              />
+            </Control>
+            <Control>
+              <Label>Median Color</Label>
+              <Input 
+                type="color"
+                value={typeof spec.mark === 'object' ? spec.mark.medianColor || '#000000' : '#000000'}
+                onChange={e => updateMarkStyle({ medianColor: e.target.value })}
+              />
+            </Control>
+            <Control>
+              <Label>Box Width</Label>
+              <Input 
+                type="number"
+                min="1"
+                max="100"
+                value={typeof spec.mark === 'object' ? spec.mark.size || 50 : 50}
+                onChange={e => updateMarkStyle({ size: parseInt(e.target.value) })}
+              />
+            </Control>
+          </>
+        )
+
+      case 'text':
+        return (
+          <>
+            <Control>
+              <Label>Font Size</Label>
+              <Input 
+                type="number"
+                min="8"
+                max="40"
+                value={typeof spec.mark === 'object' ? spec.mark.fontSize || 12 : 12}
+                onChange={e => updateMarkStyle({ fontSize: parseInt(e.target.value) })}
+              />
+            </Control>
+            <Control>
+              <Label>Text Color</Label>
+              <Input 
+                type="color"
+                value={typeof spec.mark === 'object' ? spec.mark.color || '#000000' : '#000000'}
+                onChange={e => updateMarkStyle({ color: e.target.value })}
+              />
+            </Control>
+            <Control>
+              <Label>Angle</Label>
+              <Input 
+                type="number"
+                min="0"
+                max="360"
+                value={typeof spec.mark === 'object' ? spec.mark.angle || 0 : 0}
+                onChange={e => updateMarkStyle({ angle: parseInt(e.target.value) })}
+              />
+            </Control>
+          </>
+        )
+
+      case 'rule':
+        return (
+          <>
+            <Control>
+              <Label>Stroke Width</Label>
+              <Input 
+                type="number"
+                min="1"
+                max="10"
+                value={typeof spec.mark === 'object' ? spec.mark.strokeWidth || 2 : 2}
+                onChange={e => updateMarkStyle({ strokeWidth: parseInt(e.target.value) })}
+              />
+            </Control>
+            <Control>
+              <Label>Color</Label>
+              <Input 
+                type="color"
+                value={typeof spec.mark === 'object' ? spec.mark.color || '#000000' : '#000000'}
+                onChange={e => updateMarkStyle({ color: e.target.value })}
+              />
+            </Control>
+          </>
+        )
+
+      case 'trail':
+        return (
+          <>
+            <Control>
+              <Label>Trail Width</Label>
+              <Input 
+                type="number"
+                min="0"
+                max="10"
+                value={typeof spec.mark === 'object' ? spec.mark.strokeWidth || 2 : 2}
+                onChange={e => updateMarkStyle({ strokeWidth: parseInt(e.target.value) })}
+              />
+            </Control>
+            <Control>
+              <Label>Trail Color</Label>
+              <Input 
+                type="color"
+                value={typeof spec.mark === 'object' ? spec.mark.color || '#4c78a8' : '#4c78a8'}
+                onChange={e => updateMarkStyle({ color: e.target.value })}
+              />
+            </Control>
+            <Control>
+              <Label>Opacity</Label>
+              <Input 
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={typeof spec.mark === 'object' ? spec.mark.opacity || 1 : 1}
+                onChange={e => updateMarkStyle({ opacity: parseFloat(e.target.value) })}
+              />
+            </Control>
+          </>
+        )
+
+      case 'tick':
+        return (
+          <>
+            <Control>
+              <Label>Tick Size</Label>
+              <Input 
+                type="number"
+                min="1"
+                max="50"
+                value={typeof spec.mark === 'object' ? spec.mark.size || 20 : 20}
+                onChange={e => updateMarkStyle({ size: parseInt(e.target.value) })}
+              />
+            </Control>
+            <Control>
+              <Label>Thickness</Label>
+              <Input 
+                type="number"
+                min="1"
+                max="10"
+                value={typeof spec.mark === 'object' ? spec.mark.thickness || 2 : 2}
+                onChange={e => updateMarkStyle({ thickness: parseInt(e.target.value) })}
+              />
+            </Control>
+            <Control>
+              <Label>Color</Label>
+              <Input 
+                type="color"
+                value={typeof spec.mark === 'object' ? spec.mark.color || '#4c78a8' : '#4c78a8'}
+                onChange={e => updateMarkStyle({ color: e.target.value })}
+              />
+            </Control>
+          </>
+        )
+
+      case 'rect':
+        return (
+          <>
+            <Control>
+              <Label>Fill Color</Label>
+              <Input 
+                type="color"
+                value={typeof spec.mark === 'object' ? spec.mark.fill || '#4c78a8' : '#4c78a8'}
+                onChange={e => updateMarkStyle({ fill: e.target.value })}
+              />
+            </Control>
+            <Control>
+              <Label>Stroke Color</Label>
+              <Input 
+                type="color"
+                value={typeof spec.mark === 'object' ? spec.mark.stroke || '#000000' : '#000000'}
+                onChange={e => updateMarkStyle({ stroke: e.target.value })}
+              />
+            </Control>
+            <Control>
+              <Label>Stroke Width</Label>
+              <Input 
+                type="number"
+                min="0"
+                max="5"
+                value={typeof spec.mark === 'object' ? spec.mark.strokeWidth || 0 : 0}
+                onChange={e => updateMarkStyle({ strokeWidth: parseInt(e.target.value) })}
+              />
+            </Control>
+            <Control>
+              <Label>Opacity</Label>
+              <Input 
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={typeof spec.mark === 'object' ? spec.mark.opacity || 1 : 1}
+                onChange={e => updateMarkStyle({ opacity: parseFloat(e.target.value) })}
+              />
+            </Control>
+          </>
+        )
     }
   }
 
