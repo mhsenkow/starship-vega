@@ -159,5 +159,94 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       progress: Math.floor(i * 5 + Math.random() * 10),
       velocity: Math.random() * 5
     }))
+  },
+  organizationHierarchy: {
+    id: 'organization-hierarchy',
+    name: 'Organization Structure',
+    description: 'Company organizational hierarchy',
+    type: 'hierarchical',
+    compatibleCharts: ['rect', 'arc'],
+    values: [
+      { name: 'Company', parent: null, value: 100 },
+      { name: 'Engineering', parent: 'Company', value: 40 },
+      { name: 'Sales', parent: 'Company', value: 30 },
+      { name: 'Marketing', parent: 'Company', value: 30 },
+      { name: 'Frontend', parent: 'Engineering', value: 20 },
+      { name: 'Backend', parent: 'Engineering', value: 20 },
+      { name: 'Direct', parent: 'Sales', value: 15 },
+      { name: 'Channel', parent: 'Sales', value: 15 },
+      { name: 'Digital', parent: 'Marketing', value: 15 },
+      { name: 'Events', parent: 'Marketing', value: 15 }
+    ]
+  },
+  fileSystem: {
+    id: 'file-system',
+    name: 'File System',
+    description: 'Computer file system structure',
+    type: 'hierarchical',
+    compatibleCharts: ['rect', 'arc'],
+    values: [
+      { name: 'Root', parent: null, value: 100 },
+      { name: 'Documents', parent: 'Root', value: 35 },
+      { name: 'Pictures', parent: 'Root', value: 35 },
+      { name: 'System', parent: 'Root', value: 30 },
+      { name: 'Work', parent: 'Documents', value: 20 },
+      { name: 'Personal', parent: 'Documents', value: 15 },
+      { name: 'Vacation', parent: 'Pictures', value: 20 },
+      { name: 'Family', parent: 'Pictures', value: 15 },
+      { name: 'OS', parent: 'System', value: 20 },
+      { name: 'Apps', parent: 'System', value: 10 }
+    ]
+  },
+  dependencies: {
+    id: 'dependencies',
+    name: 'Package Dependencies',
+    description: 'Software package dependency graph',
+    type: 'hierarchical',
+    compatibleCharts: ['line', 'arc'],
+    values: [
+      { source: 'App', target: 'React', value: 8 },
+      { source: 'App', target: 'Redux', value: 6 },
+      { source: 'React', target: 'DOM', value: 5 },
+      { source: 'Redux', target: 'React', value: 3 },
+      { source: 'Router', target: 'React', value: 4 },
+      { source: 'App', target: 'Router', value: 5 },
+      { source: 'Redux', target: 'Store', value: 7 },
+      { source: 'Store', target: 'State', value: 4 }
+    ]
+  },
+  socialNetwork: {
+    id: 'social-network',
+    name: 'Social Connections',
+    description: 'Social network interaction graph',
+    type: 'hierarchical',
+    compatibleCharts: ['line', 'arc'],
+    values: [
+      { source: 'Alice', target: 'Bob', value: 5 },
+      { source: 'Bob', target: 'Carol', value: 3 },
+      { source: 'Carol', target: 'David', value: 4 },
+      { source: 'David', target: 'Alice', value: 2 },
+      { source: 'Eve', target: 'Bob', value: 6 },
+      { source: 'Alice', target: 'Eve', value: 4 },
+      { source: 'Frank', target: 'Carol', value: 5 },
+      { source: 'Eve', target: 'Frank', value: 3 }
+    ]
+  },
+  teamCollaboration: {
+    id: 'team-collaboration',
+    name: 'Team Collaboration',
+    description: 'Cross-team collaboration frequency',
+    type: 'hierarchical',
+    compatibleCharts: ['line', 'arc'],
+    values: [
+      { source: 'Design', target: 'Frontend', value: 10 },
+      { source: 'Frontend', target: 'Backend', value: 8 },
+      { source: 'Backend', target: 'DevOps', value: 6 },
+      { source: 'DevOps', target: 'QA', value: 4 },
+      { source: 'QA', target: 'Design', value: 3 },
+      { source: 'Frontend', target: 'QA', value: 5 },
+      { source: 'Design', target: 'Backend', value: 2 },
+      { source: 'DevOps', target: 'Frontend', value: 7 }
+    ]
   }
 } 

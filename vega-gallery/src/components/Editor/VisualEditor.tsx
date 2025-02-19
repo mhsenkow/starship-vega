@@ -81,6 +81,28 @@ const DatasetGrid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;
   margin-top: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 8px;
+
+  /* Scrollbar styling */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+    
+    &:hover {
+      background: #bbb;
+    }
+  }
 `
 
 const DatasetCard = styled.button<{ $active: boolean; $disabled: boolean }>`

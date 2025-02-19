@@ -4,22 +4,26 @@ import { MarkType } from '../../types/vega'
 
 const SelectorContainer = styled.div`
   margin-bottom: 24px;
-`
-
-const DatasetGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
-  margin-top: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 8px;
 `
 
 const DatasetCard = styled.button<{ $active: boolean }>`
+  width: 100%;
   padding: 12px;
+  margin-bottom: 8px;
   border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
   border-radius: ${props => props.theme.borderRadius.md};
   background: ${props => props.$active ? `${props.theme.colors.primary}10` : props.theme.colors.surface};
   text-align: left;
   cursor: pointer;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
   
   &:hover {
     border-color: ${props => props.theme.colors.primary};
@@ -38,27 +42,38 @@ const DatasetDescription = styled.div`
 `
 
 interface DatasetSelectorProps {
+  chartId: string;
   currentDataset: string;
-  currentMark: MarkType;
   onSelect: (datasetId: string) => void;
 }
 
-export const DatasetSelector = ({ currentDataset, currentMark, onSelect }: DatasetSelectorProps) => {
+export const DatasetSelector = ({ chartId, currentDataset, onSelect }: DatasetSelectorProps) => {
+  // Filter datasets based on chart type
+  const compatibleDatasets = Object.entries(sampleDatasets).filter(([_, dataset]) => {
+    switch (chartId) {
+      case 'treemap':
+      case 'sunburst':
+        return dataset.type === 'hierarchical' && dataset.values[0]?.parent !== undefined
+      case 'force-directed':
+      case 'chord-diagram':
+        return dataset.type === 'hierarchical' && dataset.values[0]?.source !== undefined
+      default:
+        return dataset.compatibleCharts.includes(chartId as MarkType)
+    }
+  })
+
   return (
     <SelectorContainer>
-      <DatasetGrid>
-        {Object.entries(sampleDatasets).map(([id, dataset]) => (
-          <DatasetCard
-            key={id}
-            $active={currentDataset === id}
-            onClick={() => onSelect(id)}
-            disabled={!dataset.compatibleCharts.includes(currentMark)}
-          >
-            <DatasetName>{dataset.name}</DatasetName>
-            <DatasetDescription>{dataset.description}</DatasetDescription>
-          </DatasetCard>
-        ))}
-      </DatasetGrid>
+      {compatibleDatasets.map(([id, dataset]) => (
+        <DatasetCard
+          key={id}
+          $active={currentDataset === id}
+          onClick={() => onSelect(id)}
+        >
+          <DatasetName>{dataset.name}</DatasetName>
+          <DatasetDescription>{dataset.description}</DatasetDescription>
+        </DatasetCard>
+      ))}
     </SelectorContainer>
   )
 } 

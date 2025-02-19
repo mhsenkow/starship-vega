@@ -482,5 +482,161 @@ export const chartSpecs: Record<string, TopLevelSpec> = {
         }
       }
     ]
+  },
+  'treemap': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    width: 400,
+    height: 300,
+    data: { 
+      values: [] // Will be populated by dataset
+    },
+    mark: 'rect',
+    encoding: {
+      x: { 
+        field: 'x0', 
+        type: 'quantitative',
+        axis: null
+      },
+      x2: { field: 'x1' },
+      y: { 
+        field: 'y0', 
+        type: 'quantitative',
+        axis: null
+      },
+      y2: { field: 'y1' },
+      color: { 
+        field: 'name', 
+        type: 'nominal',
+        legend: null
+      },
+      tooltip: [
+        { field: 'name', type: 'nominal' },
+        { field: 'value', type: 'quantitative' }
+      ]
+    },
+    transform: [
+      {
+        type: 'filter',
+        expr: "datum.name != null && datum.value != null"
+      },
+      {
+        type: 'treemap',
+        field: 'value',
+        size: [400, 300],
+        as: ['x0', 'y0', 'x1', 'y1']
+      }
+    ]
+  },
+  'sunburst': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    width: 400,
+    height: 400,
+    data: {
+      values: [] // Will be populated by dataset
+    },
+    mark: { 
+      type: 'arc',
+      stroke: '#fff'
+    },
+    encoding: {
+      theta: { 
+        field: 'value', 
+        type: 'quantitative',
+        stack: true
+      },
+      radius: { 
+        field: 'level', 
+        type: 'quantitative',
+        scale: { range: [20, 200] }
+      },
+      color: { 
+        field: 'name', 
+        type: 'nominal',
+        legend: null
+      },
+      tooltip: [
+        { field: 'name', type: 'nominal' },
+        { field: 'value', type: 'quantitative' }
+      ]
+    },
+    transform: [
+      {
+        type: 'filter',
+        expr: "datum.name != null && datum.value != null"
+      },
+      {
+        type: 'nest',
+        keys: ['name'],
+        generate: true
+      },
+      {
+        type: 'hierarchy',
+        field: 'value'
+      }
+    ]
+  },
+  'force-directed': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    width: 500,
+    height: 400,
+    data: { name: 'graph' },
+    layer: [
+      {
+        mark: { type: 'line', color: '#ccc', strokeWidth: 0.5 },
+        encoding: {
+          x: { field: 'source.x', type: 'quantitative' },
+          y: { field: 'source.y', type: 'quantitative' },
+          x2: { field: 'target.x' },
+          y2: { field: 'target.y' },
+          strokeWidth: { field: 'value', type: 'quantitative', scale: { range: [0.5, 3] } }
+        }
+      },
+      {
+        mark: { type: 'circle', size: 100, stroke: 'white', strokeWidth: 1 },
+        encoding: {
+          x: { field: 'x', type: 'quantitative' },
+          y: { field: 'y', type: 'quantitative' },
+          color: { field: 'source', type: 'nominal' },
+          tooltip: { field: 'source', type: 'nominal' }
+        }
+      }
+    ],
+    transform: [
+      {
+        type: 'force',
+        forces: [
+          { force: 'center', x: 250, y: 200 },
+          { force: 'collide', radius: 15 },
+          { force: 'nbody', strength: -30 },
+          { force: 'link', distance: 60 }
+        ],
+        iterations: 300,
+        as: ['x', 'y']
+      }
+    ]
+  },
+  'chord-diagram': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    width: 400,
+    height: 400,
+    data: { name: 'graph' },
+    mark: 'arc',
+    encoding: {
+      theta: { field: 'value', type: 'quantitative', stack: true },
+      color: { field: 'source', type: 'nominal' },
+      tooltip: [
+        { field: 'source', type: 'nominal' },
+        { field: 'target', type: 'nominal' },
+        { field: 'value', type: 'quantitative' }
+      ]
+    },
+    transform: [
+      {
+        type: 'chord',
+        sourceKey: 'source',
+        targetKey: 'target',
+        valueKey: 'value'
+      }
+    ]
   }
 }

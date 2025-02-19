@@ -134,6 +134,50 @@ const sampleCharts: ChartConfig[] = [
     category: 'Statistical',
     complexity: 'Intermediate',
     spec: chartSpecs['error-bars']
+  },
+  {
+    id: 'treemap',
+    title: 'Treemap',
+    description: 'Hierarchical data visualization using nested rectangles',
+    category: 'Hierarchical',
+    complexity: 'Intermediate',
+    useCase: ['Data Analysis', 'Business Reporting'],
+    dataTypes: ['numerical', 'categorical'],
+    keywords: ['hierarchy', 'nested', 'rectangles', 'proportion'],
+    spec: chartSpecs['treemap']
+  },
+  {
+    id: 'sunburst',
+    title: 'Sunburst Chart',
+    description: 'Radial visualization of hierarchical data',
+    category: 'Hierarchical',
+    complexity: 'Advanced',
+    useCase: ['Data Analysis', 'Scientific Visualization'],
+    dataTypes: ['numerical', 'categorical'],
+    keywords: ['hierarchy', 'radial', 'circular', 'nested'],
+    spec: chartSpecs['sunburst']
+  },
+  {
+    id: 'force-directed',
+    title: 'Force-Directed Graph',
+    description: 'Network visualization with force-directed layout',
+    category: 'Hierarchical',
+    complexity: 'Advanced',
+    useCase: ['Scientific Visualization', 'Data Analysis'],
+    dataTypes: ['categorical'],
+    keywords: ['network', 'graph', 'force', 'relationships'],
+    spec: chartSpecs['force-directed']
+  },
+  {
+    id: 'chord-diagram',
+    title: 'Chord Diagram',
+    description: 'Visualization of relationships between entities',
+    category: 'Hierarchical',
+    complexity: 'Advanced',
+    useCase: ['Data Analysis', 'Scientific Visualization'],
+    dataTypes: ['numerical', 'categorical'],
+    keywords: ['relationships', 'circular', 'flow', 'connections'],
+    spec: chartSpecs['chord-diagram']
   }
 ]
 
