@@ -6,21 +6,14 @@ export const bubblePlot: TopLevelSpec = {
     values: Array.from({ length: 20 }, () => ({
       x: Math.random() * 100,
       y: Math.random() * 100,
-      size: Math.random() * 50 + 10,
-      category: ['A', 'B', 'C', 'D'][Math.floor(Math.random() * 4)]
+      size: Math.random() * 50 + 10
     }))
   },
-  mark: {
-    type: 'circle',
-    opacity: 0.7,
-    stroke: 'white',
-    strokeWidth: 1
-  },
+  mark: 'circle',
   encoding: {
     x: { field: 'x', type: 'quantitative' },
     y: { field: 'y', type: 'quantitative' },
-    size: { field: 'size', type: 'quantitative' },
-    color: { field: 'category', type: 'nominal' }
+    size: { field: 'size', type: 'quantitative' }
   }
 };
 
