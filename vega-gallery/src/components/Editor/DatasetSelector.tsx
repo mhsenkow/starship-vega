@@ -58,6 +58,8 @@ interface DatasetSelectorProps {
   currentDataset: string;
   onSelect: (datasetId: string) => void;
   detectDataTypes: (values: any[]) => Record<string, string>;
+  customDatasets: Record<string, DatasetMetadata>;
+  setCustomDatasets: (datasets: Record<string, DatasetMetadata>) => void;
 }
 
 const determineDatasetType = (dataTypes: Record<string, string>): DatasetMetadata['type'] => {
@@ -88,9 +90,7 @@ const determineCompatibleCharts = (dataTypes: Record<string, string>): MarkType[
   return charts;
 };
 
-export const DatasetSelector = ({ chartId, currentDataset, onSelect, detectDataTypes }: DatasetSelectorProps) => {
-  const [customDatasets, setCustomDatasets] = useState<Record<string, DatasetMetadata>>({});
-  
+export const DatasetSelector = ({ chartId, currentDataset, onSelect, detectDataTypes, customDatasets, setCustomDatasets }: DatasetSelectorProps) => {
   const handleNewDataset = (dataset: DatasetMetadata) => {
     setCustomDatasets(prev => ({
       ...prev,

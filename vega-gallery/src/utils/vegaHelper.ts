@@ -167,7 +167,12 @@ export const chartSpecs: Record<string, TopLevelSpec> = {
     encoding: {
       x: { field: 'date', type: 'temporal' },
       y: { field: 'progress', type: 'quantitative' },
-      size: { field: 'velocity', type: 'quantitative' }
+      size: { field: 'velocity', type: 'quantitative' },
+      tooltip: [
+        { field: 'date', type: 'temporal', format: '%Y-%m-%d' },
+        { field: 'progress', type: 'quantitative' },
+        { field: 'velocity', type: 'quantitative' }
+      ]
     }
   },
   'text-labels': {
@@ -617,11 +622,15 @@ export const chartSpecs: Record<string, TopLevelSpec> = {
       {
         mark: { type: 'line', color: '#ccc', strokeWidth: 0.5 },
         encoding: {
-          x: { field: 'source.x', type: 'quantitative' },
-          y: { field: 'source.y', type: 'quantitative' },
-          x2: { field: 'target.x' },
-          y2: { field: 'target.y' },
-          strokeWidth: { field: 'value', type: 'quantitative', scale: { range: [0.5, 3] } }
+          x: { field: 'x', type: 'quantitative', axis: null },
+          y: { field: 'y', type: 'quantitative', axis: null },
+          color: { field: 'group', type: 'nominal' },
+          size: { field: 'weight', type: 'quantitative', scale: { range: [50, 300] } },
+          tooltip: [
+            { field: 'id', type: 'nominal' },
+            { field: 'group', type: 'nominal' },
+            { field: 'weight', type: 'quantitative' }
+          ]
         }
       },
       {
@@ -657,10 +666,11 @@ export const chartSpecs: Record<string, TopLevelSpec> = {
     encoding: {
       theta: { field: 'value', type: 'quantitative', stack: true },
       color: { field: 'source', type: 'nominal' },
+      radius: { field: 'value', type: 'quantitative', scale: { range: [20, 100] } },
       tooltip: [
         { field: 'source', type: 'nominal' },
         { field: 'target', type: 'nominal' },
-        { field: 'value', type: 'quantitative' }
+        { field: 'value', type: 'quantitative', format: '.2f' }
       ]
     },
     transform: [

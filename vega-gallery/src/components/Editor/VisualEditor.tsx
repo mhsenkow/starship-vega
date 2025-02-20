@@ -140,8 +140,13 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
   const currentMark = typeof spec.mark === 'string' ? spec.mark : spec.mark?.type
   const [customDatasets, setCustomDatasets] = useState<Record<string, DatasetMetadata>>({});
   
+  // Get current dataset from either custom or sample datasets
+  const getCurrentDataset = () => {
+    return customDatasets[currentDataset] || sampleDatasets[currentDataset];
+  };
+
   const handleDatasetChange = (datasetId: string) => {
-    const dataset = sampleDatasets[datasetId] || customDatasets[datasetId];
+    const dataset = customDatasets[datasetId] || sampleDatasets[datasetId];
     if (!dataset) return;
 
     const shouldResetMark = currentMark && !dataset.compatibleCharts.includes(currentMark as MarkType);
@@ -459,7 +464,7 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
             value={currentMark || ''}
             onChange={(e) => handleMarkTypeChange(e.target.value as MarkType)}
           >
-            {sampleDatasets[currentDataset].compatibleCharts.map(chartType => (
+            {getCurrentDataset()?.compatibleCharts.map(chartType => (
               <option key={chartType} value={chartType}>
                 {chartType.charAt(0).toUpperCase() + chartType.slice(1)}
               </option>
