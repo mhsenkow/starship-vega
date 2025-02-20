@@ -1,22 +1,29 @@
 // src/charts/index.ts
-import { statistical } from './statistical'
-import { timeSeries } from './timeSeries'
-import { comparison } from './comparison'
-import { correlation } from './correlation'
-import { partToWhole } from './partToWhole'
-import { hierarchical } from './hierarchical'
-import { textAnalysis } from './textAnalysis'
+import {
+  chartSpecs,
+  statistical,
+  timeSeries,
+  comparison,
+  correlation,
+  partToWhole,
+  hierarchical,
+  textAnalysis
+} from './sampleCharts';
+import { correlationCharts } from './correlation';
+import { hierarchicalCharts } from './hierarchical';
+import { timeSeriesCharts } from './timeSeries';
+import { ChartDefinition } from '../types/chart';
 
-// Combine all chart specifications
-export const chartSpecs = {
-  ...statistical,
-  ...timeSeries,
-  ...comparison,
-  ...correlation,
-  ...partToWhole,
-  ...hierarchical,
-  ...textAnalysis
-}
+export {
+  chartSpecs,
+  statistical,
+  timeSeries,
+  comparison,
+  correlation,
+  partToWhole,
+  hierarchical,
+  textAnalysis
+};
 
 // Group charts by category
 export const chartsByCategory = {
@@ -27,4 +34,15 @@ export const chartsByCategory = {
   'Part-to-Whole': Object.values(partToWhole),
   Hierarchical: Object.values(hierarchical),
   'Text Analysis': Object.values(textAnalysis)
-}
+};
+
+export const allCharts: ChartDefinition[] = [
+  ...correlationCharts,
+  ...hierarchicalCharts,
+  ...timeSeriesCharts
+];
+
+// Helper to get charts by category
+export const getChartsByCategory = (category: string): ChartDefinition[] => {
+  return allCharts.filter(chart => chart.category === category);
+};

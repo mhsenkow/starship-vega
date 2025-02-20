@@ -1,14 +1,16 @@
+import React from 'react';
 import styled from 'styled-components'
-import { ChartCategory, ComplexityLevel } from '../../types/chart'
-import { ChartConfig } from '../../types/chart'
+import { ChartCategory, Complexity, ChartConfig } from '../../types/chart'
 
-const FilterContainer = styled.div`
+const Container = styled.div`
   display: flex;
   gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
   padding: 16px;
   background: white;
   border-radius: 8px;
-  border: 1px solid #e9ecef;
+  border: 1px solid ${props => props.theme.colors.border};
 `
 
 const FilterGroup = styled.div`
@@ -18,46 +20,50 @@ const FilterGroup = styled.div`
 `
 
 const Label = styled.label`
-  font-size: 0.9rem;
   font-weight: 500;
-  color: #495057;
+  color: ${props => props.theme.colors.text};
 `
 
 const Select = styled.select`
-  padding: 8px 12px;
-  border: 1px solid #ced4da;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  padding: 6px 12px;
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: 4px;
   background: white;
-  color: #495057;
-  min-width: 150px;
+  font-size: 0.9rem;
+  color: ${props => props.theme.colors.text};
   cursor: pointer;
-  transition: all 0.2s ease;
 
   &:hover {
-    border-color: #adb5bd;
+    border-color: ${props => props.theme.colors.primary};
   }
+`
+
+const SearchInput = styled.input`
+  padding: 6px 12px;
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: 4px;
+  font-size: 0.9rem;
+  min-width: 200px;
 
   &:focus {
-    border-color: #4dabf7;
     outline: none;
-    box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+    border-color: ${props => props.theme.colors.primary};
   }
 `
 
 interface FilterBarProps {
-  category: ChartCategory | 'All'
-  complexity: ComplexityLevel | 'All'
-  searchTerm: string
-  sortBy: 'category' | 'complexity'
-  filteredCharts: ChartConfig[]
-  onCategoryChange: (category: ChartCategory | 'All') => void
-  onComplexityChange: (complexity: ComplexityLevel | 'All') => void
-  onSearchChange: (term: string) => void
-  onSortChange: (sort: 'category' | 'complexity') => void
+  category: ChartCategory | 'All';
+  complexity: Complexity | 'All';
+  searchTerm: string;
+  sortBy: 'category' | 'complexity';
+  filteredCharts: ChartConfig[];
+  onCategoryChange: (category: ChartCategory | 'All') => void;
+  onComplexityChange: (complexity: Complexity | 'All') => void;
+  onSearchChange: (term: string) => void;
+  onSortChange: (sort: 'category' | 'complexity') => void;
 }
 
-export const FilterBar = ({
+export const FilterBar: React.FC<FilterBarProps> = ({
   category,
   complexity,
   searchTerm,
@@ -67,21 +73,17 @@ export const FilterBar = ({
   onComplexityChange,
   onSearchChange,
   onSortChange
-}: FilterBarProps) => {
-  // Get categories that have charts
-  const availableCategories = [...new Set(filteredCharts.map(chart => chart.category))]
+}) => {
+  const categories = Object.values(ChartCategory);
 
   return (
-    <FilterContainer>
-      <SearchGroup>
-        <SearchInput
-          type="search"
-          placeholder="Search charts..."
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-        />
-      </SearchGroup>
-
+    <Container>
+      <SearchInput
+        type="text"
+        placeholder="Search charts..."
+        value={searchTerm}
+        onChange={(e) => onSearchChange(e.target.value)}
+      />
       <FilterGroup>
         <Label>Category:</Label>
         <Select 
@@ -89,7 +91,7 @@ export const FilterBar = ({
           onChange={(e) => onCategoryChange(e.target.value as ChartCategory | 'All')}
         >
           <option value="All">All Categories</option>
-          {availableCategories.map(cat => (
+          {categories.map(cat => (
             <option key={cat} value={cat}>
               {cat} ({filteredCharts.filter(c => c.category === cat).length})
             </option>
@@ -99,20 +101,17 @@ export const FilterBar = ({
 
       <FilterGroup>
         <Label>Complexity:</Label>
-        <ComplexityButtons>
-          {['Beginner', 'Intermediate', 'Advanced'].map(level => (
-            <ComplexityButton
-              key={level}
-              $active={complexity === level}
-              onClick={() => onComplexityChange(complexity === level ? 'All' : level as ComplexityLevel)}
-            >
-              {level}
-              <ComplexityCount>
-                ({filteredCharts.filter(c => c.complexity === level).length})
-              </ComplexityCount>
-            </ComplexityButton>
+        <Select
+          value={complexity}
+          onChange={(e) => onComplexityChange(e.target.value as Complexity | 'All')}
+        >
+          <option value="All">All Levels</option>
+          {Object.values(Complexity).map(level => (
+            <option key={level} value={level}>
+              {level} ({filteredCharts.filter(c => c.complexity === level).length})
+            </option>
           ))}
-        </ComplexityButtons>
+        </Select>
       </FilterGroup>
 
       <FilterGroup>
@@ -125,49 +124,8 @@ export const FilterBar = ({
           <option value="complexity">Complexity</option>
         </Select>
       </FilterGroup>
-    </FilterContainer>
+
+      <span>{filteredCharts.length} charts</span>
+    </Container>
   )
 }
-
-const SearchGroup = styled.div`
-  display: flex;
-  align-items: center;
-  flex: 1;
-`
-
-const SearchInput = styled.input`
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  width: 100%;
-  max-width: 300px;
-`
-
-const ComplexityButtons = styled.div`
-  display: flex;
-  gap: 8px;
-`
-
-const ComplexityCount = styled.span`
-  font-size: 0.8rem;
-  margin-left: 4px;
-  opacity: 0.7;
-`
-
-const ComplexityButton = styled.button<{ $active: boolean }>`
-  display: flex;
-  align-items: center;
-  padding: 6px 12px;
-  border-radius: 16px;
-  border: 1px solid ${props => props.$active ? '#4C78A8' : '#e0e0e0'};
-  background: ${props => props.$active ? '#4C78A8' : 'transparent'};
-  color: ${props => props.$active ? 'white' : '#495057'};
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.9rem;
-
-  &:hover {
-    background: ${props => props.$active ? '#4C78A8' : '#f0f0f0'};
-    border-color: ${props => props.$active ? '#4C78A8' : '#ced4da'};
-  }
-`

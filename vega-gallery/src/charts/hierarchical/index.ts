@@ -1,5 +1,6 @@
 import { TopLevelSpec } from 'vega-lite';
 import { Spec as VegaSpec } from 'vega';
+import { ChartDefinition, ChartCategory } from '../../types/chart';
 
 export const treemap: VegaSpec = {
   $schema: 'https://vega.github.io/schema/vega/v5.json',
@@ -145,4 +146,23 @@ export const sunburst: TopLevelSpec = {
 export const hierarchical = {
   'treemap': treemap,
   'sunburst': sunburst
-}; 
+};
+
+export const hierarchicalCharts: ChartDefinition[] = [
+  {
+    id: 'treemap',
+    title: 'Treemap',
+    category: ChartCategory.Hierarchical,
+    description: 'Nested rectangles showing hierarchical data',
+    tags: ['hierarchy', 'area', 'nested'],
+    spec: treemap
+  },
+  {
+    id: 'sunburst',
+    title: 'Sunburst Chart',
+    category: ChartCategory.Hierarchical,
+    description: 'Radial visualization of hierarchical data',
+    tags: ['hierarchy', 'radial', 'nested'],
+    spec: sunburst
+  }
+]; 

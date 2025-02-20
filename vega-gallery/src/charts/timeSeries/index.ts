@@ -1,5 +1,6 @@
 import { TopLevelSpec } from 'vega-lite';
 import { sampleDatasets } from '../../utils/sampleData';
+import { ChartDefinition, ChartCategory } from '../../types/chart';
 
 export const lineChart: TopLevelSpec = {
   $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
@@ -142,4 +143,80 @@ export const timeSeries = {
   'stream-graph': streamGraph,
   'radial-plot': radialPlot,
   'interactive-multiline': interactiveMultiline
-}; 
+};
+
+export const timeSeriesCharts: ChartDefinition[] = [
+  {
+    id: 'line-chart',
+    title: 'Line Chart',
+    category: ChartCategory.TimeSeries,
+    description: 'Basic line chart for temporal data',
+    tags: ['line', 'temporal', 'trend'],
+    spec: {
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      width: 500,
+      height: 300,
+      data: {
+        values: Array.from({ length: 50 }, (_, i) => ({
+          time: new Date(2024, 0, i + 1).toISOString().split('T')[0],
+          value: Math.sin(i / 8) * 20 + 50 + Math.random() * 5
+        }))
+      },
+      mark: {
+        type: 'line',
+        point: true,
+        strokeWidth: 2
+      },
+      encoding: {
+        x: { 
+          field: 'time', 
+          type: 'temporal',
+          axis: { grid: false }
+        },
+        y: { 
+          field: 'value', 
+          type: 'quantitative',
+          axis: { grid: true }
+        },
+        color: { value: '#4C78A8' }
+      }
+    }
+  },
+  {
+    id: 'area-chart',
+    title: 'Area Chart',
+    category: ChartCategory.TimeSeries,
+    description: 'Area chart showing temporal trends',
+    tags: ['area', 'temporal', 'trend'],
+    spec: {
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      width: 500,
+      height: 300,
+      data: {
+        values: Array.from({ length: 50 }, (_, i) => ({
+          time: new Date(2024, 0, i + 1).toISOString().split('T')[0],
+          value: Math.sin(i / 8) * 20 + 50 + Math.random() * 5
+        }))
+      },
+      mark: {
+        type: 'area',
+        opacity: 0.6,
+        line: true,
+        point: true
+      },
+      encoding: {
+        x: { 
+          field: 'time', 
+          type: 'temporal',
+          axis: { grid: false }
+        },
+        y: { 
+          field: 'value', 
+          type: 'quantitative',
+          axis: { grid: true }
+        },
+        color: { value: '#72B7B2' }
+      }
+    }
+  }
+]; 
