@@ -1,14 +1,20 @@
 import styled from 'styled-components'
 import { sampleDatasets } from '../../utils/sampleData'
 import { MarkType } from '../../types/vega'
+import { useState } from 'react'
+import { DataUploader } from './DataUploader'
+import { DatasetMetadata } from '../types/vega'
 
 const SelectorContainer = styled.div`
   margin-bottom: 24px;
-  max-height: 200px;
+  max-height: 400px;
   overflow-y: auto;
   border: 1px solid #eee;
   border-radius: 8px;
-  padding: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 `
 
 const DatasetCard = styled.button<{ $active: boolean }>`
@@ -41,41 +47,102 @@ const DatasetDescription = styled.div`
   color: ${props => props.theme.text.secondary};
 `
 
+const DatasetMeta = styled.div`
+  font-size: 0.8rem;
+  color: ${props => props.theme.text.secondary};
+  margin-top: 4px;
+`
+
 interface DatasetSelectorProps {
   chartId: string;
   currentDataset: string;
   onSelect: (datasetId: string) => void;
+  detectDataTypes: (values: any[]) => Record<string, string>;
 }
 
-export const DatasetSelector = ({ chartId, currentDataset, onSelect }: DatasetSelectorProps) => {
+const determineDatasetType = (dataTypes: Record<string, string>): DatasetMetadata['type'] => {
+  const types = new Set(Object.values(dataTypes));
+  
+  if (types.has('temporal')) return 'temporal';
+  if (Object.keys(dataTypes).some(k => k.includes('parent') || k.includes('source'))) {
+    return 'hierarchical';
+  }
+  if (types.has('quantitative')) return 'numerical';
+  return 'categorical';
+};
+
+const determineCompatibleCharts = (dataTypes: Record<string, string>): MarkType[] => {
+  const types = new Set(Object.values(dataTypes));
+  const charts: MarkType[] = [];
+  
+  if (types.has('quantitative')) {
+    charts.push('bar', 'line', 'point', 'area');
+  }
+  if (types.has('temporal')) {
+    charts.push('line', 'area', 'point');
+  }
+  if (types.has('nominal') || types.has('ordinal')) {
+    charts.push('bar', 'point');
+  }
+  
+  return charts;
+};
+
+export const DatasetSelector = ({ chartId, currentDataset, onSelect, detectDataTypes }: DatasetSelectorProps) => {
+  const [customDatasets, setCustomDatasets] = useState<Record<string, DatasetMetadata>>({});
+  
+  const handleNewDataset = (dataset: DatasetMetadata) => {
+    setCustomDatasets(prev => ({
+      ...prev,
+      [dataset.id]: dataset
+    }));
+  };
+
   // Filter datasets based on chart type
-  const compatibleDatasets = Object.entries(sampleDatasets).filter(([_, dataset]) => {
+  const compatibleDatasets = Object.entries({
+    ...sampleDatasets,
+    ...customDatasets
+  }).filter(([_, dataset]) => {
     switch (chartId) {
       case 'sunburst':
         return dataset.type === 'hierarchical' && 
                dataset.values.some(v => 'parent' in v) &&
-               dataset.values.some(v => 'value' in v)
+               dataset.values.some(v => 'value' in v);
       case 'force-directed':
       case 'chord-diagram':
         return dataset.type === 'hierarchical' && 
-               dataset.values.some(v => 'source' in v)
+               dataset.values.some(v => 'source' in v);
       default:
-        return dataset.compatibleCharts.includes(chartId as MarkType)
+        return dataset.compatibleCharts.includes(chartId as MarkType);
     }
-  })
+  });
 
   return (
     <SelectorContainer>
+      <DataUploader 
+        onDatasetAdd={handleNewDataset}
+        detectDataTypes={detectDataTypes}
+        determineCompatibleCharts={determineCompatibleCharts}
+        determineDatasetType={determineDatasetType}
+      />
       {compatibleDatasets.map(([id, dataset]) => (
         <DatasetCard
           key={id}
           $active={currentDataset === id}
           onClick={() => onSelect(id)}
         >
-          <DatasetName>{dataset.name}</DatasetName>
+          <DatasetName>
+            {dataset.name}
+            {dataset.source === 'custom' && ' (Custom)'}
+          </DatasetName>
           <DatasetDescription>{dataset.description}</DatasetDescription>
+          {dataset.source === 'custom' && (
+            <DatasetMeta>
+              Uploaded: {new Date(dataset.uploadDate).toLocaleDateString()}
+            </DatasetMeta>
+          )}
         </DatasetCard>
       ))}
     </SelectorContainer>
-  )
+  );
 } 

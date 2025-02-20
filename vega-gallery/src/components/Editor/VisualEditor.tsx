@@ -3,6 +3,7 @@ import { TopLevelSpec } from 'vega-lite'
 import { useMemo, useState } from 'react'
 import { EncodingChannel, MarkType, EncodingUpdate } from '../../types/vega'
 import { sampleDatasets } from '../../utils/sampleData'
+import { DatasetSelector } from './DatasetSelector'
 
 const Container = styled.div`
   padding: 16px;
@@ -137,28 +138,31 @@ interface VisualEditorProps {
 export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
   const [currentDataset, setCurrentDataset] = useState(Object.keys(sampleDatasets)[0])
   const currentMark = typeof spec.mark === 'string' ? spec.mark : spec.mark?.type
+  const [customDatasets, setCustomDatasets] = useState<Record<string, DatasetMetadata>>({});
   
   const handleDatasetChange = (datasetId: string) => {
-    const dataset = sampleDatasets[datasetId]
-    const shouldResetMark = currentMark && !dataset.compatibleCharts.includes(currentMark as MarkType)
+    const dataset = sampleDatasets[datasetId] || customDatasets[datasetId];
+    if (!dataset) return;
+
+    const shouldResetMark = currentMark && !dataset.compatibleCharts.includes(currentMark as MarkType);
     
     // Detect data types
-    const dataTypes = detectDataTypes(dataset.values)
+    const dataTypes = detectDataTypes(dataset.values);
     
     // Determine best mark type if needed
-    const markType = shouldResetMark ? dataset.compatibleCharts[0] : currentMark
+    const markType = shouldResetMark ? dataset.compatibleCharts[0] : currentMark;
     
     // Get suggested encodings
-    const suggestedEncodings = suggestEncodings(dataTypes, markType as MarkType)
+    const suggestedEncodings = suggestEncodings(dataTypes, markType as MarkType);
     
     onChange({
       ...spec,
       data: { values: dataset.values },
       mark: markType,
       encoding: suggestedEncodings
-    })
+    });
     
-    setCurrentDataset(datasetId)
+    setCurrentDataset(datasetId);
   }
 
   const handleMarkTypeChange = (type: MarkType) => {
@@ -437,19 +441,14 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
     <Container>
       <Section>
         <SectionTitle>Dataset</SectionTitle>
-        <DatasetGrid>
-          {Object.entries(sampleDatasets).map(([id, dataset]) => (
-            <DatasetCard
-              key={id}
-              $active={currentDataset === id}
-              $disabled={currentMark ? !dataset.compatibleCharts.includes(currentMark as MarkType) : false}
-              onClick={() => !dataset.compatibleCharts.includes(currentMark as MarkType) ? null : handleDatasetChange(id)}
-            >
-              <DatasetName>{dataset.name}</DatasetName>
-              <DatasetDescription>{dataset.description}</DatasetDescription>
-            </DatasetCard>
-          ))}
-        </DatasetGrid>
+        <DatasetSelector
+          chartId={currentMark || ''}
+          currentDataset={currentDataset}
+          onSelect={handleDatasetChange}
+          detectDataTypes={detectDataTypes}
+          customDatasets={customDatasets}
+          setCustomDatasets={setCustomDatasets}
+        />
       </Section>
 
       <Section>

@@ -1,23 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
 import { renderVegaLite } from '../../utils/vegaHelper'
+import { ChartFooter } from './ChartFooter'
 
 const PreviewContainer = styled.div<{ $height: number }>`
   border: 1px solid #eee;
   border-radius: 4px;
   padding: 16px;
   height: ${props => props.$height}px;
-  overflow: auto;
   display: flex;
   flex-direction: column;
-  margin-top:auto;
-  margin-bottom:auto;
+  overflow: hidden;
 `
 
 const ChartContainer = styled.div`
-  flex: 1;
+  height: 60%;
   min-height: 0;
   position: relative;
+  margin-bottom: 8px;
 `
 
 const ErrorMessage = styled.div`
@@ -34,47 +34,33 @@ interface PreviewProps {
 }
 
 export const Preview = ({ spec, height }: PreviewProps) => {
-  const containerRef = useRef<HTMLDivElement>(null)
+  const chartRef = useRef<HTMLDivElement>(null)
   const [error, setError] = useState<string | null>(null)
+  const [data, setData] = useState<any[]>([])
 
   useEffect(() => {
-    let mounted = true;
-    
     const renderChart = async () => {
-      if (containerRef.current && mounted) {
-        try {
-          const parsedSpec = JSON.parse(spec)
-          await renderVegaLite(containerRef.current, parsedSpec, { mode: 'editor' })
-          if (mounted) setError(null)
-        } catch (err) {
-          if (mounted) setError(err instanceof Error ? err.message : 'Invalid specification')
+      try {
+        const parsedSpec = JSON.parse(spec)
+        setData(parsedSpec.data?.values || [])
+        
+        if (chartRef.current) {
+          await renderVegaLite(chartRef.current, parsedSpec)
+          setError(null)
         }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to render chart')
       }
     }
 
     renderChart()
-
-    const resizeObserver = new ResizeObserver(() => {
-      if (mounted) renderChart()
-    })
-
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current)
-    }
-
-    return () => {
-      mounted = false
-      resizeObserver.disconnect()
-      if (containerRef.current) {
-        containerRef.current.innerHTML = ''
-      }
-    }
-  }, [spec, height])
+  }, [spec])
 
   return (
     <PreviewContainer $height={height}>
-      <div ref={containerRef} style={{ flex: 1 }} />
+      <ChartContainer ref={chartRef} />
       {error && <ErrorMessage>{error}</ErrorMessage>}
+      <ChartFooter data={data} />
     </PreviewContainer>
   )
 }

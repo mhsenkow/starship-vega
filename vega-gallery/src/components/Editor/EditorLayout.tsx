@@ -79,7 +79,7 @@ interface EditorLayoutProps {
 
 export const EditorLayout = ({ chartId, onBack }: EditorLayoutProps) => {
   const [spec, setSpec] = useState(JSON.stringify(chartSpecs[chartId], null, 2))
-  const [previewHeight, setPreviewHeight] = useState(600)
+  const [previewHeight, setPreviewHeight] = useState(900)
   const resizingRef = useRef(false)
   const startYRef = useRef(0)
   const startHeightRef = useRef(0)
