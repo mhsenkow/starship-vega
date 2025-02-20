@@ -6,8 +6,11 @@ An interactive gallery and playground for Vega-Lite visualizations with real-tim
 
 ### Gallery View
 - ✅ Responsive 3-column grid layout with chart cards
-- ✅ Category filters (Statistical, Time Series)
-- ✅ Complexity filters (Beginner, Intermediate)
+- ✅ Advanced filtering system:
+  - Category filters (Statistical, Time Series, Hierarchical, Correlation, Part-to-Whole)
+  - Complexity filters (Beginner, Intermediate, Advanced)
+  - Search functionality with keywords
+  - Smart sorting by category and complexity
 - ✅ Interactive chart previews
 - ✅ Consistent 300x180 chart previews
 
@@ -19,6 +22,36 @@ An interactive gallery and playground for Vega-Lite visualizations with real-tim
 - ✅ Live preview with automatic updates
 - ✅ Responsive chart rendering
 - ✅ Error handling for invalid specifications
+- ✅ Dataset compatibility checking
+
+### Visualization Types
+- ✅ Statistical Charts:
+  - Scatter plots
+  - Bar charts (Simple, Grouped, Stacked)
+  - Box plots
+  - Violin plots
+  - Histograms with KDE
+  - Q-Q plots
+  - Error bars
+  - Correlation heatmaps
+- ✅ Time Series:
+  - Line charts
+  - Area charts
+  - Stream graphs
+  - Radial plots
+  - Interactive multi-line
+- ✅ Hierarchical:
+  - Treemaps
+  - Sunburst charts
+  - Force-directed graphs
+  - Chord diagrams
+- ✅ Part-to-Whole:
+  - Pie charts
+  - Waffle charts
+- ✅ Specialized:
+  - Heat maps
+  - Bullet charts
+  - Connected scatter plots
 
 ### Chart Customization
 - ✅ Dataset selection with compatibility checks
@@ -29,15 +62,15 @@ An interactive gallery and playground for Vega-Lite visualizations with real-tim
   - Fonts and typography
   - Axes and grid styling
   - Legend configuration
-- ✅ Support for multiple chart types:
-  - Bar charts
-  - Line charts
-  - Scatter plots
-  - Pie charts
-  - Box plots
-  - Area charts
-  - Tick plots
-  - Trail visualizations
+
+### Data Management
+- ✅ Built-in sample datasets
+- ✅ Custom data upload support:
+  - JSON and CSV formats
+  - Automatic data type detection
+  - Dataset-chart compatibility checking
+- ✅ Smart encoding suggestions
+- ✅ Interactive data preview
 
 ## 🚀 Getting Started
 
@@ -66,12 +99,14 @@ http://localhost:5173/
 - Dual-mode rendering:
   - Fixed dimensions (300x180) for gallery
   - Container-responsive for editor
+- Optimized performance with smart re-rendering
 
 ### Styling
 - IBM Plex Sans for UI
 - IBM Plex Mono for code
 - Consistent color scheme and spacing
 - Responsive layout breakpoints
+- Customizable chart themes
 
 ### Data Management
 - Built-in sample datasets
@@ -81,26 +116,58 @@ http://localhost:5173/
 - Support for multiple data formats
 
 ## 🎯 Roadmap
-- [ ] Add more chart examples
-  - Support for geographic visualizations
-  - Hierarchical data visualizations
-- [ ] Implement chart sharing
-  - URL-based sharing
-  - Export to image
-- [ ] Add chart thumbnails
-  - Pre-rendered previews
-  - Loading states
-- [ ] Support for custom data sources
-  - CSV upload
-  - JSON import
-  - API integration
-- [ ] Add chart templates
-  - Starter templates
-  - Common configurations
-- [ ] Implement chart export options
-  - PNG/SVG export
-  - Vega-Lite spec export
-- [✓] Add visual styling controls
 
+### Phase 1: Enhanced Visualization (Q2 2024)
+- [ ] Geographic visualizations
+  - Maps with data overlays
+  - Choropleth maps
+  - Point maps with clustering
+- [ ] Advanced interactions
+  - Cross-filtering between charts
+  - Drill-down capabilities
+  - Custom interaction builders
+- [ ] Animation system
+  - Transition animations
+  - Time-based animations
+  - Interactive playback controls
+
+### Phase 2: Data Management (Q3 2024)
+- [ ] Advanced data sources
+  - Database connections
+  - REST API integration
+  - Real-time data streaming
+- [ ] Data transformation
+  - Visual data transformation builder
+  - Custom formula support
+  - Aggregation functions
+  - Data cleaning tools
+
+### Phase 3: Collaboration (Q4 2024)
+- [ ] User management
+  - User accounts
+  - Team workspaces
+  - Access control
+- [ ] Sharing capabilities
+  - Public/private charts
+  - Embeddable visualizations
+  - Export to multiple formats
+- [ ] Version control
+  - Chart version history
+  - Collaborative editing
+  - Change tracking
+
+### Phase 4: Enterprise Features (Q1 2025)
+- [ ] Dashboard builder
+  - Multi-chart layouts
+  - Interactive dashboard filters
+  - Real-time updates
+- [ ] Advanced analytics
+  - Statistical analysis tools
+  - Trend detection
+  - Anomaly highlighting
+- [ ] Integration capabilities
+  - API for external tools
+  - Plugin system
+  - Custom extensions
 
 Meta isn't allowed to use this but anyone else, feel free. 
