@@ -345,40 +345,36 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
         }
         break;
 
-      case 'arc':
-        if (catFields.length && quantFields.length) {
-          encodings.theta = { field: quantFields[0], type: 'quantitative' }
-          encodings.color = { field: catFields[0], type: 'nominal' }
-        }
-        break;
-
-      case 'area':
-        if (timeFields.length && quantFields.length) {
-          encodings.x = { field: timeFields[0], type: 'temporal' }
-          encodings.y = { field: quantFields[0], type: 'quantitative' }
+      case 'circle':
+      case 'square':
+        if (quantFields.length >= 2) {
+          encodings.x = { field: quantFields[0], type: 'quantitative' }
+          encodings.y = { field: quantFields[1], type: 'quantitative' }
           if (catFields.length) {
             encodings.color = { field: catFields[0], type: 'nominal' }
           }
-        }
-        break;
-
-      case 'boxplot':
-        if (catFields.length && quantFields.length) {
-          encodings.x = { field: catFields[0], type: 'nominal' }
-          encodings.y = { field: quantFields[0], type: 'quantitative' }
-          if (catFields.length > 1) {
-            encodings.color = { field: catFields[1], type: 'nominal' }
+          // Add size encoding based on BMI
+          encodings.size = { 
+            field: 'bmi', 
+            type: 'quantitative',
+            scale: { range: [100, 1000] }
           }
         }
         break;
 
       case 'text':
-        if (quantFields.length) {
+        if (quantFields.length >= 2) {
           encodings.x = { field: quantFields[0], type: 'quantitative' }
-          encodings.text = { field: quantFields[0], type: 'quantitative' }
-          if (quantFields.length > 1) {
-            encodings.y = { field: quantFields[1], type: 'quantitative' }
-            encodings.size = { field: quantFields[1], type: 'quantitative' }
+          encodings.y = { field: quantFields[1], type: 'quantitative' }
+          encodings.text = { field: 'bmi', type: 'quantitative' }
+          if (catFields.length) {
+            encodings.color = { field: catFields[0], type: 'nominal' }
+          }
+          // Add size encoding based on BMI
+          encodings.size = { 
+            field: 'bmi', 
+            type: 'quantitative',
+            scale: { range: [8, 20] }
           }
         }
         break;
@@ -404,16 +400,20 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
         break;
 
       case 'trail':
-        if (timeFields.length && quantFields.length) {
-          encodings.x = { field: timeFields[0], type: 'temporal' }
-          encodings.y = { field: quantFields[0], type: 'quantitative' }
-          if (quantFields.length > 1) {
-            encodings.size = { 
-              field: quantFields[1], 
-              type: 'quantitative',
-              scale: { range: [1, 8] }
-            }
+        if (quantFields.length >= 2) {
+          encodings.x = { field: quantFields[0], type: 'quantitative' }
+          encodings.y = { field: quantFields[1], type: 'quantitative' }
+          if (catFields.length) {
+            encodings.color = { field: catFields[0], type: 'nominal' }
           }
+          // Size encoding based on BMI
+          encodings.size = { 
+            field: 'bmi', 
+            type: 'quantitative',
+            scale: { range: [1, 8] }
+          }
+          // Order by height to create a trail effect
+          encodings.order = { field: 'height', type: 'quantitative' }
         }
         break;
     }

@@ -18,6 +18,6 @@ export interface DatasetMetadata {
   name: string;
   description: string;
   type: 'categorical' | 'temporal' | 'numerical' | 'hierarchical';
-  compatibleCharts: Array<'bar' | 'line' | 'point' | 'arc' | 'area' | 'boxplot' | 'rect' | 'rule' | 'text' | 'tick' | 'trail' | 'square'>;
+  compatibleCharts: Array<'bar' | 'line' | 'point' | 'arc' | 'area' | 'boxplot' | 'rect' | 'rule' | 'text' | 'tick' | 'trail' | 'square' | 'sunburst'>;
   values: any[];
 } 

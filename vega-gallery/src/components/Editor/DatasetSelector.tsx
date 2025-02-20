@@ -51,12 +51,14 @@ export const DatasetSelector = ({ chartId, currentDataset, onSelect }: DatasetSe
   // Filter datasets based on chart type
   const compatibleDatasets = Object.entries(sampleDatasets).filter(([_, dataset]) => {
     switch (chartId) {
-      case 'treemap':
       case 'sunburst':
-        return dataset.type === 'hierarchical' && dataset.values[0]?.parent !== undefined
+        return dataset.type === 'hierarchical' && 
+               dataset.values.some(v => 'parent' in v) &&
+               dataset.values.some(v => 'value' in v)
       case 'force-directed':
       case 'chord-diagram':
-        return dataset.type === 'hierarchical' && dataset.values[0]?.source !== undefined
+        return dataset.type === 'hierarchical' && 
+               dataset.values.some(v => 'source' in v)
       default:
         return dataset.compatibleCharts.includes(chartId as MarkType)
     }

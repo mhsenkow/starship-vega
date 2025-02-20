@@ -10,6 +10,8 @@ const PreviewContainer = styled.div<{ $height: number }>`
   overflow: auto;
   display: flex;
   flex-direction: column;
+  margin-top:auto;
+  margin-bottom:auto;
 `
 
 const ChartContainer = styled.div`
@@ -36,23 +38,24 @@ export const Preview = ({ spec, height }: PreviewProps) => {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let mounted = true;
+    
     const renderChart = async () => {
-      if (containerRef.current) {
+      if (containerRef.current && mounted) {
         try {
           const parsedSpec = JSON.parse(spec)
           await renderVegaLite(containerRef.current, parsedSpec, { mode: 'editor' })
-          setError(null)
+          if (mounted) setError(null)
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'Invalid specification')
+          if (mounted) setError(err instanceof Error ? err.message : 'Invalid specification')
         }
       }
     }
 
     renderChart()
 
-    // Add resize observer for responsiveness
     const resizeObserver = new ResizeObserver(() => {
-      renderChart()
+      if (mounted) renderChart()
     })
 
     if (containerRef.current) {
@@ -60,7 +63,11 @@ export const Preview = ({ spec, height }: PreviewProps) => {
     }
 
     return () => {
+      mounted = false
       resizeObserver.disconnect()
+      if (containerRef.current) {
+        containerRef.current.innerHTML = ''
+      }
     }
   }, [spec, height])
 

@@ -33,6 +33,74 @@ export const generateTickData = () => {
   return data
 }
 
+export const generateStatisticalData = () => {
+  // Box-Muller transform for better normal distribution
+  const normalRandom = () => {
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  };
+
+  return Array.from({ length: 200 }, () => {
+    const baseValue = normalRandom();
+    return {
+      group: ['A', 'B', 'C'][Math.floor(Math.random() * 3)],
+      value: 50 + (baseValue * 15), // mean = 50, sd = 15
+      category: ['Control', 'Treatment'][Math.floor(Math.random() * 2)],
+      outlier: Math.random() < 0.05 // 5% chance of being an outlier
+    };
+  });
+}
+
+export const generateTimeSeriesData = () => {
+  return Array.from({ length: 365 }, (_, i) => {
+    const trend = i * 0.1;
+    const seasonal = 15 * Math.sin(i * 2 * Math.PI / 365); // Yearly seasonality
+    const weekly = 5 * Math.sin(i * 2 * Math.PI / 7); // Weekly pattern
+    const noise = Math.random() * 8 - 4;
+    
+    return {
+      date: new Date(2023, 0, i + 1).toISOString().split('T')[0],
+      value: Math.max(0, 50 + trend + seasonal + weekly + noise),
+      category: ['Revenue', 'Costs', 'Profit'][Math.floor(Math.random() * 3)]
+    };
+  });
+}
+
+export const generateHierarchicalData = () => {
+  return {
+    name: "Organization",
+    children: [
+      {
+        name: "Engineering",
+        children: [
+          { name: "Frontend", value: 20 },
+          { name: "Backend", value: 25 },
+          { name: "DevOps", value: 15 },
+          { name: "QA", value: 10 }
+        ]
+      },
+      {
+        name: "Sales",
+        children: [
+          { name: "Direct", value: 30 },
+          { name: "Channel", value: 25 },
+          { name: "Support", value: 15 }
+        ]
+      },
+      {
+        name: "Marketing",
+        children: [
+          { name: "Digital", value: 20 },
+          { name: "Events", value: 15 },
+          { name: "Content", value: 10 }
+        ]
+      }
+    ]
+  };
+}
+
 export const sampleDatasets: Record<string, DatasetMetadata> = {
   categoricalSales: {
     id: 'categorical-sales',
@@ -53,7 +121,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     name: 'Temperature Readings',
     description: 'Daily temperature readings over a month',
     type: 'temporal',
-    compatibleCharts: ['line', 'point', 'bar'],
+    compatibleCharts: ['line', 'point', 'bar', 'arc'],
     values: Array.from({ length: 30 }, (_, i) => ({
       date: new Date(2024, 0, i + 1).toISOString().split('T')[0],
       temperature: Math.round(20 + Math.sin(i / 3) * 5),
@@ -65,7 +133,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     name: 'Health Metrics',
     description: 'Height vs. Weight correlation',
     type: 'numerical',
-    compatibleCharts: ['point', 'bar'],
+    compatibleCharts: ['point', 'circle', 'square', 'text', 'trail', 'rule'],
     values: Array.from({ length: 50 }, () => ({
       height: Math.round(160 + Math.random() * 40),
       weight: Math.round(60 + Math.random() * 40),
@@ -165,18 +233,18 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     name: 'Organization Structure',
     description: 'Company organizational hierarchy',
     type: 'hierarchical',
-    compatibleCharts: ['rect', 'arc'],
+    compatibleCharts: ['sunburst'],
     values: [
-      { name: 'Company', parent: null, value: 100 },
-      { name: 'Engineering', parent: 'Company', value: 40 },
-      { name: 'Sales', parent: 'Company', value: 30 },
-      { name: 'Marketing', parent: 'Company', value: 30 },
-      { name: 'Frontend', parent: 'Engineering', value: 20 },
-      { name: 'Backend', parent: 'Engineering', value: 20 },
-      { name: 'Direct', parent: 'Sales', value: 15 },
-      { name: 'Channel', parent: 'Sales', value: 15 },
-      { name: 'Digital', parent: 'Marketing', value: 15 },
-      { name: 'Events', parent: 'Marketing', value: 15 }
+      { name: "Root", parent: null, value: 100 },
+      { name: "A", parent: "Root", value: 50 },
+      { name: "B", parent: "Root", value: 30 },
+      { name: "C", parent: "Root", value: 20 },
+      { name: "A1", parent: "A", value: 25 },
+      { name: "A2", parent: "A", value: 25 },
+      { name: "B1", parent: "B", value: 15 },
+      { name: "B2", parent: "B", value: 15 },
+      { name: "C1", parent: "C", value: 10 },
+      { name: "C2", parent: "C", value: 10 }
     ]
   },
   fileSystem: {
@@ -247,6 +315,73 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { source: 'Frontend', target: 'QA', value: 5 },
       { source: 'Design', target: 'Backend', value: 2 },
       { source: 'DevOps', target: 'Frontend', value: 7 }
+    ]
+  },
+  statisticalDistribution: {
+    id: 'statistical-distribution',
+    name: 'Statistical Distributions',
+    description: 'Various statistical distributions for advanced analysis',
+    type: 'numerical',
+    compatibleCharts: ['violin', 'boxplot', 'point'],
+    values: generateStatisticalData()
+  },
+  detailedTimeSeries: {
+    id: 'detailed-timeseries',
+    name: 'Complex Time Series',
+    description: 'Time series with seasonal patterns and trends',
+    type: 'temporal',
+    compatibleCharts: ['line', 'area', 'point'],
+    values: generateTimeSeriesData()
+  },
+  complexHierarchy: {
+    id: 'complex-hierarchy',
+    name: 'Complex Organization',
+    description: 'Multi-level organizational structure',
+    type: 'hierarchical',
+    compatibleCharts: ['treemap', 'sunburst'],
+    values: [
+      { id: "CEO", parentId: null, value: 100 },
+      { id: "Engineering", parentId: "CEO", value: 50 },
+      { id: "Sales", parentId: "CEO", value: 30 },
+      { id: "Marketing", parentId: "CEO", value: 20 },
+      { id: "Frontend", parentId: "Engineering", value: 20 },
+      { id: "Backend", parentId: "Engineering", value: 15 },
+      { id: "DevOps", parentId: "Engineering", value: 15 },
+      { id: "Enterprise", parentId: "Sales", value: 15 },
+      { id: "SMB", parentId: "Sales", value: 15 },
+      { id: "Digital", parentId: "Marketing", value: 10 },
+      { id: "Events", parentId: "Marketing", value: 10 },
+      { id: "React", parentId: "Frontend", value: 10 },
+      { id: "Vue", parentId: "Frontend", value: 10 },
+      { id: "Node", parentId: "Backend", value: 7 },
+      { id: "Python", parentId: "Backend", value: 8 },
+      { id: "AWS", parentId: "DevOps", value: 8 },
+      { id: "K8s", parentId: "DevOps", value: 7 }
+    ]
+  },
+  hierarchicalOrg: {
+    id: 'hierarchical-org',
+    name: 'Organizational Structure',
+    description: 'Complex organizational hierarchy',
+    type: 'hierarchical',
+    compatibleCharts: ['treemap', 'sunburst'],
+    values: generateHierarchicalData()
+  },
+  networkConnections: {
+    id: 'network-connections',
+    name: 'Network Connections',
+    description: 'Complex network relationships',
+    type: 'hierarchical',
+    compatibleCharts: ['force-directed', 'chord-diagram'],
+    values: [
+      { source: 'Frontend', target: 'API', value: 10 },
+      { source: 'API', target: 'Database', value: 8 },
+      { source: 'Frontend', target: 'Auth', value: 6 },
+      { source: 'API', target: 'Cache', value: 5 },
+      { source: 'Cache', target: 'Database', value: 7 },
+      { source: 'Auth', target: 'Database', value: 4 },
+      { source: 'Frontend', target: 'Analytics', value: 3 },
+      { source: 'Analytics', target: 'Database', value: 5 }
     ]
   }
 } 

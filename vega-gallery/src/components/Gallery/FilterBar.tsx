@@ -1,5 +1,6 @@
 import styled from 'styled-components'
 import { ChartCategory, ComplexityLevel } from '../../types/chart'
+import { ChartConfig } from '../../types/chart'
 
 const FilterContainer = styled.div`
   display: flex;
@@ -48,10 +49,11 @@ interface FilterBarProps {
   category: ChartCategory | 'All'
   complexity: ComplexityLevel | 'All'
   searchTerm: string
+  sortBy: 'category' | 'complexity'
+  filteredCharts: ChartConfig[]
   onCategoryChange: (category: ChartCategory | 'All') => void
   onComplexityChange: (complexity: ComplexityLevel | 'All') => void
   onSearchChange: (term: string) => void
-  sortBy: 'category' | 'complexity'
   onSortChange: (sort: 'category' | 'complexity') => void
 }
 
@@ -59,12 +61,16 @@ export const FilterBar = ({
   category,
   complexity,
   searchTerm,
+  sortBy,
+  filteredCharts,
   onCategoryChange,
   onComplexityChange,
   onSearchChange,
-  sortBy,
   onSortChange
 }: FilterBarProps) => {
+  // Get categories that have charts
+  const availableCategories = [...new Set(filteredCharts.map(chart => chart.category))]
+
   return (
     <FilterContainer>
       <SearchGroup>
@@ -83,12 +89,11 @@ export const FilterBar = ({
           onChange={(e) => onCategoryChange(e.target.value as ChartCategory | 'All')}
         >
           <option value="All">All Categories</option>
-          <option value="Statistical">Statistical</option>
-          <option value="Time Series">Time Series</option>
-          <option value="Distribution">Distribution</option>
-          <option value="Correlation">Correlation</option>
-          <option value="Part-to-Whole">Part-to-Whole</option>
-          <option value="Hierarchical">Hierarchical</option>
+          {availableCategories.map(cat => (
+            <option key={cat} value={cat}>
+              {cat} ({filteredCharts.filter(c => c.category === cat).length})
+            </option>
+          ))}
         </Select>
       </FilterGroup>
 
@@ -102,6 +107,9 @@ export const FilterBar = ({
               onClick={() => onComplexityChange(complexity === level ? 'All' : level as ComplexityLevel)}
             >
               {level}
+              <ComplexityCount>
+                ({filteredCharts.filter(c => c.complexity === level).length})
+              </ComplexityCount>
             </ComplexityButton>
           ))}
         </ComplexityButtons>
@@ -140,16 +148,26 @@ const ComplexityButtons = styled.div`
   gap: 8px;
 `
 
+const ComplexityCount = styled.span`
+  font-size: 0.8rem;
+  margin-left: 4px;
+  opacity: 0.7;
+`
+
 const ComplexityButton = styled.button<{ $active: boolean }>`
-  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
   border-radius: 16px;
-  border: none;
-  background: ${props => props.$active ? '#4C78A8' : '#f0f0f0'};
-  color: ${props => props.$active ? 'white' : 'black'};
+  border: 1px solid ${props => props.$active ? '#4C78A8' : '#e0e0e0'};
+  background: ${props => props.$active ? '#4C78A8' : 'transparent'};
+  color: ${props => props.$active ? 'white' : '#495057'};
   cursor: pointer;
   transition: all 0.2s;
+  font-size: 0.9rem;
 
   &:hover {
-    background: ${props => props.$active ? '#4C78A8' : '#e0e0e0'};
+    background: ${props => props.$active ? '#4C78A8' : '#f0f0f0'};
+    border-color: ${props => props.$active ? '#4C78A8' : '#ced4da'};
   }
 `

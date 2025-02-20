@@ -19,7 +19,7 @@ export interface ChartConfig {
   id: string
   title: string
   description: string
-  category: ChartCategory
+  categories: ChartCategory[]
   useCase: ChartUseCase[]
   complexity: Complexity
   dataTypes: ('numerical' | 'categorical' | 'temporal')[]

@@ -269,19 +269,42 @@ export const chartSpecs: Record<string, TopLevelSpec> = {
         category: `Metric ${Math.floor(i / 8) + 1}`
       }))
     },
-    encoding: {
-      theta: { field: 'hour', type: 'quantitative', scale: { domain: [0, 24] } },
-      radius: { field: 'value', type: 'quantitative', scale: { type: 'sqrt' } },
-      color: { field: 'category', type: 'nominal' }
-    },
     layer: [{
-      mark: { type: 'arc', innerRadius: 20, stroke: '#fff' }
+      mark: { type: 'arc', innerRadius: 20, stroke: '#fff' },
+      encoding: {
+        theta: { 
+          field: 'hour', 
+          type: 'quantitative',
+          scale: { domain: [0, 24] }
+        },
+        radius: { 
+          field: 'value', 
+          type: 'quantitative',
+          scale: { type: 'sqrt', zero: true }
+        },
+        color: { 
+          field: 'category', 
+          type: 'nominal'
+        },
+        tooltip: [
+          { field: 'hour', type: 'quantitative' },
+          { field: 'value', type: 'quantitative', format: '.1f' },
+          { field: 'category', type: 'nominal' }
+        ]
+      }
     }, {
       mark: { type: 'text', radiusOffset: 10 },
       encoding: {
+        theta: { 
+          field: 'hour', 
+          type: 'quantitative',
+          scale: { domain: [0, 24] }
+        },
+        radius: { value: 100 },
         text: { field: 'hour', type: 'quantitative' }
       }
-    }]
+    }],
+    view: { stroke: null }
   },
   'interactive-multiline': {
     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
@@ -528,50 +551,60 @@ export const chartSpecs: Record<string, TopLevelSpec> = {
     ]
   },
   'sunburst': {
-    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    $schema: 'https://vega.github.io/schema/vega/v5.json',
     width: 400,
     height: 400,
-    data: {
-      values: [] // Will be populated by dataset
-    },
-    mark: { 
-      type: 'arc',
-      stroke: '#fff'
-    },
-    encoding: {
-      theta: { 
-        field: 'value', 
-        type: 'quantitative',
-        stack: true
-      },
-      radius: { 
-        field: 'level', 
-        type: 'quantitative',
-        scale: { range: [20, 200] }
-      },
-      color: { 
-        field: 'name', 
-        type: 'nominal',
-        legend: null
-      },
-      tooltip: [
-        { field: 'name', type: 'nominal' },
-        { field: 'value', type: 'quantitative' }
-      ]
-    },
-    transform: [
+    padding: 5,
+    autosize: "none",
+    data: [
       {
-        type: 'filter',
-        expr: "datum.name != null && datum.value != null"
-      },
+        name: "tree",
+        values: [], // Will be populated
+        transform: [
+          {
+            type: "stratify",
+            key: "name",
+            parentKey: "parent"
+          },
+          {
+            type: "partition",
+            field: "value",
+            sort: {field: "value"},
+            size: [{signal: "width"}, {signal: "height"}],
+            round: true
+          }
+        ]
+      }
+    ],
+    scales: [
       {
-        type: 'nest',
-        keys: ['name'],
-        generate: true
-      },
+        name: "color",
+        type: "ordinal",
+        domain: {data: "tree", field: "name"},
+        range: {scheme: "category20"}
+      }
+    ],
+    marks: [
       {
-        type: 'hierarchy',
-        field: 'value'
+        type: "arc",
+        from: {data: "tree"},
+        encode: {
+          enter: {
+            x: {signal: "width / 2"},
+            y: {signal: "height / 2"},
+            fill: {scale: "color", field: "name"},
+            tooltip: {signal: "datum.name + ': ' + datum.value"}
+          },
+          update: {
+            startAngle: {field: "x0"},
+            endAngle: {field: "x1"},
+            innerRadius: {field: "y0"},
+            outerRadius: {field: "y1"},
+            stroke: {value: "white"},
+            strokeWidth: {value: 1},
+            zindex: {value: 0}
+          }
+        }
       }
     ]
   },
@@ -638,5 +671,196 @@ export const chartSpecs: Record<string, TopLevelSpec> = {
         valueKey: 'value'
       }
     ]
+  },
+  'grouped-bar': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: {
+      values: [
+        { category: 'A', group: 'Group 1', value: 28 },
+        { category: 'B', group: 'Group 1', value: 55 },
+        { category: 'C', group: 'Group 1', value: 43 },
+        { category: 'A', group: 'Group 2', value: 19 },
+        { category: 'B', group: 'Group 2', value: 44 },
+        { category: 'C', group: 'Group 2', value: 35 }
+      ]
+    },
+    mark: 'bar',
+    encoding: {
+      x: { field: 'category', type: 'nominal' },
+      y: { field: 'value', type: 'quantitative' },
+      xOffset: { field: 'group' },
+      color: { field: 'group', type: 'nominal' }
+    }
+  },
+  'bullet-chart': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: {
+      values: [
+        { category: 'Revenue', actual: 80, target: 100, ranges: [40, 70, 100] },
+        { category: 'Profit', actual: 60, target: 75, ranges: [30, 55, 80] },
+        { category: 'Growth', actual: 45, target: 50, ranges: [20, 35, 60] }
+      ]
+    },
+    layer: [
+      {
+        mark: { type: 'bar', color: '#ddd', size: 20 },
+        encoding: {
+          x: { field: 'ranges', type: 'quantitative' },
+          y: { field: 'category', type: 'nominal' }
+        }
+      },
+      {
+        mark: { type: 'bar', color: '#333', size: 20 },
+        encoding: {
+          x: { field: 'actual', type: 'quantitative' },
+          y: { field: 'category', type: 'nominal' }
+        }
+      },
+      {
+        mark: { type: 'tick', color: 'red', size: 40, thickness: 2 },
+        encoding: {
+          x: { field: 'target', type: 'quantitative' },
+          y: { field: 'category', type: 'nominal' }
+        }
+      }
+    ]
+  },
+  'waffle-chart': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: {
+      values: Array.from({ length: 100 }, (_, i) => ({
+        value: i,
+        category: i < 30 ? 'A' : i < 60 ? 'B' : i < 85 ? 'C' : 'D'
+      }))
+    },
+    mark: 'square',
+    encoding: {
+      x: {
+        field: 'value',
+        type: 'ordinal',
+        axis: null,
+        scale: { domain: Array.from({ length: 10 }, (_, i) => i) }
+      },
+      y: {
+        field: 'value',
+        type: 'ordinal',
+        axis: null,
+        scale: { domain: Array.from({ length: 10 }, (_, i) => i) }
+      },
+      color: { field: 'category', type: 'nominal' }
+    }
+  },
+  'connected-scatter': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: {
+      values: Array.from({ length: 10 }, (_, i) => ({
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        time: i
+      }))
+    },
+    layer: [
+      {
+        mark: { type: 'line', color: '#aaa' },
+        encoding: {
+          x: { field: 'x', type: 'quantitative' },
+          y: { field: 'y', type: 'quantitative' },
+          order: { field: 'time', type: 'quantitative' }
+        }
+      },
+      {
+        mark: { type: 'point', filled: true },
+        encoding: {
+          x: { field: 'x', type: 'quantitative' },
+          y: { field: 'y', type: 'quantitative' },
+          order: { field: 'time', type: 'quantitative' }
+        }
+      }
+    ]
+  },
+  'bubble-plot': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: {
+      values: Array.from({ length: 20 }, () => ({
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: Math.random() * 50 + 10,
+        category: ['A', 'B', 'C', 'D'][Math.floor(Math.random() * 4)]
+      }))
+    },
+    mark: {
+      type: 'circle',
+      opacity: 0.7,
+      stroke: 'white',
+      strokeWidth: 1
+    },
+    encoding: {
+      x: { 
+        field: 'x', 
+        type: 'quantitative',
+        title: 'Variable 1'
+      },
+      y: { 
+        field: 'y', 
+        type: 'quantitative',
+        title: 'Variable 2'
+      },
+      size: {
+        field: 'size',
+        type: 'quantitative',
+        scale: { range: [100, 1000] },
+        title: 'Variable 3'
+      },
+      color: { 
+        field: 'category', 
+        type: 'nominal'
+      },
+      tooltip: [
+        { field: 'x', type: 'quantitative', format: '.1f' },
+        { field: 'y', type: 'quantitative', format: '.1f' },
+        { field: 'size', type: 'quantitative', format: '.1f' },
+        { field: 'category', type: 'nominal' }
+      ]
+    }
+  },
+  'stacked-bar': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: {
+      values: [
+        { category: 'A', group: 'Group 1', value: 28 },
+        { category: 'B', group: 'Group 1', value: 55 },
+        { category: 'C', group: 'Group 1', value: 43 },
+        { category: 'A', group: 'Group 2', value: 19 },
+        { category: 'B', group: 'Group 2', value: 44 },
+        { category: 'C', group: 'Group 2', value: 35 },
+        { category: 'A', group: 'Group 3', value: 25 },
+        { category: 'B', group: 'Group 3', value: 37 },
+        { category: 'C', group: 'Group 3', value: 29 }
+      ]
+    },
+    mark: 'bar',
+    encoding: {
+      x: { 
+        field: 'category', 
+        type: 'nominal',
+        title: 'Category'
+      },
+      y: { 
+        field: 'value', 
+        type: 'quantitative',
+        title: 'Value',
+        stack: true
+      },
+      color: { 
+        field: 'group', 
+        type: 'nominal',
+        title: 'Group'
+      },
+      tooltip: [
+        { field: 'category', type: 'nominal' },
+        { field: 'group', type: 'nominal' },
+        { field: 'value', type: 'quantitative' }
+      ]
+    }
   }
 }

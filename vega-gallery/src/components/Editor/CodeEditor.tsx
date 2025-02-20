@@ -2,10 +2,10 @@ import Editor from '@monaco-editor/react'
 import styled from 'styled-components'
 
 const EditorContainer = styled.div`
-  border: 1px solid #eee;
-  border-radius: 4px;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 8px;
   overflow: hidden;
-  height: 600px;
+  height: 100%;
 `
 
 interface CodeEditorProps {

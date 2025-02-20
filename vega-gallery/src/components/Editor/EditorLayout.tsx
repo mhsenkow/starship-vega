@@ -4,13 +4,14 @@ import { Preview } from './Preview'
 import { chartSpecs } from '../../utils/vegaHelper'
 import { useState, useRef, useEffect } from 'react'
 import { TemplateEditor } from './TemplateEditor'
+import { theme } from '../../types/theme'
 
 const Container = styled.div`
   display: grid;
   grid-template-columns: 400px 1fr;
-  gap: 20px;
-  height: calc(100vh - 100px);
-  padding: 20px;
+  gap: 12px;
+  height: calc(100vh - 160px);
+  padding: 16px;
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -20,7 +21,7 @@ const EditorPanel = styled.div`
   height: 100%;
   overflow-y: auto;
   border-right: 1px solid ${props => props.theme.colors.border};
-  padding-right: 20px;
+  padding-right: 12px;
 `
 
 const PreviewPanel = styled.div`

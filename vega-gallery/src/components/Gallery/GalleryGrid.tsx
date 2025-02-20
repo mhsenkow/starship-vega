@@ -178,6 +178,54 @@ const sampleCharts: ChartConfig[] = [
     dataTypes: ['numerical', 'categorical'],
     keywords: ['relationships', 'circular', 'flow', 'connections'],
     spec: chartSpecs['chord-diagram']
+  },
+  {
+    id: 'grouped-bar',
+    title: 'Grouped Bar Chart',
+    description: 'Compare values across multiple categories and groups',
+    category: 'Comparison',
+    complexity: 'Intermediate',
+    spec: chartSpecs['grouped-bar']
+  },
+  {
+    id: 'bullet-chart',
+    title: 'Bullet Chart',
+    description: 'Compare actual vs target values with context',
+    category: 'Comparison',
+    complexity: 'Intermediate',
+    spec: chartSpecs['bullet-chart']
+  },
+  {
+    id: 'stacked-bar',
+    title: 'Stacked Bar Chart',
+    description: 'Show composition of total values across categories',
+    category: 'Part-to-Whole',
+    complexity: 'Beginner',
+    spec: chartSpecs['stacked-bar']
+  },
+  {
+    id: 'waffle-chart',
+    title: 'Waffle Chart',
+    description: 'Show percentage composition using a grid of squares',
+    category: 'Part-to-Whole',
+    complexity: 'Intermediate',
+    spec: chartSpecs['waffle-chart']
+  },
+  {
+    id: 'bubble-plot',
+    title: 'Bubble Plot',
+    description: 'Show relationships between three variables',
+    category: 'Correlation',
+    complexity: 'Intermediate',
+    spec: chartSpecs['bubble-plot']
+  },
+  {
+    id: 'connected-scatter',
+    title: 'Connected Scatter Plot',
+    description: 'Show correlation with temporal progression',
+    category: 'Correlation',
+    complexity: 'Intermediate',
+    spec: chartSpecs['connected-scatter']
   }
 ]
 
@@ -189,7 +237,7 @@ export const GalleryGrid = ({ onChartSelect }: GalleryGridProps) => {
 
   const filteredCharts = useMemo(() => {
     return sampleCharts.filter(chart => {
-      if (category !== 'All' && chart.category !== category) return false
+      if (category !== 'All' && !chart.categories.includes(category)) return false
       if (complexity !== 'All' && chart.complexity !== complexity) return false
       if (searchTerm) {
         const search = searchTerm.toLowerCase()
@@ -204,14 +252,39 @@ export const GalleryGrid = ({ onChartSelect }: GalleryGridProps) => {
 
   const sortedCharts = useMemo(() => {
     return [...filteredCharts].sort((a, b) => {
-      switch (sortBy) {
-        case 'category':
-          return a.category.localeCompare(b.category)
-        case 'complexity':
-          const order = { 'Beginner': 0, 'Intermediate': 1, 'Advanced': 2 }
-          return order[a.complexity] - order[b.complexity]
-        default:
-          return 0
+      // First check if specs are empty
+      const aHasSpec = Object.keys(a.spec || {}).length > 0
+      const bHasSpec = Object.keys(b.spec || {}).length > 0
+      
+      if (aHasSpec !== bHasSpec) {
+        return aHasSpec ? -1 : 1
+      }
+
+      if (sortBy === 'category') {
+        // Prioritize basic charts within each category
+        const basicCharts = ['bar-chart', 'line-chart', 'scatter-plot']
+        const aIsBasic = basicCharts.includes(a.id)
+        const bIsBasic = basicCharts.includes(b.id)
+        
+        if (aIsBasic !== bIsBasic) {
+          return aIsBasic ? -1 : 1
+        }
+        
+        return a.category.localeCompare(b.category)
+      } else {
+        // complexity sorting
+        const complexityOrder = { 'Beginner': 0, 'Intermediate': 1, 'Advanced': 2 }
+        const complexityDiff = complexityOrder[a.complexity] - complexityOrder[b.complexity]
+        
+        if (complexityDiff === 0) {
+          // Within same complexity, prioritize basic charts
+          const basicCharts = ['bar-chart', 'line-chart', 'scatter-plot']
+          const aIsBasic = basicCharts.includes(a.id)
+          const bIsBasic = basicCharts.includes(b.id)
+          return aIsBasic ? -1 : bIsBasic ? 1 : 0
+        }
+        
+        return complexityDiff
       }
     })
   }, [filteredCharts, sortBy])
@@ -223,6 +296,7 @@ export const GalleryGrid = ({ onChartSelect }: GalleryGridProps) => {
         complexity={complexity}
         searchTerm={searchTerm}
         sortBy={sortBy}
+        filteredCharts={filteredCharts}
         onCategoryChange={setCategory}
         onComplexityChange={setComplexity}
         onSearchChange={setSearchTerm}
