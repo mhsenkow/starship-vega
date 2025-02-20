@@ -3,7 +3,12 @@ export interface DatasetMetadata {
   name: string;
   description: string;
   type: 'categorical' | 'temporal' | 'numerical' | 'hierarchical';
-  compatibleCharts: Array<'bar' | 'line' | 'point' | 'arc' | 'area' | 'boxplot' | 'rect' | 'rule' | 'text' | 'tick' | 'trail' | 'square'>;
+  compatibleCharts: Array<
+    | 'bar' | 'line' | 'point' | 'arc' | 'area' | 'boxplot' 
+    | 'rect' | 'rule' | 'text' | 'tick' | 'trail' | 'square'
+    | 'circle' | 'sunburst' | 'treemap' | 'force-directed' 
+    | 'chord-diagram' | 'violin' | 'wordcloud'
+  >;
   values: any[];
 }
 
@@ -100,6 +105,40 @@ export const generateHierarchicalData = () => {
     ]
   };
 }
+
+export const generateMultiMetricData = () => {
+  return Array.from({ length: 100 }, (_, i) => ({
+    id: i,
+    category: ['A', 'B', 'C', 'D'][Math.floor(Math.random() * 4)],
+    metric1: Math.random() * 100,
+    metric2: Math.random() * 50,
+    metric3: Math.random() * 200,
+    date: new Date(2024, 0, Math.floor(i/3)).toISOString().split('T')[0],
+    group: ['Group 1', 'Group 2', 'Group 3'][Math.floor(Math.random() * 3)]
+  }));
+};
+
+export const generateCategoricalBreakdown = () => {
+  const categories = ['Electronics', 'Clothing', 'Food', 'Books', 'Sports'];
+  const subcategories = {
+    Electronics: ['Phones', 'Laptops', 'Tablets', 'Accessories'],
+    Clothing: ['Shirts', 'Pants', 'Dresses', 'Shoes'],
+    Food: ['Fruits', 'Vegetables', 'Meat', 'Dairy'],
+    Books: ['Fiction', 'Non-fiction', 'Education', 'Comics'],
+    Sports: ['Equipment', 'Clothing', 'Accessories', 'Nutrition']
+  };
+  
+  return categories.flatMap(category => 
+    subcategories[category].map(subcategory => ({
+      category,
+      subcategory,
+      value: Math.round(Math.random() * 1000),
+      growth: Math.round((Math.random() - 0.5) * 100),
+      units: Math.round(Math.random() * 500),
+      satisfaction: Math.round(Math.random() * 5 * 10) / 10
+    }))
+  );
+};
 
 export const sampleDatasets: Record<string, DatasetMetadata> = {
   categoricalSales: {
@@ -365,7 +404,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     description: 'Complex organizational hierarchy',
     type: 'hierarchical',
     compatibleCharts: ['treemap', 'sunburst'],
-    values: generateHierarchicalData()
+    values: [generateHierarchicalData()].flat()
   },
   networkConnections: {
     id: 'network-connections',
@@ -431,5 +470,36 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       {text: "Security", size: 30},
       {text: "API", size: 25}
     ]
+  },
+  multiMetricAnalysis: {
+    id: 'multi-metric-analysis',
+    name: 'Multi-Metric Analysis',
+    description: 'Multiple metrics across categories and time',
+    type: 'numerical',
+    compatibleCharts: ['bar', 'line', 'point', 'area', 'boxplot', 'violin'],
+    values: generateMultiMetricData()
+  },
+  retailBreakdown: {
+    id: 'retail-breakdown',
+    name: 'Retail Category Analysis',
+    description: 'Detailed breakdown of retail categories with multiple metrics',
+    type: 'categorical',
+    compatibleCharts: ['bar', 'point', 'treemap', 'sunburst', 'heatmap'],
+    values: generateCategoricalBreakdown()
+  },
+  combinedMetrics: {
+    id: 'combined-metrics',
+    name: 'Combined Metrics View',
+    description: 'Multiple metrics that work well with various chart types',
+    type: 'numerical',
+    compatibleCharts: ['bar', 'line', 'point', 'area', 'boxplot', 'violin'],
+    values: Array.from({ length: 50 }, (_, i) => ({
+      date: new Date(2024, 0, i).toISOString().split('T')[0],
+      category: ['A', 'B', 'C'][Math.floor(Math.random() * 3)],
+      value: Math.random() * 100,
+      trend: Math.sin(i / 10) * 50 + 50,
+      volume: Math.round(Math.random() * 1000),
+      sentiment: Math.round(Math.random() * 5 * 10) / 10
+    }))
   }
 } 

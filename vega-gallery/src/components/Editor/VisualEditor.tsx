@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { EncodingChannel, MarkType, EncodingUpdate } from '../../types/vega'
 import { sampleDatasets } from '../../utils/sampleData'
 import { DatasetSelector } from './DatasetSelector'
+import { generateRandomEncoding } from '../../utils/chartAdapters'
 
 const Container = styled.div`
   padding: 16px;
@@ -128,6 +129,24 @@ const DatasetName = styled.div`
 const DatasetDescription = styled.div`
   font-size: 0.9rem;
   color: ${props => props.theme.text.secondary};
+`
+
+const RandomizeButton = styled.button`
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+
+  &:hover {
+    background: #f8f9fa;
+  }
 `
 
 interface VisualEditorProps {
@@ -438,6 +457,11 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
     return encodings
   }
 
+  const handleRandomize = () => {
+    const randomEncoding = generateRandomEncoding(fields)
+    onChange({ encoding: randomEncoding })
+  }
+
   if (!spec) {
     return <div>Invalid specification</div>
   }
@@ -475,6 +499,9 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
 
       <Section>
         <SectionTitle>Encoding</SectionTitle>
+        <RandomizeButton onClick={handleRandomize}>
+          🎲 Randomize Encodings
+        </RandomizeButton>
         {getAvailableEncodings().map(channel => (
           <Control key={channel}>
             <EncodingGrid>
