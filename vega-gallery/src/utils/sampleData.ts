@@ -383,5 +383,53 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { source: 'Frontend', target: 'Analytics', value: 3 },
       { source: 'Analytics', target: 'Database', value: 5 }
     ]
+  },
+  textAnalysis: {
+    id: 'text-analysis',
+    name: 'Word Frequencies',
+    description: 'Sample text data for word cloud visualization',
+    type: 'categorical',
+    compatibleCharts: ['text'],
+    values: [
+      { text: 'Data', value: 100 },
+      { text: 'Visualization', value: 85 },
+      { text: 'Analytics', value: 80 },
+      { text: 'Chart', value: 75 },
+      { text: 'Graph', value: 70 },
+      { text: 'Dashboard', value: 65 },
+      { text: 'Statistics', value: 60 },
+      { text: 'Analysis', value: 55 },
+      { text: 'Insights', value: 50 },
+      { text: 'Trends', value: 45 },
+      { text: 'Metrics', value: 40 },
+      { text: 'Report', value: 35 },
+      { text: 'Performance', value: 30 },
+      { text: 'Growth', value: 25 },
+      { text: 'Strategy', value: 20 }
+    ]
+  },
+  wordFrequencies: {
+    id: 'word-frequencies',
+    name: 'Word Frequencies',
+    description: 'Common words and their frequencies for word cloud visualization',
+    type: 'categorical',
+    compatibleCharts: ['wordcloud'],
+    values: [
+      {text: "Data", size: 100},
+      {text: "Analytics", size: 85},
+      {text: "Visualization", size: 80},
+      {text: "Machine", size: 75},
+      {text: "Learning", size: 75},
+      {text: "Algorithm", size: 70},
+      {text: "Statistics", size: 65},
+      {text: "Programming", size: 60},
+      {text: "Python", size: 55},
+      {text: "JavaScript", size: 50},
+      {text: "Database", size: 45},
+      {text: "Cloud", size: 40},
+      {text: "Network", size: 35},
+      {text: "Security", size: 30},
+      {text: "API", size: 25}
+    ]
   }
 } 

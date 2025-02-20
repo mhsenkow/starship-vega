@@ -1,11 +1,13 @@
+import { TopLevelSpec } from 'vega-lite';
+
 export type ChartCategory = 
   | 'Statistical' 
-  | 'Time Series' 
+  | 'Time Series'
   | 'Comparison' 
-  | 'Distribution' 
   | 'Correlation' 
   | 'Part-to-Whole'
   | 'Hierarchical'
+  | 'Text Analysis';
 
 export type ChartUseCase = 
   | 'Data Analysis' 
@@ -16,14 +18,21 @@ export type ChartUseCase =
 export type Complexity = 'Beginner' | 'Intermediate' | 'Advanced'
 
 export interface ChartConfig {
-  id: string
-  title: string
-  description: string
-  categories: ChartCategory[]
-  useCase: ChartUseCase[]
-  complexity: Complexity
-  dataTypes: ('numerical' | 'categorical' | 'temporal')[]
-  spec: TopLevelSpec
-  keywords: string[]
-  thumbnail?: string;
+  id: string;
+  title: string;
+  description: string;
+  category: ChartCategory;
+  complexity: Complexity;
+  spec: TopLevelSpec;
+  metadata?: {
+    recommended?: boolean;
+    tags?: string[];
+    useCase?: string[];
+    dataTypes?: string[];
+    keywords?: string[];
+    dataRequirements?: {
+      minDataPoints?: number;
+      requiredFields: string[];
+    };
+  };
 }

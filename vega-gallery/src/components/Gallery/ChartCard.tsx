@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
 import styled from 'styled-components'
 import { ChartConfig } from '../../types/chart'
-import { renderVegaLite, chartSpecs } from '../../utils/vegaHelper'
+import { renderVegaLite } from '../../utils/chartRenderer'
+import { chartSpecs } from '../../charts'
 
 const Card = styled.div`
   background: white;
@@ -62,7 +63,7 @@ interface ChartCardProps {
   onClick: (id: string) => void;
 }
 
-export const ChartCard = ({ chart, onClick }: ChartCardProps) => {
+export default function ChartCard({ chart, onClick }: ChartCardProps) {
   const chartRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {

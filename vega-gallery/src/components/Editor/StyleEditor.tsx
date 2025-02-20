@@ -1121,6 +1121,126 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
           />
         </Control>
       </Section>
+
+      <Section>
+        <SectionTitle>Visual Effects</SectionTitle>
+        <Control>
+          <Label>Glow Effect</Label>
+          <Input 
+            type="range"
+            min="0"
+            max="20"
+            value={spec.config?.view?.glowRadius || 0}
+            onChange={e => updateStyle({
+              config: {
+                view: {
+                  ...spec.config?.view,
+                  glowRadius: parseInt(e.target.value),
+                  glowColor: spec.config?.view?.glowColor || '#ffffff'
+                }
+              }
+            })}
+          />
+        </Control>
+        <Control>
+          <Label>Glow Color</Label>
+          <Input 
+            type="color"
+            value={spec.config?.view?.glowColor || '#ffffff'}
+            onChange={e => updateStyle({
+              config: {
+                view: {
+                  ...spec.config?.view,
+                  glowColor: e.target.value
+                }
+              }
+            })}
+          />
+        </Control>
+        <Control>
+          <Label>Drop Shadow</Label>
+          <Input 
+            type="range"
+            min="0"
+            max="20"
+            value={spec.config?.view?.shadowRadius || 0}
+            onChange={e => updateStyle({
+              config: {
+                view: {
+                  ...spec.config?.view,
+                  shadowRadius: parseInt(e.target.value)
+                }
+              }
+            })}
+          />
+        </Control>
+        <Control>
+          <Label>Gradient Background</Label>
+          <Select
+            value={spec.config?.view?.gradientType || 'none'}
+            onChange={e => updateStyle({
+              config: {
+                view: {
+                  ...spec.config?.view,
+                  gradientType: e.target.value
+                }
+              }
+            })}
+          >
+            <option value="none">None</option>
+            <option value="linear">Linear</option>
+            <option value="radial">Radial</option>
+          </Select>
+        </Control>
+        <Control>
+          <Label>Gradient Start Color</Label>
+          <Input 
+            type="color"
+            value={spec.config?.view?.gradientStart || '#ffffff'}
+            onChange={e => updateStyle({
+              config: {
+                view: {
+                  ...spec.config?.view,
+                  gradientStart: e.target.value
+                }
+              }
+            })}
+          />
+        </Control>
+        <Control>
+          <Label>Gradient End Color</Label>
+          <Input 
+            type="color"
+            value={spec.config?.view?.gradientEnd || '#f0f0f0'}
+            onChange={e => updateStyle({
+              config: {
+                view: {
+                  ...spec.config?.view,
+                  gradientEnd: e.target.value
+                }
+              }
+            })}
+          />
+        </Control>
+        <Control>
+          <Label>Blur Effect</Label>
+          <Input 
+            type="range"
+            min="0"
+            max="10"
+            step="0.5"
+            value={spec.config?.mark?.blur || 0}
+            onChange={e => updateStyle({
+              config: {
+                mark: {
+                  ...spec.config?.mark,
+                  blur: parseFloat(e.target.value)
+                }
+              }
+            })}
+          />
+        </Control>
+      </Section>
     </Container>
   )
 } 

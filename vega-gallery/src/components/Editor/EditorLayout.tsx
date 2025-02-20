@@ -1,10 +1,11 @@
 import styled from 'styled-components'
 import { CodeEditor } from './CodeEditor'
 import { Preview } from './Preview'
-import { chartSpecs } from '../../utils/vegaHelper'
+import { chartSpecs } from '../../charts'
 import { useState, useRef, useEffect } from 'react'
 import { TemplateEditor } from './TemplateEditor'
 import { theme } from '../../types/theme'
+import { ErrorBoundary } from '../ErrorBoundary'
 
 const Container = styled.div`
   display: grid;
@@ -116,10 +117,14 @@ export const EditorLayout = ({ chartId, onBack }: EditorLayoutProps) => {
       <BackButton onClick={onBack}>Back to Gallery</BackButton>
       <Container>
         <EditorPanel>
-          <TemplateEditor spec={spec} onChange={setSpec} />
+          <ErrorBoundary>
+            <TemplateEditor spec={spec} onChange={setSpec} />
+          </ErrorBoundary>
         </EditorPanel>
         <PreviewPanel>
-          <Preview spec={spec} height={previewHeight} />
+          <ErrorBoundary>
+            <Preview spec={spec} height={previewHeight} />
+          </ErrorBoundary>
           <ResizeHandle onMouseDown={handleMouseDown} />
         </PreviewPanel>
       </Container>

@@ -1,9 +1,8 @@
 import styled from 'styled-components'
-import { ChartCard } from './ChartCard'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, lazy, Suspense } from 'react'
 import { FilterBar } from './FilterBar'
-import { ChartConfig, ChartCategory, ComplexityLevel } from '../../types/chart'
-import { chartSpecs } from '../../utils/vegaHelper'
+import { ChartConfig, ChartCategory, Complexity } from '../../types/chart'
+import { chartSpecs } from '../../charts'
 import { ChartFilter } from './ChartFilter'
 
 const Container = styled.div`
@@ -21,7 +20,7 @@ interface GalleryGridProps {
   onChartSelect: (chartId: string) => void;
 }
 
-// We'll move this to a separate file later
+// Sample charts with updated structure
 const sampleCharts: ChartConfig[] = [
   {
     id: 'scatter-plot',
@@ -29,7 +28,13 @@ const sampleCharts: ChartConfig[] = [
     description: 'A basic scatter plot showing the relationship between two variables',
     category: 'Statistical',
     complexity: 'Beginner',
-    spec: {}
+    spec: chartSpecs['scatter-plot'],
+    metadata: {
+      tags: ['correlation', 'distribution', 'points'],
+      dataRequirements: {
+        requiredFields: ['x', 'y']
+      }
+    }
   },
   {
     id: 'bar-chart',
@@ -37,7 +42,7 @@ const sampleCharts: ChartConfig[] = [
     description: 'Simple bar chart for comparing categorical data',
     category: 'Statistical',
     complexity: 'Beginner',
-    spec: {}
+    spec: chartSpecs['bar-chart']
   },
   {
     id: 'line-chart',
@@ -45,15 +50,15 @@ const sampleCharts: ChartConfig[] = [
     description: 'Time series visualization showing trends over time',
     category: 'Time Series',
     complexity: 'Beginner',
-    spec: {}
+    spec: chartSpecs['line-chart']
   },
   {
     id: 'pie-chart',
     title: 'Pie Chart',
     description: 'Circular statistical visualization for part-to-whole relationships',
-    category: 'Statistical',
+    category: 'Part-to-Whole',
     complexity: 'Intermediate',
-    spec: {}
+    spec: chartSpecs['pie-chart']
   },
   {
     id: 'boxplot-distribution',
@@ -141,10 +146,12 @@ const sampleCharts: ChartConfig[] = [
     description: 'Hierarchical data visualization using nested rectangles',
     category: 'Hierarchical',
     complexity: 'Intermediate',
-    useCase: ['Data Analysis', 'Business Reporting'],
-    dataTypes: ['numerical', 'categorical'],
-    keywords: ['hierarchy', 'nested', 'rectangles', 'proportion'],
-    spec: chartSpecs['treemap']
+    spec: chartSpecs['treemap'],
+    metadata: {
+      useCase: ['Data Analysis', 'Business Reporting'],
+      dataTypes: ['numerical', 'categorical'],
+      keywords: ['hierarchy', 'nested', 'rectangles', 'proportion']
+    }
   },
   {
     id: 'sunburst',
@@ -152,10 +159,12 @@ const sampleCharts: ChartConfig[] = [
     description: 'Radial visualization of hierarchical data',
     category: 'Hierarchical',
     complexity: 'Advanced',
-    useCase: ['Data Analysis', 'Scientific Visualization'],
-    dataTypes: ['numerical', 'categorical'],
-    keywords: ['hierarchy', 'radial', 'circular', 'nested'],
-    spec: chartSpecs['sunburst']
+    spec: chartSpecs['sunburst'],
+    metadata: {
+      useCase: ['Data Analysis', 'Scientific Visualization'],
+      dataTypes: ['numerical', 'categorical'],
+      keywords: ['hierarchy', 'radial', 'circular', 'nested']
+    }
   },
   {
     id: 'force-directed',
@@ -163,10 +172,12 @@ const sampleCharts: ChartConfig[] = [
     description: 'Network visualization with force-directed layout',
     category: 'Hierarchical',
     complexity: 'Advanced',
-    useCase: ['Scientific Visualization', 'Data Analysis'],
-    dataTypes: ['categorical'],
-    keywords: ['network', 'graph', 'force', 'relationships'],
-    spec: chartSpecs['force-directed']
+    spec: chartSpecs['force-directed'],
+    metadata: {
+      useCase: ['Scientific Visualization', 'Data Analysis'],
+      dataTypes: ['categorical'],
+      keywords: ['network', 'graph', 'force', 'relationships']
+    }
   },
   {
     id: 'chord-diagram',
@@ -174,10 +185,12 @@ const sampleCharts: ChartConfig[] = [
     description: 'Visualization of relationships between entities',
     category: 'Hierarchical',
     complexity: 'Advanced',
-    useCase: ['Data Analysis', 'Scientific Visualization'],
-    dataTypes: ['numerical', 'categorical'],
-    keywords: ['relationships', 'circular', 'flow', 'connections'],
-    spec: chartSpecs['chord-diagram']
+    spec: chartSpecs['chord-diagram'],
+    metadata: {
+      useCase: ['Data Analysis', 'Scientific Visualization'],
+      dataTypes: ['numerical', 'categorical'],
+      keywords: ['relationships', 'circular', 'flow', 'connections']
+    }
   },
   {
     id: 'grouped-bar',
@@ -226,29 +239,47 @@ const sampleCharts: ChartConfig[] = [
     category: 'Correlation',
     complexity: 'Intermediate',
     spec: chartSpecs['connected-scatter']
+  },
+  {
+    id: 'word-cloud',
+    title: 'Word Cloud',
+    description: 'Text size visualization based on word frequency',
+    category: 'Text Analysis',
+    complexity: 'Intermediate',
+    spec: chartSpecs['word-cloud'],
+    metadata: {
+      useCase: ['Data Analysis', 'Text Mining'],
+      dataTypes: ['categorical'],
+      keywords: ['text', 'frequency', 'words', 'size']
+    }
   }
 ]
 
+// Lazy load ChartCard
+const LazyChartCard = lazy(() => import('./ChartCard').then(module => ({ 
+  default: module.default 
+})))
+
 export const GalleryGrid = ({ onChartSelect }: GalleryGridProps) => {
   const [category, setCategory] = useState<ChartCategory | 'All'>('All')
-  const [complexity, setComplexity] = useState<ComplexityLevel | 'All'>('All')
+  const [complexity, setComplexity] = useState<Complexity | 'All'>('All')
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState<'category' | 'complexity'>('category')
 
   const filteredCharts = useMemo(() => {
     return sampleCharts.filter(chart => {
-      if (category !== 'All' && !chart.categories.includes(category)) return false
-      if (complexity !== 'All' && chart.complexity !== complexity) return false
+      if (category !== 'All' && chart.category !== category) return false;
+      if (complexity !== 'All' && chart.complexity !== complexity) return false;
       if (searchTerm) {
-        const search = searchTerm.toLowerCase()
+        const search = searchTerm.toLowerCase();
         return (
           chart.title.toLowerCase().includes(search) ||
           chart.description.toLowerCase().includes(search)
-        )
+        );
       }
-      return true
-    })
-  }, [category, complexity, searchTerm])
+      return true;
+    });
+  }, [category, complexity, searchTerm]);
 
   const sortedCharts = useMemo(() => {
     return [...filteredCharts].sort((a, b) => {
@@ -303,13 +334,15 @@ export const GalleryGrid = ({ onChartSelect }: GalleryGridProps) => {
         onSortChange={setSortBy}
       />
       <Grid>
-        {sortedCharts.map(chart => (
-          <ChartCard 
-            key={chart.id} 
-            chart={chart}
-            onClick={() => onChartSelect(chart.id)}
-          />
-        ))}
+        <Suspense fallback={<div>Loading...</div>}>
+          {sortedCharts.map(chart => (
+            <LazyChartCard 
+              key={chart.id} 
+              chart={chart}
+              onClick={() => onChartSelect(chart.id)}
+            />
+          ))}
+        </Suspense>
       </Grid>
     </Container>
   )

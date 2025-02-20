@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
-import { renderVegaLite } from '../../utils/vegaHelper'
+import { renderVegaLite } from '../../utils/chartRenderer'
 import { ChartFooter } from './ChartFooter'
 
 const PreviewContainer = styled.div<{ $height: number }>`
