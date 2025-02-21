@@ -1,4 +1,6 @@
 # Vega Gallery
+<img width="1289" alt="image" src="https://github.com/user-attachments/assets/9ce72547-2b47-411a-bf95-f23b00e2548a" />
+
 
 An interactive gallery and playground for Vega-Lite visualizations with real-time visual editing capabilities.
 
