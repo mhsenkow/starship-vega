@@ -14,3 +14,15 @@ interface LayoutProps {
 export const Layout = ({ children }: LayoutProps) => {
   return <LayoutContainer>{children}</LayoutContainer>
 }
+
+export const GalleryLayout = styled(LayoutContainer)`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: ${(props) => props.theme.spacing.lg};
+`;
+
+export const EditorLayout = styled(LayoutContainer)`
+  display: flex;
+  flex-direction: column;
+  gap: ${(props) => props.theme.spacing.lg};
+`;
