@@ -1,9 +1,19 @@
+/**
+ * Core chart type definitions and configurations
+ * - Defines chart categories, complexity levels
+ * - Defines chart configuration interfaces
+ * - Defines chart styling interfaces
+ * Used by: GalleryGrid, ChartCard, StyleEditor
+ */
+
 import { TopLevelSpec } from 'vega-lite';
 
 export enum ChartCategory {
-  Correlation = 'correlation',
-  Hierarchical = 'hierarchical',
-  TimeSeries = 'timeSeries'
+  Statistical = 'Statistical',
+  TimeSeries = 'Time Series',
+  Hierarchical = 'Hierarchical',
+  Correlation = 'Correlation',
+  PartToWhole = 'Part to Whole'
 }
 
 export enum Complexity {
@@ -42,7 +52,7 @@ export interface ChartConfig {
   description: string;
   category: ChartCategory;
   complexity: Complexity;
-  spec: any; // Could be more specific with Vega types
+  spec: any;
   metadata?: {
     tags?: string[];
     dataRequirements?: {

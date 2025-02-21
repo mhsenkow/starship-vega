@@ -1,3 +1,11 @@
+/**
+ * Chart specification transformation utilities
+ * - Converts between different chart formats
+ * - Generates random encodings for exploration
+ * - Handles chart type compatibility
+ * Used by: VisualEditor, GalleryGrid
+ */
+
 import { MarkType, ChartEncoding } from '../types/vega';
 import { DatasetMetadata } from '../types/dataset';
 import { detectDataTypes } from './dataUtils';

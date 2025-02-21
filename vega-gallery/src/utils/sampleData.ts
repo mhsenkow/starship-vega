@@ -1,3 +1,14 @@
+/**
+ * Sample dataset definitions and generators
+ * - Provides sample data for different chart types
+ * - Includes data generators for testing
+ * - Defines dataset compatibility
+ * Used by: DatasetSelector, ChartPreview
+ */
+
+import { MarkType } from '../types/vega';
+import { DatasetMetadata } from '../types/dataset';
+
 export interface DatasetMetadata {
   id: string;
   name: string;
@@ -120,16 +131,16 @@ export const generateMultiMetricData = () => {
 
 export const generateCategoricalBreakdown = () => {
   const categories = ['Electronics', 'Clothing', 'Food', 'Books', 'Sports'];
-  const subcategories = {
+  const subcategories: Record<string, string[]> = {
     Electronics: ['Phones', 'Laptops', 'Tablets', 'Accessories'],
     Clothing: ['Shirts', 'Pants', 'Dresses', 'Shoes'],
-    Food: ['Fruits', 'Vegetables', 'Meat', 'Dairy'],
-    Books: ['Fiction', 'Non-fiction', 'Education', 'Comics'],
-    Sports: ['Equipment', 'Clothing', 'Accessories', 'Nutrition']
+    Food: ['Snacks', 'Beverages', 'Fresh', 'Frozen'],
+    Books: ['Fiction', 'Non-Fiction', 'Academic', 'Children'],
+    Sports: ['Equipment', 'Apparel', 'Accessories', 'Footwear']
   };
   
   return categories.flatMap(category => 
-    subcategories[category].map(subcategory => ({
+    subcategories[category as keyof typeof subcategories].map(subcategory => ({
       category,
       subcategory,
       value: Math.round(Math.random() * 1000),
@@ -141,21 +152,26 @@ export const generateCategoricalBreakdown = () => {
 };
 
 export const sampleDatasets: Record<string, DatasetMetadata> = {
-  categoricalSales: {
-    id: 'categorical-sales',
+  'product-sales': {
+    id: 'product-sales',
     name: 'Product Sales',
     description: 'Sales data across product categories',
     type: 'categorical',
     compatibleCharts: ['bar', 'arc'],
     values: [
-      { category: 'Electronics', value: 420, quarter: 'Q1' },
-      { category: 'Clothing', value: 330, quarter: 'Q1' },
-      { category: 'Books', value: 230, quarter: 'Q1' },
-      { category: 'Food', value: 180, quarter: 'Q1' },
-      { category: 'Sports', value: 280, quarter: 'Q1' }
+      { category: 'Electronics', quarter: 'Q1', value: 420, growth: 15 },
+      { category: 'Electronics', quarter: 'Q2', value: 460, growth: 9.5 },
+      { category: 'Clothing', quarter: 'Q1', value: 310, growth: 7 },
+      { category: 'Clothing', quarter: 'Q2', value: 330, growth: 6.5 },
+      { category: 'Books', quarter: 'Q1', value: 230, growth: 4 },
+      { category: 'Books', quarter: 'Q2', value: 280, growth: 21.7 },
+      { category: 'Food', quarter: 'Q1', value: 180, growth: 8 },
+      { category: 'Food', quarter: 'Q2', value: 190, growth: 5.5 },
+      { category: 'Sports', quarter: 'Q1', value: 280, growth: 12 },
+      { category: 'Sports', quarter: 'Q2', value: 320, growth: 14.3 }
     ]
   },
-  timeSeriesTemp: {
+  'timeseries-temp': {
     id: 'timeseries-temp',
     name: 'Temperature Readings',
     description: 'Daily temperature readings over a month',
@@ -167,7 +183,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       humidity: Math.round(60 + Math.cos(i / 3) * 10)
     }))
   },
-  scatterHealth: {
+  'scatter-health': {
     id: 'scatter-health',
     name: 'Health Metrics',
     description: 'Height vs. Weight correlation',
@@ -180,7 +196,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       group: ['Male', 'Female'][Math.floor(Math.random() * 2)]
     }))
   },
-  marketShare: {
+  'market-share': {
     id: 'market-share',
     name: 'Market Share',
     description: 'Company market share distribution',
@@ -194,7 +210,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { company: 'Others', share: 5 }
     ]
   },
-  boxplotExample: {
+  'boxplot-example': {
     id: 'boxplot-example',
     name: 'Box Plot Distribution',
     description: 'Distribution of values across categories',
@@ -202,7 +218,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     compatibleCharts: ['boxplot'],
     values: generateBoxPlotData()
   },
-  textAnnotations: {
+  'text-annotations': {
     id: 'text-annotations',
     name: 'Data Labels',
     description: 'Text annotations with data points',
@@ -215,7 +231,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       value: Math.round(Math.random() * 100)
     }))
   },
-  ruleGuides: {
+  'rule-guides': {
     id: 'rule-guides',
     name: 'Reference Lines',
     description: 'Reference lines and thresholds',
@@ -227,7 +243,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { start: 40, end: 60, category: 'Threshold 3' }
     ]
   },
-  tickDistribution: {
+  'tick-distribution': {
     id: 'tick-distribution',
     name: 'Value Distribution',
     description: 'Distribution of values using tick marks',
@@ -235,7 +251,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     compatibleCharts: ['tick', 'point'],
     values: generateTickData()
   },
-  boxplotStats: {
+  'boxplot-stats': {
     id: 'boxplot-stats',
     name: 'Distribution Statistics',
     description: 'Statistical distribution across categories',
@@ -243,7 +259,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     compatibleCharts: ['boxplot', 'point'],
     values: generateBoxPlotData()
   },
-  areaTimeSeries: {
+  'area-timeseries': {
     id: 'area-timeseries',
     name: 'Cumulative Growth',
     description: 'Area chart showing growth over time',
@@ -255,7 +271,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       category: ['Revenue', 'Costs'][Math.floor(Math.random() * 2)]
     }))
   },
-  trailProgress: {
+  'trail-progress': {
     id: 'trail-progress',
     name: 'Progress Trail',
     description: 'Trail showing progress over time',
@@ -267,7 +283,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       velocity: Math.random() * 5
     }))
   },
-  organizationHierarchy: {
+  'organization-hierarchy': {
     id: 'organization-hierarchy',
     name: 'Organization Structure',
     description: 'Company organizational hierarchy',
@@ -286,7 +302,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { name: "C2", parent: "C", value: 10 }
     ]
   },
-  fileSystem: {
+  'file-system': {
     id: 'file-system',
     name: 'File System',
     description: 'Computer file system structure',
@@ -305,7 +321,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { name: 'Apps', parent: 'System', value: 10 }
     ]
   },
-  dependencies: {
+  'dependencies': {
     id: 'dependencies',
     name: 'Package Dependencies',
     description: 'Software package dependency graph',
@@ -322,7 +338,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { source: 'Store', target: 'State', value: 4 }
     ]
   },
-  socialNetwork: {
+  'social-network': {
     id: 'social-network',
     name: 'Social Connections',
     description: 'Social network interaction graph',
@@ -339,7 +355,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { source: 'Eve', target: 'Frank', value: 3 }
     ]
   },
-  teamCollaboration: {
+  'team-collaboration': {
     id: 'team-collaboration',
     name: 'Team Collaboration',
     description: 'Cross-team collaboration frequency',
@@ -356,7 +372,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { source: 'DevOps', target: 'Frontend', value: 7 }
     ]
   },
-  statisticalDistribution: {
+  'statistical-distribution': {
     id: 'statistical-distribution',
     name: 'Statistical Distributions',
     description: 'Various statistical distributions for advanced analysis',
@@ -364,7 +380,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     compatibleCharts: ['violin', 'boxplot', 'point'],
     values: generateStatisticalData()
   },
-  detailedTimeSeries: {
+  'detailed-timeseries': {
     id: 'detailed-timeseries',
     name: 'Complex Time Series',
     description: 'Time series with seasonal patterns and trends',
@@ -372,7 +388,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     compatibleCharts: ['line', 'area', 'point'],
     values: generateTimeSeriesData()
   },
-  complexHierarchy: {
+  'complex-hierarchy': {
     id: 'complex-hierarchy',
     name: 'Complex Organization',
     description: 'Multi-level organizational structure',
@@ -398,7 +414,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { id: "K8s", parentId: "DevOps", value: 7 }
     ]
   },
-  hierarchicalOrg: {
+  'hierarchical-org': {
     id: 'hierarchical-org',
     name: 'Organizational Structure',
     description: 'Complex organizational hierarchy',
@@ -406,7 +422,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     compatibleCharts: ['treemap', 'sunburst'],
     values: [generateHierarchicalData()].flat()
   },
-  networkConnections: {
+  'network-connections': {
     id: 'network-connections',
     name: 'Network Connections',
     description: 'Complex network relationships',
@@ -423,7 +439,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { source: 'Analytics', target: 'Database', value: 5 }
     ]
   },
-  textAnalysis: {
+  'text-analysis': {
     id: 'text-analysis',
     name: 'Word Frequencies',
     description: 'Sample text data for word cloud visualization',
@@ -447,7 +463,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { text: 'Strategy', value: 20 }
     ]
   },
-  wordFrequencies: {
+  'word-frequencies': {
     id: 'word-frequencies',
     name: 'Word Frequencies',
     description: 'Common words and their frequencies for word cloud visualization',
@@ -471,7 +487,7 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       {text: "API", size: 25}
     ]
   },
-  multiMetricAnalysis: {
+  'multi-metric-analysis': {
     id: 'multi-metric-analysis',
     name: 'Multi-Metric Analysis',
     description: 'Multiple metrics across categories and time',
@@ -479,15 +495,15 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     compatibleCharts: ['bar', 'line', 'point', 'area', 'boxplot', 'violin'],
     values: generateMultiMetricData()
   },
-  retailBreakdown: {
+  'retail-breakdown': {
     id: 'retail-breakdown',
     name: 'Retail Category Analysis',
     description: 'Detailed breakdown of retail categories with multiple metrics',
     type: 'categorical',
-    compatibleCharts: ['bar', 'point', 'treemap', 'sunburst', 'heatmap'],
+    compatibleCharts: ['bar', 'point', 'rect', 'heatmap'] as MarkType[],
     values: generateCategoricalBreakdown()
   },
-  combinedMetrics: {
+  'combined-metrics': {
     id: 'combined-metrics',
     name: 'Combined Metrics View',
     description: 'Multiple metrics that work well with various chart types',

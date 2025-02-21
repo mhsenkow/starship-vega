@@ -52,9 +52,17 @@ const Select = styled.select`
   border-radius: 6px;
 `
 
+/**
+ * Chart style customization component
+ * - Provides UI controls for visual styling
+ * - Handles color, size, font, and layout options
+ * - Updates chart spec with style changes
+ * Dependencies: chartStyles, theme
+ */
+
 interface StyleEditorProps {
   spec: TopLevelSpec;
-  onChange: (updates: Partial<TopLevelSpec>) => void;
+  onChange: (updates: TopLevelSpec) => void;
 }
 
 export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {

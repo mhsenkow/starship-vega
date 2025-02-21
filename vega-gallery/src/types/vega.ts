@@ -1,12 +1,40 @@
-import { TopLevelSpec } from 'vega-lite'
+/**
+ * Core Vega-Lite type definitions
+ * - Defines chart mark types and their encodings
+ * - Handles type compatibility with Vega-Lite
+ * Used by: VisualEditor, chartAdapters
+ */
+
+import { TopLevelSpec, Mark } from 'vega-lite'
 import { DatasetMetadata } from './dataset'
 
-export type EncodingChannel = 'x' | 'y' | 'color' | 'size' | 'theta' | 'radius' | 'tooltip' | 'order' | 'text' | 'shape' | 'strokeWidth'
+export type EncodingChannel = 
+  | 'x' 
+  | 'y' 
+  | 'color' 
+  | 'size' 
+  | 'shape' 
+  | 'text' 
+  | 'tooltip' 
+  | 'order'
+  | 'strokeWidth'
+  | 'xOffset'
+  | 'yOffset';
+
 export type MarkType = 
-  | 'bar' | 'line' | 'point' | 'arc' | 'area' | 'boxplot' 
-  | 'rect' | 'rule' | 'text' | 'tick' | 'trail' | 'square'
-  | 'circle' | 'sunburst' | 'treemap' | 'force-directed' 
-  | 'chord-diagram' | 'violin' | 'wordcloud'
+  | 'bar' 
+  | 'line' 
+  | 'area' 
+  | 'point' 
+  | 'circle' 
+  | 'square'
+  | 'rect' 
+  | 'rule' 
+  | 'text' 
+  | 'tick'
+  | 'arc'
+  | 'boxplot'
+  | 'trail';
 
 export interface EncodingUpdate {
   field?: string
@@ -28,28 +56,46 @@ export interface DatasetSelectorBaseProps {
 
 export interface EncodingField {
   field: string;
-  type?: string;
-  aggregate?: 'count' | 'sum' | 'mean' | 'median' | 'min' | 'max';
+  type: 'quantitative' | 'nominal' | 'ordinal' | 'temporal';
   scale?: {
-    zero?: boolean;
-    range?: number[];
-    type?: 'linear' | 'log' | 'pow' | 'sqrt';
+    domain?: any[];
+    range?: any[];
+    scheme?: string;
   };
   sort?: 'ascending' | 'descending' | null;
-  stack?: 'zero' | 'normalize' | 'center' | null;
-  bin?: boolean | {maxbins?: number};
-  timeUnit?: 'year' | 'month' | 'day' | 'hour' | 'minute' | 'second';
-  format?: string;
+  aggregate?: 'count' | 'sum' | 'mean' | 'median';
 }
 
-export interface ChartEncoding {
-  x?: EncodingField;
-  y?: EncodingField;
-  color?: EncodingField;
-  size?: EncodingField;
-  shape?: EncodingField;
-  strokeWidth?: EncodingField;
-  tooltip?: EncodingField | EncodingField[];
-  order?: EncodingField;
-  [key: string]: EncodingField | EncodingField[] | undefined;
-} 
+export type ChartEncoding = Partial<Record<EncodingChannel, EncodingField>>;
+
+export interface MarkConfig {
+  type: MarkType;
+  point?: boolean;
+  tooltip?: boolean;
+  interpolate?: 'linear' | 'step' | 'monotone';
+  clip?: boolean;
+  filled?: boolean;
+}
+
+export interface ChartSpec extends TopLevelSpec {
+  mark: MarkType | MarkConfig;
+  encoding?: Partial<Record<EncodingChannel, EncodingField>>;
+  data?: {
+    values: any[];
+  };
+  width?: 'container' | number;
+  height?: 'container' | number;
+  autosize?: {
+    type: 'fit' | 'fill' | 'fit-x' | 'fit-y' | 'none';
+    contains?: 'padding' | 'content';
+    resize?: boolean;
+  };
+}
+
+export interface ChartPresetConfig {
+  chartType: 'bar' | 'line' | 'scatter' | 'pie' | 'area';
+  dataType: 'categorical' | 'numeric' | 'temporal';
+  aggregation: 'count' | 'sum' | 'average' | 'percentage' | 'none';
+}
+
+export type { TopLevelSpec }; 

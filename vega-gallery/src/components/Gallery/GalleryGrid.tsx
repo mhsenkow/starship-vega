@@ -1,9 +1,10 @@
 import styled from 'styled-components'
-import { useState, useMemo, lazy, Suspense } from 'react'
+import { useState, useMemo } from 'react'
 import { FilterBar } from './FilterBar'
-import { ChartConfig, ChartCategory, Complexity } from '../../types/chart'
-import { sampleCharts } from '../../charts/sampleCharts'
-import { ChartFilter } from './ChartFilter'
+import { ChartCard } from './ChartCard'
+import { chartSpecs } from '../../charts/specs'
+import { ChartCategory, Complexity } from '../../types/chart'
+import { TopLevelSpec } from 'vega-lite'
 
 const Container = styled.div`
   padding: 24px;
@@ -20,18 +21,41 @@ interface GalleryGridProps {
   onChartSelect: (chartId: string) => void;
 }
 
-const LazyChartCard = lazy(() => import('./ChartCard').then(module => ({ 
-  default: module.default 
-})))
+/**
+ * Main gallery view component
+ * - Displays grid of available chart types
+ * - Handles chart selection and filtering
+ * - Renders chart previews using ChartCard
+ * Dependencies: ChartCard, chartSpecs
+ */
+
+interface ChartPreview {
+  id: string;
+  title: string;
+  description: string;
+  spec: TopLevelSpec;
+  category: ChartCategory;
+  complexity: Complexity;
+}
 
 export const GalleryGrid = ({ onChartSelect }: GalleryGridProps) => {
   const [category, setCategory] = useState<ChartCategory | 'All'>('All')
   const [complexity, setComplexity] = useState<Complexity | 'All'>('All')
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState<'category' | 'complexity'>('category')
+
+  const charts = useMemo<ChartPreview[]>(() => {
+    return Object.entries(chartSpecs).map(([id, spec]) => ({
+      id,
+      title: id.replace(/([A-Z])/g, ' $1').trim(),
+      description: `A ${id.toLowerCase()} visualization`,
+      spec,
+      category: ChartCategory.Statistical,
+      complexity: Complexity.Beginner
+    }));
+  }, []);
 
   const filteredCharts = useMemo(() => {
-    return sampleCharts.filter(chart => {
+    return charts.filter(chart => {
       if (category !== 'All' && chart.category !== category) return false;
       if (complexity !== 'All' && chart.complexity !== complexity) return false;
       if (searchTerm) {
@@ -43,26 +67,7 @@ export const GalleryGrid = ({ onChartSelect }: GalleryGridProps) => {
       }
       return true;
     });
-  }, [category, complexity, searchTerm]);
-
-  const sortedCharts = useMemo(() => {
-    return [...filteredCharts].sort((a, b) => {
-      // First check if specs are empty
-      const aHasSpec = Object.keys(a.spec || {}).length > 0
-      const bHasSpec = Object.keys(b.spec || {}).length > 0
-      
-      if (aHasSpec !== bHasSpec) {
-        return aHasSpec ? -1 : 1
-      }
-
-      if (sortBy === 'category') {
-        return a.category.localeCompare(b.category)
-      } else {
-        const complexityOrder = { 'Beginner': 0, 'Intermediate': 1, 'Advanced': 2 }
-        return complexityOrder[a.complexity] - complexityOrder[b.complexity]
-      }
-    })
-  }, [filteredCharts, sortBy])
+  }, [charts, category, complexity, searchTerm]);
 
   return (
     <Container>
@@ -70,23 +75,18 @@ export const GalleryGrid = ({ onChartSelect }: GalleryGridProps) => {
         category={category}
         complexity={complexity}
         searchTerm={searchTerm}
-        sortBy={sortBy}
-        filteredCharts={filteredCharts}
         onCategoryChange={setCategory}
         onComplexityChange={setComplexity}
         onSearchChange={setSearchTerm}
-        onSortChange={setSortBy}
       />
       <Grid>
-        <Suspense fallback={<div>Loading...</div>}>
-          {sortedCharts.map(chart => (
-            <LazyChartCard 
-              key={chart.id} 
-              chart={chart}
-              onClick={() => onChartSelect(chart.id)}
-            />
-          ))}
-        </Suspense>
+        {filteredCharts.map(chart => (
+          <ChartCard
+            key={chart.id}
+            chart={chart}
+            onClick={() => onChartSelect(chart.id)}
+          />
+        ))}
       </Grid>
     </Container>
   )

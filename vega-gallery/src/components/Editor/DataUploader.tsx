@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import Papa from 'papaparse'; // For CSV parsing
-import { DatasetMetadata } from '../types/vega';
+import { DatasetMetadata } from '../../types/dataset';
+import { MarkType } from '../../types/vega';
 import styled from 'styled-components';
 
 interface DataUploaderProps {
@@ -13,31 +14,31 @@ interface DataUploaderProps {
 const UploadButton = styled.label`
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  margin-bottom: 12px;
-  background: ${props => props.theme.colors.primary};
-  color: white;
-  border-radius: ${props => props.theme.borderRadius.md};
+  gap: ${props => props.theme.spacing.sm};
+  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
+  margin-bottom: ${props => props.theme.spacing.md};
+  background: ${props => props.theme.colors.primary[500]};
+  color: ${props => props.theme.colors.neutral[50]};
+  border-radius: ${props => props.theme.borders.radius.md};
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: background 0.2s;
+  font-size: ${props => props.theme.typography.fontSize.sm};
+  transition: background ${props => props.theme.transitions.duration.fast};
 
   &:hover {
-    background: ${props => `${props.theme.colors.primary}dd`};
+    background: ${props => props.theme.colors.primary[600]};
   }
 `;
 
 const ErrorMessage = styled.p`
   color: ${props => props.theme.colors.error};
-  font-size: 0.9rem;
-  margin: 8px 0;
+  font-size: ${props => props.theme.typography.fontSize.sm};
+  margin: ${props => props.theme.spacing.sm} 0;
 `;
 
 const ProcessingText = styled.span`
-  color: ${props => props.theme.text.secondary};
-  font-size: 0.9rem;
-  margin-left: 8px;
+  color: ${props => props.theme.colors.neutral[600]};
+  font-size: ${props => props.theme.typography.fontSize.sm};
+  margin-left: ${props => props.theme.spacing.sm};
 `;
 
 export const DataUploader = ({ 

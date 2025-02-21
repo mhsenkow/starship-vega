@@ -6,7 +6,6 @@ const Container = styled.div`
   display: flex;
   gap: 16px;
   align-items: center;
-  flex-wrap: wrap;
   padding: 16px;
   background: white;
   border-radius: 8px;
@@ -55,27 +54,19 @@ interface FilterBarProps {
   category: ChartCategory | 'All';
   complexity: Complexity | 'All';
   searchTerm: string;
-  sortBy: 'category' | 'complexity';
-  filteredCharts: ChartConfig[];
   onCategoryChange: (category: ChartCategory | 'All') => void;
   onComplexityChange: (complexity: Complexity | 'All') => void;
   onSearchChange: (term: string) => void;
-  onSortChange: (sort: 'category' | 'complexity') => void;
 }
 
-export const FilterBar: React.FC<FilterBarProps> = ({
+export const FilterBar = ({
   category,
   complexity,
   searchTerm,
-  sortBy,
-  filteredCharts,
   onCategoryChange,
   onComplexityChange,
-  onSearchChange,
-  onSortChange
-}) => {
-  const categories = Object.values(ChartCategory);
-
+  onSearchChange
+}: FilterBarProps) => {
   return (
     <Container>
       <SearchInput
@@ -91,10 +82,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           onChange={(e) => onCategoryChange(e.target.value as ChartCategory | 'All')}
         >
           <option value="All">All Categories</option>
-          {categories.map(cat => (
-            <option key={cat} value={cat}>
-              {cat} ({filteredCharts.filter(c => c.category === cat).length})
-            </option>
+          {Object.values(ChartCategory).map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
           ))}
         </Select>
       </FilterGroup>
@@ -107,25 +96,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         >
           <option value="All">All Levels</option>
           {Object.values(Complexity).map(level => (
-            <option key={level} value={level}>
-              {level} ({filteredCharts.filter(c => c.complexity === level).length})
-            </option>
+            <option key={level} value={level}>{level}</option>
           ))}
         </Select>
       </FilterGroup>
-
-      <FilterGroup>
-        <Label>Sort by:</Label>
-        <Select
-          value={sortBy}
-          onChange={(e) => onSortChange(e.target.value as 'category' | 'complexity')}
-        >
-          <option value="category">Category</option>
-          <option value="complexity">Complexity</option>
-        </Select>
-      </FilterGroup>
-
-      <span>{filteredCharts.length} charts</span>
     </Container>
-  )
-}
+  );
+};

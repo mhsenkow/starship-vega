@@ -1,95 +1,74 @@
-import { useEffect, useRef } from 'react'
-import styled from 'styled-components'
-import { ChartConfig } from '../../types/chart'
-import { renderVegaLite } from '../../utils/chartRenderer'
-import { chartSpecs } from '../../charts'
+import { ChartPreview } from '../Editor/ChartPreview';
+import { ChartConfig } from '../../types/chart';
+import styled from 'styled-components';
 
 const Card = styled.div`
   background: white;
-  border-radius: 8px;
+  border-radius: ${props => props.theme.borders.radius.lg};
   overflow: hidden;
-  border: 1px solid #e9ecef;
-  transition: all 0.2s ease;
   cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: ${props => props.theme.shadows.sm};
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-4px);
+    box-shadow: ${props => props.theme.shadows.md};
   }
-`
+`;
 
-const ChartPreview = styled.div`
-  height: 200px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
-`
+const PreviewContainer = styled.div`
+  height: 180px;
+  background: ${props => props.theme.colors.background};
+`;
 
 const Content = styled.div`
-  padding: 16px;
-`
+  padding: ${props => props.theme.spacing.md};
+  border-top: 1px solid ${props => props.theme.colors.border};
 
-const Title = styled.h3`
-  margin: 0 0 8px 0;
-  font-size: 1.1rem;
-  color: #2c3e50;
-  font-weight: 600;
-`
+  h3 {
+    margin: 0 0 ${props => props.theme.spacing.sm};
+    font-size: ${props => props.theme.typography.fontSize.md};
+    color: ${props => props.theme.colors.text};
+  }
 
-const Description = styled.p`
-  margin: 0 0 16px 0;
-  color: #6c757d;
-  font-size: 0.9rem;
-  line-height: 1.4;
-`
+  p {
+    margin: 0;
+    font-size: ${props => props.theme.typography.fontSize.sm};
+    color: ${props => props.theme.colors.neutral[600]};
+  }
+`;
 
-const BadgeContainer = styled.div`
-  display: flex;
-  gap: 8px;
-`
-
-const Badge = styled.span`
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  background: #f8f9fa;
-  color: #495057;
-  border: 1px solid #e9ecef;
-`
+/**
+ * Individual chart preview card component
+ * - Renders chart preview with title and description
+ * - Handles hover interactions and click events
+ * - Used in gallery grid view
+ * Dependencies: ChartPreview, chartStyles
+ */
 
 interface ChartCardProps {
   chart: ChartConfig;
-  onClick: (id: string) => void;
+  onClick: () => void;
 }
 
-export default function ChartCard({ chart, onClick }: ChartCardProps) {
-  const chartRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const renderChart = async () => {
-      if (chartRef.current) {
-        const spec = chartSpecs[chart.id]
-        if (spec) {
-          await renderVegaLite(chartRef.current, spec, { mode: 'gallery' })
-        }
-      }
-    }
-
-    renderChart()
-  }, [chart.id])
-
+export const ChartCard = ({ chart, onClick }: ChartCardProps) => {
   return (
-    <Card onClick={() => onClick(chart.id)}>
-      <ChartPreview ref={chartRef} />
+    <Card onClick={onClick}>
+      <PreviewContainer>
+        <ChartPreview 
+          spec={chart.spec}
+          width={300}
+          height={180}
+          mode="gallery"
+          showDataTable={false}
+        />
+      </PreviewContainer>
       <Content>
-        <Title>{chart.title}</Title>
-        <Description>{chart.description}</Description>
-        <BadgeContainer>
-          <Badge>{chart.category}</Badge>
-          <Badge>{chart.complexity}</Badge>
-        </BadgeContainer>
+        <h3>{chart.title}</h3>
+        <p>{chart.description}</p>
       </Content>
     </Card>
-  )
-}
+  );
+};
+
+export default ChartCard

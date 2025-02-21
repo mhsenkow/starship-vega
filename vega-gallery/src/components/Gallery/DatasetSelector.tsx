@@ -1,69 +1,67 @@
 import React from 'react';
 import styled from 'styled-components';
-import { DatasetMetadata } from '../../types/dataset';
+import { DatasetMetadata, DatasetSelectorBaseProps } from '../../types/dataset';
+import { MarkType } from '../../types/vega';
 import { DataUploader } from '../Editor/DataUploader';
-import { detectDataTypes, inferChartType } from '../../utils/dataUtils';
+import { detectDataTypes, inferChartType, determineDatasetType } from '../../utils/dataUtils';
 
 const SelectorContainer = styled.div`
-  margin-bottom: 24px;
+  margin-bottom: ${props => props.theme.spacing.lg};
   max-height: 400px;
   overflow-y: auto;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  padding: 16px;
+  border: ${props => props.theme.borders.width.thin} solid ${props => props.theme.colors.border};
+  border-radius: ${props => props.theme.borders.radius.lg};
+  padding: ${props => props.theme.spacing.md};
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: ${props => props.theme.spacing.sm};
 `;
 
 const DatasetCard = styled.button<{ $active: boolean }>`
   width: 100%;
   padding: 12px;
   margin-bottom: 8px;
-  border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
-  border-radius: ${props => props.theme.borderRadius.md};
-  background: ${props => props.$active ? `${props.theme.colors.primary}10` : props.theme.colors.surface};
+  border: 1px solid ${props => props.$active ? '#4dabf7' : '#e9ecef'};
+  border-radius: 6px;
+  background: ${props => props.$active ? 'rgba(77, 171, 247, 0.1)' : '#ffffff'};
   text-align: left;
   cursor: pointer;
-  
-  &:last-child {
-    margin-bottom: 0;
-  }
+  transition: all 0.2s ease;
   
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
+    border-color: #4dabf7;
+    background: ${props => props.$active ? 
+      'rgba(77, 171, 247, 0.1)' : 
+      '#f8f9fa'};
   }
 `;
 
 const DatasetName = styled.div`
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 1rem;
   font-weight: 500;
-  color: ${props => props.theme.text.primary};
+  color: #2c3e50;
   margin-bottom: 4px;
 `;
 
 const DatasetDescription = styled.div`
-  font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  font-size: 0.875rem;
+  color: #6c757d;
 `;
 
 const DatasetMeta = styled.div`
-  font-size: 0.8rem;
-  color: ${props => props.theme.text.secondary};
+  font-size: 0.75rem;
+  color: #868e96;
   margin-top: 4px;
 `;
 
-interface DatasetSelectorProps {
-  chartId: string;
-  currentDataset: string;
-  onSelect: (datasetId: string) => void;
-  customDatasets?: Record<string, DatasetMetadata>;
-  setCustomDatasets?: (datasets: Record<string, DatasetMetadata>) => void;
-  allowUpload?: boolean;
-}
-
-const determineCompatibleCharts = (dataTypes: Record<string, string>): string[] => {
+const determineCompatibleCharts = (dataTypes: Record<string, string>): MarkType[] => {
   return inferChartType(dataTypes);
 };
+
+interface DatasetSelectorProps extends DatasetSelectorBaseProps {
+  allowUpload?: boolean;
+}
 
 export const DatasetSelector: React.FC<DatasetSelectorProps> = ({
   chartId,
@@ -84,8 +82,18 @@ export const DatasetSelector: React.FC<DatasetSelectorProps> = ({
 
   // Filter datasets based on chart type
   const compatibleDatasets = Object.entries(customDatasets).filter(([_, dataset]) => {
-    const compatibleCharts = determineCompatibleCharts(dataset.dataTypes || {});
-    return compatibleCharts.includes(chartId);
+    switch (chartId) {
+      case 'sunburst':
+        return dataset.type === 'hierarchical' && 
+               dataset.values.some((v: any) => 'parent' in v) &&
+               dataset.values.some((v: any) => 'value' in v);
+      case 'force-directed':
+      case 'chord-diagram':
+        return dataset.type === 'hierarchical' && 
+               dataset.values.some((v: any) => 'source' in v);
+      default:
+        return dataset.compatibleCharts.includes(chartId as MarkType);
+    }
   });
 
   return (
@@ -95,6 +103,7 @@ export const DatasetSelector: React.FC<DatasetSelectorProps> = ({
           onDatasetAdd={handleNewDataset}
           detectDataTypes={detectDataTypes}
           determineCompatibleCharts={determineCompatibleCharts}
+          determineDatasetType={determineDatasetType}
         />
       )}
       {compatibleDatasets.map(([id, dataset]) => (

@@ -6,6 +6,7 @@ import { ChartStyle } from '../types/chart'
 interface RenderOptions {
   mode?: 'gallery' | 'editor';
   style?: Partial<ChartStyle>;
+  actions?: boolean;
 }
 
 // Function to apply visual effects directly to SVG elements
@@ -160,46 +161,212 @@ const applyChartStyles = (spec: VegaLiteSpec | VegaSpec, style?: Partial<ChartSt
   };
 };
 
+export function validateEncoding(spec: any, markType: string) {
+  const invalidChannels = {
+    line: ['theta', 'radius'],
+    bar: ['theta', 'radius'],
+    point: ['theta', 'radius'],
+    area: ['theta', 'radius'],
+    // Add more mark-specific invalid channels
+  };
+
+  if (spec.encoding && invalidChannels[markType]) {
+    const encoding = { ...spec.encoding };
+    invalidChannels[markType].forEach(channel => {
+      delete encoding[channel];
+    });
+    return { ...spec, encoding };
+  }
+
+  return spec;
+}
+
+/**
+ * Vega-Lite chart rendering utilities
+ * - Handles chart rendering and updates
+ * - Applies visual effects and styling
+ * - Manages chart container sizing
+ */
+
+// Add data validation and preprocessing
+function preprocessSpec(spec: TopLevelSpec): TopLevelSpec {
+  if (!spec.data?.values?.length) {
+    return spec;
+  }
+
+  const values = spec.data.values;
+  const mark = typeof spec.mark === 'string' ? spec.mark : spec.mark?.type;
+
+  // Special handling for line charts
+  if (mark === 'line') {
+    const xField = spec.encoding?.x?.field as string;
+    const yField = spec.encoding?.y?.field as string;
+
+    if (!xField || !yField) return spec;
+
+    // Filter out invalid values and sort by x-axis
+    const validValues = values
+      .filter(d => {
+        const x = d[xField];
+        const y = d[yField];
+        return x != null && y != null && 
+               !Number.isNaN(Number(x)) && !Number.isNaN(Number(y));
+      })
+      .sort((a, b) => {
+        // Handle date sorting
+        if (spec.encoding?.x?.type === 'temporal') {
+          const dateA = new Date(a[xField]);
+          const dateB = new Date(b[xField]);
+          return dateA.getTime() - dateB.getTime();
+        }
+        return Number(a[xField]) - Number(b[xField]);
+      });
+
+    return {
+      ...spec,
+      data: { values: validValues },
+      encoding: {
+        ...spec.encoding,
+        x: {
+          ...spec.encoding?.x,
+          scale: { nice: true },
+        },
+        y: {
+          ...spec.encoding?.y,
+          scale: { nice: true },
+        }
+      }
+    };
+  }
+
+  return spec;
+}
+
 export const renderVegaLite = async (
-  element: HTMLElement, 
-  spec: VegaLiteSpec | VegaSpec,
+  container: HTMLElement, 
+  spec: TopLevelSpec,
   options: RenderOptions = {}
 ) => {
   try {
-    const isVegaLite = spec.$schema?.includes('vega-lite');
+    // Determine chart type and create safe spec
+    const markType = typeof spec.mark === 'string' ? spec.mark : spec.mark?.type;
     
-    // Apply style modifications to spec
-    const styledSpec = applyChartStyles(spec, options.style);
-    
-    const embedOptions: EmbedOptions = {
-      actions: false,
-      renderer: 'svg',
-      downloadFileName: 'chart',
-      defaultStyle: false, // Set to false to ensure our styles take precedence
+    const safeSpec = {
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      ...spec,
+      // Ensure mark configuration
+      mark: (() => {
+        const baseConfig = {
+          tooltip: true,
+          filled: true,
+          opacity: 0.8,
+          fillOpacity: 0.6,
+          stroke: '#fff',
+          strokeWidth: 1
+        };
+
+        if (typeof spec.mark === 'string') {
+          return {
+            type: spec.mark,
+            ...baseConfig
+          };
+        }
+
+        // Handle specific chart types
+        switch (markType) {
+          case 'violin':
+            return {
+              type: 'violin',
+              ...baseConfig,
+              orient: 'vertical',
+              extent: 'min-max',
+              density: true
+            };
+          case 'arc':
+            return {
+              type: 'arc',
+              ...baseConfig,
+              innerRadius: spec.mark?.innerRadius || 0,
+              padAngle: spec.mark?.padAngle || 0
+            };
+          default:
+            return {
+              ...spec.mark,
+              ...baseConfig
+            };
+        }
+      })(),
+      
+      // Safe config defaults
+      config: {
+        ...spec.config,
+        view: {
+          stroke: null,
+          ...spec.config?.view
+        },
+        mark: {
+          filled: true,
+          opacity: 0.8,
+          fillOpacity: 0.6,
+          ...spec.config?.mark
+        }
+      }
     };
 
-    if (isVegaLite) {
-      const responsiveSpec = {
-        ...styledSpec,
-        width: options.mode === 'gallery' ? 300 : "container",
-        height: options.mode === 'gallery' ? 180 : "container",
-        autosize: {
-          type: "fit",
-          contains: "padding"
-        }
+    // Ensure data exists
+    if (!safeSpec.data?.values?.length) {
+      safeSpec.data = {
+        values: [{ value: 0 }]
       };
-      
-      await vegaEmbed(element, responsiveSpec, embedOptions);
-    } else {
-      // Handle pure Vega specs if needed
-      await vegaEmbed(element, styledSpec, embedOptions);
     }
 
-    // Apply visual effects after the chart is rendered
-    applyVisualEffectsToSVG(element, options.style);
+    // Handle specific chart type encodings
+    if (!safeSpec.encoding) {
+      safeSpec.encoding = {};
+    }
 
-  } catch (error) {
-    console.error('Error rendering chart:', error);
-    throw error;
+    // Add default encodings based on chart type
+    switch (markType) {
+      case 'violin':
+        if (!safeSpec.encoding.y) {
+          safeSpec.encoding = {
+            ...safeSpec.encoding,
+            y: { 
+              field: 'value',
+              type: 'quantitative',
+              scale: { zero: false }
+            },
+            x: {
+              field: 'category',
+              type: 'nominal'
+            }
+          };
+        }
+        break;
+      case 'arc':
+        if (!safeSpec.encoding.theta) {
+          safeSpec.encoding = {
+            ...safeSpec.encoding,
+            theta: { field: 'value', type: 'quantitative' },
+            color: { field: 'category', type: 'nominal' }
+          };
+        }
+        break;
+    }
+
+    // Ensure proper sizing
+    safeSpec.width = options.mode === 'gallery' ? 300 : 'container';
+    safeSpec.height = options.mode === 'gallery' ? 200 : 'container';
+    safeSpec.autosize = { type: 'fit', contains: 'padding', resize: true };
+
+    await vegaEmbed(container, safeSpec, {
+      actions: options.mode === 'editor',
+      renderer: 'svg',
+      theme: 'light',
+      defaultStyle: true
+    });
+  } catch (err) {
+    console.error('Error rendering chart:', err);
+    throw err;
   }
 }; 

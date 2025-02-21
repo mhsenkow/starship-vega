@@ -1,29 +1,29 @@
 import { useState } from 'react'
-import styled, { ThemeProvider } from 'styled-components'
+import styled from 'styled-components'
 import { Layout } from './components/common/Layout'
 import { GalleryGrid } from './components/Gallery/GalleryGrid'
 import { EditorLayout } from './components/Editor/EditorLayout'
-import { theme } from './types/theme'
+import { ThemeProvider } from './providers/ThemeProvider'
 
 const AppContainer = styled.div`
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #f8f9fa;
 `
 
-function App() {
+const App = () => {
   const [selectedChart, setSelectedChart] = useState<string | null>(null)
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider>
       <AppContainer>
         <Layout>
-          {!selectedChart ? (
-            <GalleryGrid onChartSelect={setSelectedChart} />
-          ) : (
+          {selectedChart ? (
             <EditorLayout 
               chartId={selectedChart} 
               onBack={() => setSelectedChart(null)} 
             />
+          ) : (
+            <GalleryGrid onChartSelect={setSelectedChart} />
           )}
         </Layout>
       </AppContainer>

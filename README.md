@@ -115,7 +115,7 @@ http://localhost:5173/
 - Dataset-chart compatibility checking
 - Support for multiple data formats
 
-## 🎯 Roadmap
+## 🎯 Roadmap & TODOs
 
 ### Phase 1: Enhanced Visualization (Q2 2024)
 - [ ] Geographic visualizations
@@ -130,6 +130,9 @@ http://localhost:5173/
   - Transition animations
   - Time-based animations
   - Interactive playback controls
+- [ ] Fix: Implement missing chart types in `/src/charts/distribution/index.ts`
+- [ ] Fix: Complete implementation of violin plots and KDE histograms
+- [ ] Fix: Add error handling for invalid chart specifications
 
 ### Phase 2: Data Management (Q3 2024)
 - [ ] Advanced data sources
@@ -141,6 +144,9 @@ http://localhost:5173/
   - Custom formula support
   - Aggregation functions
   - Data cleaning tools
+- [ ] Fix: Complete data validation in DatasetSelector component
+- [ ] Fix: Implement proper error boundaries for data loading
+- [ ] Fix: Add data type inference for CSV uploads
 
 ### Phase 3: Collaboration (Q4 2024)
 - [ ] User management
@@ -155,6 +161,8 @@ http://localhost:5173/
   - Chart version history
   - Collaborative editing
   - Change tracking
+- [ ] Fix: Implement missing export functionality
+- [ ] Fix: Add proper state management for user sessions
 
 ### Phase 4: Enterprise Features (Q1 2025)
 - [ ] Dashboard builder
@@ -169,5 +177,19 @@ http://localhost:5173/
   - API for external tools
   - Plugin system
   - Custom extensions
+- [ ] Fix: Complete implementation of chart interactivity
+- [ ] Fix: Add proper TypeScript types for all chart configurations
+
+### Immediate TODOs
+1. Fix empty distribution charts implementation
+2. Complete missing chart type definitions
+3. Implement proper error handling in chart renderer
+4. Add validation for dataset compatibility
+5. Complete style editor functionality
+6. Add proper TypeScript types for chart configurations
+7. Implement missing chart interactions
+8. Add tests for core components
+9. Fix responsive layout issues
+10. Complete documentation for all components
 
 Meta isn't allowed to use this but anyone else, feel free. 

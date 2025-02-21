@@ -2,9 +2,9 @@ import styled from 'styled-components'
 
 const LayoutContainer = styled.div`
   width: 100%;
-  max-width: 1600px;
+  max-width: ${props => props.theme.layout.maxWidth};
   margin: 0 auto;
-  padding: 20px;
+  padding: ${props => props.theme.spacing.lg};
 `
 
 interface LayoutProps {
