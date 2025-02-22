@@ -1,29 +1,46 @@
+import { useVirtualizer } from '@tanstack/react-virtual';
 import styled from 'styled-components';
+import { useRef } from 'react';
 
-const DataPreviewContainer = styled.div`
-  margin-top: 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  overflow: hidden;
+const VirtualTable = styled.div`
+  height: 400px;
+  overflow: auto;
 `;
 
-const DataTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-`;
+export const DataPreview = ({ data }: { data: any[] }) => {
+  const parentRef = useRef<HTMLDivElement>(null);
 
-const Th = styled.th`
-  padding: 12px;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-  text-align: left;
-  color: #475569;
-  font-weight: 500;
-`;
+  const rowVirtualizer = useVirtualizer({
+    count: data.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 35,
+  });
 
-const Td = styled.td`
-  padding: 12px;
-  border-bottom: 1px solid #e2e8f0;
-  color: #1e293b;
-`; 
+  return (
+    <VirtualTable ref={parentRef}>
+      <div
+        style={{
+          height: `${rowVirtualizer.getTotalSize()}px`,
+          width: '100%',
+          position: 'relative',
+        }}
+      >
+        {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+          <div
+            key={virtualRow.index}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: `${virtualRow.size}px`,
+              transform: `translateY(${virtualRow.start}px)`,
+            }}
+          >
+            {/* Render row data */}
+          </div>
+        ))}
+      </div>
+    </VirtualTable>
+  );
+}; 

@@ -1,485 +1,229 @@
 import styled from 'styled-components'
 import { CodeEditor } from './CodeEditor'
 import { Preview } from './Preview'
-import { chartSpecs } from '../../charts/specs'
+import { chartSpecs } from '../../charts'
 import { useState, useRef, useEffect } from 'react'
-import { TemplateEditor } from './TemplateEditor'
-import { theme } from '../../types/theme'
-import { ErrorBoundary } from '../ErrorBoundary'
 import { VisualEditor } from './VisualEditor'
 import { StyleEditor } from './StyleEditor'
-import { ChartPreview } from './ChartPreview'
-import { ResizableContainer } from './ResizableContainer'
+import { theme } from '../../types/theme'
+import { ErrorBoundary } from '../ErrorBoundary'
+import { DataCurationPanel } from './DataCurationPanel'
+import { DatasetMetadata } from '../../types/dataset'
 import { TopLevelSpec } from 'vega-lite'
-import { MarkType } from '../../types/vega'
-import { sampleDatasets } from '../../utils/sampleData'
-import { DatasetSelector } from './DatasetSelector'
+import BrushIcon from '@mui/icons-material/Brush';
+import TuneIcon from '@mui/icons-material/Tune';
+import CodeIcon from '@mui/icons-material/Code';
 
 const Container = styled.div`
+  display: grid;
+  grid-template-columns: minmax(320px, 400px) 1fr;
+  gap: 12px;
+  height: calc(100vh - 80px);
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  overflow: hidden;
+`
+
+const EditorPanel = styled.div`
+  height: 100%;
+  overflow-y: auto;
+  border-right: 1px solid ${props => props.theme.colors.border};
+  padding-right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: inset 0 -10px 10px -10px rgba(0, 0, 0, 0.05);
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+    
+    &:hover {
+      background: #bbb;
+    }
+  }
+`
+
+const PreviewPanel = styled.div`
+  position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 `
 
-const Header = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 24px;
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
+const PreviewContent = styled.div`
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
 `
 
 const BackButton = styled.button`
+  margin-bottom: 24px;
+  padding: 10px 20px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #495057;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  background: white;
-  color: #64748b;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 
   &:hover {
-    background: #f8fafc;
-    border-color: #94a3b8;
+    background: #f1f3f5;
+    color: #2c3e50;
+  }
+
+  &::before {
+    content: "←";
+    font-size: 1.2em;
   }
 `
 
 const TabContainer = styled.div`
   display: flex;
-  gap: 2px;
-  padding: 12px 16px;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid ${props => props.theme.colors.border};
 `
 
 const Tab = styled.button<{ $active: boolean }>`
-  padding: 8px 16px;
-  background: ${props => props.$active ? 'white' : 'transparent'};
-  border: none;
-  border-radius: 6px;
-  color: ${props => props.$active ? '#0f172a' : '#64748b'};
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover {
-    background: ${props => props.$active ? 'white' : '#f1f5f9'};
-  }
-`
-
-const EditorContent = styled.div`
-  flex: 1;
-  overflow: hidden;
-`
-
-const TopBar = styled.div`
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-`;
-
-const SuggestedCharts = styled.div`
-  display: flex;
-  gap: 8px;
-  margin-left: 16px;
-`;
-
-const ChartButton = styled.button<{ $active: boolean }>`
-  padding: 6px 12px;
-  border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
-  border-radius: 4px;
-  background: ${props => props.$active ? props.theme.colors.primary + '10' : 'white'};
-  color: ${props => props.theme.colors.text};
+  gap: 6px;
+  padding: 8px 12px;
+  background: ${props => props.$active ? props.theme.colors.primary + '20' : 'transparent'};
+  border: none;
+  border-radius: 6px;
+  color: ${props => props.$active ? props.theme.colors.primary : props.theme.text.secondary};
   cursor: pointer;
-  font-size: 14px;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
 
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
+    background: ${props => props.$active ? props.theme.colors.primary + '20' : '#f1f3f5'};
   }
-`;
 
-const defaultSpec: TopLevelSpec = {
-  $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-  data: { values: [] },
-  mark: 'bar',
-  encoding: {}
-};
-
-/**
- * Main chart editor layout component
- * - Manages editor state and mode switching
- * - Coordinates between visual/code/style editors
- * - Handles chart preview updates
- * Dependencies: VisualEditor, StyleEditor, CodeEditor, ChartPreview
- */
+  svg {
+    font-size: 18px;
+  }
+`
 
 interface EditorLayoutProps {
   chartId: string;
   onBack: () => void;
 }
 
-type EditorTab = 'data' | 'encoding' | 'style' | 'code';
-
-const EditorContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: #f8fafc;
-`;
-
-const MainContent = styled.div`
-  display: grid;
-  grid-template-columns: 400px 1fr;
-  gap: 24px;
-  padding: 24px;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-`;
-
-const LeftPanel = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  overflow: hidden;
-`;
-
-const RightPanel = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  overflow: hidden;
-`;
-
-const TabContent = styled.div`
-  flex: 1;
-  overflow: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-`;
-
-// Update DatasetSelector container
-const SelectorContainer = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-`;
-
-const DatasetGrid = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
-`;
-
-const RecommendationsSection = styled.div`
-  padding: 12px;
-  background: ${props => props.theme.colors.neutral[50]};
-  border-bottom: 1px solid ${props => props.theme.colors.border};
-`;
-
-const RecommendationTitle = styled.div`
-  font-size: 12px;
-  font-weight: 500;
-  color: ${props => props.theme.colors.neutral[600]};
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
-`;
-
-const RecommendationGrid = styled.div`
-  display: flex;
-  gap: 8px;
-`;
-
-const RecommendationCard = styled.button<{ $active: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid ${props => props.$active ? props.theme.colors.primary[200] : props.theme.colors.border};
-  border-radius: 6px;
-  background: ${props => props.$active ? props.theme.colors.primary[50] : 'white'};
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: ${props => props.theme.colors.primary[200]};
-    background: ${props => props.$active ? props.theme.colors.primary[100] : props.theme.colors.neutral[50]};
-  }
-
-  svg {
-    width: 16px;
-    height: 16px;
-    color: ${props => props.$active ? props.theme.colors.primary[600] : props.theme.colors.neutral[600]};
-  }
-
-  .description {
-    font-size: 12px;
-    color: ${props => props.theme.colors.neutral[600]};
-    text-align: left;
-  }
-`;
-
 export const EditorLayout = ({ chartId, onBack }: EditorLayoutProps) => {
-  const [currentTab, setCurrentTab] = useState<EditorTab>('data');
-  const [currentType, setCurrentType] = useState(chartId);
-  
-  // Safely initialize dataset
-  const [currentDataset, setCurrentDataset] = useState(() => {
-    const firstDataset = Object.entries(sampleDatasets)
-      .find(([_, dataset]) => dataset.values?.length > 0);
-    return firstDataset ? firstDataset[0] : '';
-  });
+  const [spec, setSpec] = useState(JSON.stringify(chartSpecs[chartId as keyof typeof chartSpecs], null, 2))
+  const [mode, setMode] = useState<'visual' | 'style' | 'code'>('visual')
+  const [dataset, setDataset] = useState<DatasetMetadata | null>(null)
 
-  // Initialize spec with safe defaults
-  const [currentSpec, setCurrentSpec] = useState(() => {
-    const baseSpec = chartSpecs[chartId] || defaultSpec;
-    const dataset = sampleDatasets[currentDataset];
-    return {
-      ...baseSpec,
-      data: { 
-        values: dataset?.values || []
-      },
-      width: 'container',
-      height: 'container',
-      autosize: { type: 'fit', contains: 'padding' }
-    };
-  });
-
-  useEffect(() => {
-    console.log('Current spec updated:', currentSpec);
-  }, [currentSpec]);
-
-  const handleDatasetChange = (datasetId: string) => {
-    console.log('Dataset change triggered:', datasetId);
-    console.log('Available datasets:', Object.keys(sampleDatasets));
-    
-    const dataset = sampleDatasets[datasetId];
-    if (!dataset) {
-      console.warn('Dataset not found:', datasetId);
-      console.log('Available datasets:', Object.keys(sampleDatasets));
-      return;
-    }
-
-    setCurrentDataset(datasetId);
-    
-    // Create new spec with updated data
-    const newSpec: TopLevelSpec = {
-      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-      ...currentSpec,
-      data: { 
-        values: dataset.values 
-      },
-      mark: {
-        ...currentSpec.mark,
-        type: typeof currentSpec.mark === 'string' ? currentSpec.mark : currentSpec.mark.type,
-        cursor: 'pointer'
-      },
-      config: {
-        ...currentSpec.config,
-        mark: {
-          ...currentSpec.config?.mark,
-          cursor: 'pointer'
-        }
-      },
-      encoding: getCompatibleEncodings(
-        typeof currentSpec.mark === 'string' ? currentSpec.mark : currentSpec.mark.type,
-        currentSpec.encoding || {},
-        dataset.values[0] || {}
-      ),
-      width: 'container',
-      height: 'container',
-      autosize: { type: 'fit', contains: 'padding' }
-    };
-
-    console.log('New spec:', newSpec);
-    setCurrentSpec(newSpec);
-  };
-
-  // Add this helper function in the same file
-  const getCompatibleEncodings = (
-    markType: string,
-    currentEncodings: any,
-    newDataFields: any
-  ): Record<string, any> => {
-    if (!currentEncodings || !newDataFields) return {};
-
-    const dataFields = Object.keys(newDataFields);
-    const compatibleEncodings: Record<string, any> = {};
-
-    // Try to preserve existing encodings if fields exist in new dataset
-    Object.entries(currentEncodings).forEach(([channel, encoding]: [string, any]) => {
-      if (encoding?.field && dataFields.includes(encoding.field)) {
-        compatibleEncodings[channel] = encoding;
+  const handleVisualChange = (updates: Partial<ExtendedSpec>) => {
+    // Ensure mark configurations are properly serialized
+    const serializedSpec = {
+      ...updates,
+      mark: typeof updates.mark === 'string' ? updates.mark : {
+        ...updates.mark,
+        // Ensure these properties are included in the JSON
+        ...(updates.mark?.type === 'point' && {
+          type: 'point',
+          size: updates.mark.size,
+          filled: updates.mark.filled,
+          shape: updates.mark.shape,
+          stroke: updates.mark.stroke,
+          strokeWidth: updates.mark.strokeWidth
+        }),
+        // Add other mark-specific configurations
+        ...(updates.mark?.type === 'line' && {
+          point: updates.mark.point,
+          interpolate: updates.mark.interpolate
+        }),
+        ...(updates.mark?.type === 'area' && {
+          line: updates.mark.line,
+          opacity: updates.mark.opacity
+        }),
+        ...(updates.mark?.type === 'bar' && {
+          cornerRadius: updates.mark.cornerRadius
+        })
       }
-    });
-
-    // If no compatible encodings found, suggest new ones based on data types
-    if (Object.keys(compatibleEncodings).length === 0) {
-      const quantitativeFields = dataFields.filter(field => 
-        typeof newDataFields[field] === 'number'
-      );
-      const categoricalFields = dataFields.filter(field => 
-        typeof newDataFields[field] === 'string'
-      );
-      const temporalFields = dataFields.filter(field => 
-        !isNaN(Date.parse(newDataFields[field]))
-      );
-
-      // Suggest basic encodings based on chart type and available fields
-      switch (markType) {
-        case 'bar':
-          if (categoricalFields.length && quantitativeFields.length) {
-            compatibleEncodings.x = { field: categoricalFields[0], type: 'nominal' };
-            compatibleEncodings.y = { field: quantitativeFields[0], type: 'quantitative' };
-          }
-          break;
-        case 'line':
-          if (temporalFields.length && quantitativeFields.length) {
-            compatibleEncodings.x = { field: temporalFields[0], type: 'temporal' };
-            compatibleEncodings.y = { field: quantitativeFields[0], type: 'quantitative' };
-          }
-          break;
-        case 'point':
-          if (quantitativeFields.length >= 2) {
-            compatibleEncodings.x = { field: quantitativeFields[0], type: 'quantitative' };
-            compatibleEncodings.y = { field: quantitativeFields[1], type: 'quantitative' };
-          }
-          break;
-        // Add more cases as needed
-      }
-    }
-
-    return compatibleEncodings;
-  };
-
-  const handleChartTypeChange = (newType: string) => {
-    setCurrentType(newType);
-    
-    // Get the base spec for the new chart type
-    const baseSpec = chartSpecs[newType] || defaultSpec;
-    
-    // Create new spec while preserving data and compatible encodings
-    const newSpec = {
-      ...baseSpec,
-      data: currentSpec.data, // Keep current data
-      width: 'container',
-      height: 'container',
-      autosize: { type: 'fit', contains: 'padding' },
-      // Try to preserve compatible encodings
-      encoding: getCompatibleEncodings(
-        baseSpec.mark as string,
-        currentSpec.encoding,
-        { values: currentSpec.data.values }
-      )
     };
 
-    setCurrentSpec(newSpec);
-  };
-
-  const handleCodeChange = (value: string) => {
-    try {
-      setCurrentSpec(JSON.parse(value));
-    } catch (e) {
-      // Handle JSON parse error
-    }
-  };
+    // Update the code editor with properly formatted JSON
+    setSpec(JSON.stringify(serializedSpec, null, 2));
+  }
 
   return (
-    <EditorContainer>
-      <Header>
-        <BackButton onClick={onBack}>
-          <span>←</span> Back to Gallery
-        </BackButton>
-      </Header>
-      
-      <MainContent>
-        <LeftPanel>
+    <div>
+      <BackButton onClick={onBack}>Back to Gallery</BackButton>
+      <Container>
+        <EditorPanel>
           <TabContainer>
             <Tab 
-              $active={currentTab === 'data'} 
-              onClick={() => setCurrentTab('data')}
+              $active={mode === 'visual'} 
+              onClick={() => setMode('visual')}
             >
+              <TuneIcon />
               Data
             </Tab>
             <Tab 
-              $active={currentTab === 'encoding'} 
-              onClick={() => setCurrentTab('encoding')}
+              $active={mode === 'style'} 
+              onClick={() => setMode('style')}
             >
-              Encoding
-            </Tab>
-            <Tab 
-              $active={currentTab === 'style'} 
-              onClick={() => setCurrentTab('style')}
-            >
+              <BrushIcon />
               Style
             </Tab>
             <Tab 
-              $active={currentTab === 'code'} 
-              onClick={() => setCurrentTab('code')}
+              $active={mode === 'code'} 
+              onClick={() => setMode('code')}
             >
+              <CodeIcon />
               Code
             </Tab>
           </TabContainer>
-          
-          <TabContent>
-            {currentTab === 'data' && (
-              <DatasetSelector 
-                chartId={chartId}
-                currentDataset={currentDataset}
-                onSelect={handleDatasetChange}
-                mode="editor"
-              />
-            )}
-            {currentTab === 'encoding' && (
-              <VisualEditor 
-                spec={currentSpec} 
-                onChange={setCurrentSpec} 
-              />
-            )}
-            {currentTab === 'style' && (
-              <StyleEditor 
-                spec={currentSpec} 
-                onChange={setCurrentSpec} 
-              />
-            )}
-            {currentTab === 'code' && (
-              <CodeEditor 
-                value={JSON.stringify(currentSpec, null, 2)}
-                onChange={handleCodeChange}
-              />
-            )}
-          </TabContent>
-        </LeftPanel>
 
-        <RightPanel>
-          <ErrorBoundary>
-            <ChartPreview 
-              spec={currentSpec}
-              mode="editor"
+          {mode === 'visual' && dataset && (
+            <DataCurationPanel 
+              dataset={dataset}
+              onDatasetUpdate={setDataset}
             />
+          )}
+
+          <ErrorBoundary>
+            {mode === 'code' ? (
+              <CodeEditor value={spec} onChange={setSpec} />
+            ) : mode === 'style' ? (
+              <StyleEditor spec={JSON.parse(spec)} onChange={handleVisualChange} />
+            ) : (
+              <VisualEditor spec={JSON.parse(spec)} onChange={handleVisualChange} />
+            )}
           </ErrorBoundary>
-        </RightPanel>
-      </MainContent>
-    </EditorContainer>
-  );
-};
+        </EditorPanel>
+        <PreviewPanel>
+          <ErrorBoundary>
+            <PreviewContent>
+              <Preview spec={spec} />
+            </PreviewContent>
+          </ErrorBoundary>
+        </PreviewPanel>
+      </Container>
+    </div>
+  )
+}

@@ -1,19 +1,9 @@
-/**
- * Core chart type definitions and configurations
- * - Defines chart categories, complexity levels
- * - Defines chart configuration interfaces
- * - Defines chart styling interfaces
- * Used by: GalleryGrid, ChartCard, StyleEditor
- */
-
 import { TopLevelSpec } from 'vega-lite';
 
 export enum ChartCategory {
-  Statistical = 'Statistical',
-  TimeSeries = 'Time Series',
-  Hierarchical = 'Hierarchical',
-  Correlation = 'Correlation',
-  PartToWhole = 'Part to Whole'
+  Correlation = 'correlation',
+  Hierarchical = 'hierarchical',
+  TimeSeries = 'timeSeries'
 }
 
 export enum Complexity {
@@ -29,20 +19,31 @@ export type ChartUseCase =
   | 'Dashboard'
 
 export interface ChartStyle {
+  marks?: {
+    opacity?: number;
+    strokeWidth?: number;
+    stroke?: string;
+    fill?: string;
+    filled?: boolean;
+    [key: string]: any;
+  };
   axis?: {
     tickOpacity?: number;
-    baselineColor?: string;
-    baselineWidth?: number;
-    baselineOpacity?: number;
-  };
-  view?: {
-    backgroundColor?: string;
-    backgroundOpacity?: number;
-    padding?: number;
+    gridOpacity?: number;
+    labelFontSize?: number;
+    titleFontSize?: number;
+    [key: string]: any;
   };
   legend?: {
     titleFontSize?: number;
     labelFontSize?: number;
+    [key: string]: any;
+  };
+  view?: {
+    stroke?: string | null;
+    fill?: string;
+    padding?: number;
+    [key: string]: any;
   };
 }
 
@@ -52,7 +53,7 @@ export interface ChartConfig {
   description: string;
   category: ChartCategory;
   complexity: Complexity;
-  spec: any;
+  spec: any; // Could be more specific with Vega types
   metadata?: {
     tags?: string[];
     dataRequirements?: {

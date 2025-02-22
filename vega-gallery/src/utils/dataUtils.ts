@@ -1,58 +1,60 @@
 import { MarkType } from '../types/vega';
 import { DatasetMetadata } from '../types/dataset';
 
-/**
- * Data analysis and type inference utilities
- * - detectDataTypes: Analyzes data to determine field types
- * - inferChartType: Suggests chart types based on data
- * - determineDatasetType: Categorizes datasets
- * Used by: DatasetSelector, VisualEditor
- */
-
-export function detectDataTypes(values: any[]): Record<string, string> {
+export const detectDataTypes = (values: any[]): Record<string, string> => {
   if (!values.length) return {};
-  
-  const sampleRow = values[0];
+
+  const sample = values[0];
   const types: Record<string, string> = {};
-  
-  Object.entries(sampleRow).forEach(([field, value]) => {
+
+  Object.entries(sample).forEach(([key, value]) => {
     if (typeof value === 'number') {
-      types[field] = 'quantitative';
-    } else if (value instanceof Date || !isNaN(Date.parse(value as string))) {
-      types[field] = 'temporal';
+      types[key] = 'quantitative';
+    } else if (value instanceof Date || (typeof value === 'string' && !isNaN(Date.parse(value)))) {
+      types[key] = 'temporal';
     } else if (typeof value === 'string') {
-      const isNumeric = !isNaN(Number(value));
-      types[field] = isNumeric ? 'ordinal' : 'nominal';
+      // Check if it's a hierarchical relationship field
+      if (key.includes('parent') || key.includes('source') || key.includes('target')) {
+        types[key] = 'hierarchical';
+      } else {
+        // Attempt to determine if it's ordinal or nominal
+        const uniqueValues = new Set(values.map(v => v[key]));
+        types[key] = uniqueValues.size < values.length * 0.3 ? 'ordinal' : 'nominal';
+      }
+    } else if (typeof value === 'boolean') {
+      types[key] = 'nominal';
     }
   });
-  
+
   return types;
-}
+};
 
-export function inferChartType(dataTypes: Record<string, string>): MarkType[] {
+export const inferChartType = (dataTypes: Record<string, string>): string[] => {
   const types = new Set(Object.values(dataTypes));
-  const charts: MarkType[] = [];
-  
+  const charts: string[] = [];
+
+  // Basic chart type inference
   if (types.has('quantitative')) {
-    charts.push('bar', 'line', 'point', 'area', 'heatmap');
+    if (types.has('temporal')) {
+      charts.push('line-chart', 'area-chart');
+    } else {
+      charts.push('scatter-plot', 'bubble-chart');
+    }
   }
-  if (types.has('temporal')) {
-    charts.push('line', 'area', 'point');
-  }
-  if (types.has('nominal') || types.has('ordinal')) {
-    charts.push('bar', 'point');
-  }
-  
-  return charts;
-}
 
-export function determineDatasetType(dataTypes: Record<string, string>): DatasetMetadata['type'] {
-  const types = new Set(Object.values(dataTypes));
-  
-  if (types.has('temporal')) return 'temporal';
-  if (types.has('quantitative')) return 'numerical';
-  return 'categorical';
-}
+  if (types.has('ordinal') || types.has('nominal')) {
+    charts.push('bar-chart');
+    if (types.has('quantitative')) {
+      charts.push('grouped-bar', 'stacked-bar');
+    }
+  }
+
+  if (types.has('hierarchical')) {
+    charts.push('treemap', 'sunburst');
+  }
+
+  return charts;
+};
 
 export const validateDataset = (values: any[]): boolean => {
   if (!Array.isArray(values) || !values.length) {
@@ -159,4 +161,50 @@ export const isDatasetCompatibleWithChart = (
     default:
       return compatibleCharts.includes(chartId as MarkType);
   }
+};
+
+export const cleanData = (data: any[]): any[] => {
+  return data.map(row => {
+    const cleaned = { ...row };
+    Object.entries(cleaned).forEach(([key, value]) => {
+      // Try to parse dates
+      if (typeof value === 'string' && !isNaN(Date.parse(value))) {
+        cleaned[key] = new Date(value);
+      }
+      // Clean numbers
+      if (typeof value === 'string' && !isNaN(Number(value))) {
+        cleaned[key] = Number(value);
+      }
+      // Handle nulls
+      if (value === '' || value === null || value === undefined) {
+        cleaned[key] = null;
+      }
+    });
+    return cleaned;
+  });
+};
+
+export const inferDataTypes = (data: any[]): Record<string, string[]> => {
+  if (!data.length) return {};
+  
+  const types: Record<string, Set<string>> = {};
+  const fields = Object.keys(data[0]);
+
+  fields.forEach(field => {
+    types[field] = new Set();
+    data.forEach(row => {
+      const value = row[field];
+      if (typeof value === 'number') types[field].add('quantitative');
+      if (value instanceof Date) types[field].add('temporal');
+      if (typeof value === 'string') {
+        if (!isNaN(Date.parse(value))) types[field].add('temporal');
+        else if (!isNaN(Number(value))) types[field].add('quantitative');
+        else types[field].add('nominal');
+      }
+    });
+  });
+
+  return Object.fromEntries(
+    Object.entries(types).map(([field, typeSet]) => [field, Array.from(typeSet)])
+  );
 }; 

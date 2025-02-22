@@ -2,12 +2,10 @@ import { useState } from 'react'
 import styled from 'styled-components'
 
 const FooterContainer = styled.div`
-  flex: 1;
-  border-top: 1px solid #eee;
-  background: white;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  height: 100%; // Take full height of parent
+  overflow: hidden; // Prevent double scrollbars
 `
 
 const ToggleButton = styled.button<{ $isOpen: boolean }>`
@@ -30,14 +28,30 @@ const ToggleButton = styled.button<{ $isOpen: boolean }>`
 
   svg {
     transform: rotate(${props => props.$isOpen ? '180deg' : '0deg'});
-    transition: transform 0.2s ease;
+    transition: transform 0.3s ease;
   }
 `
 
 const TableContainer = styled.div<{ $isOpen: boolean }>`
   flex: 1;
-  overflow-y: auto;
-  transition: all 0.3s ease;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: ${props => props.$isOpen ? '100%' : '0'};
+  transition: max-height 0.3s ease;
+  
+  /* Make table header sticky */
+  thead th {
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    z-index: 1;
+  }
+`
+
+const TableScroller = styled.div`
+  flex: 1;
+  overflow: auto;
 `
 
 const Table = styled.table`
@@ -49,20 +63,15 @@ const Table = styled.table`
     padding: 6px 12px;
     text-align: left;
     border-bottom: 1px solid #eee;
+    white-space: nowrap;
   }
 
-  th {
-    background: #f8f9fa;
-    font-weight: 500;
-    color: #495057;
-  }
-
-  tr:last-child td {
-    border-bottom: none;
-  }
-
-  tbody tr:hover {
-    background: #f8f9fa;
+  /* Optional: fixed first column */
+  th:first-child, td:first-child {
+    position: sticky;
+    left: 0;
+    background: inherit;
+    z-index: 2;
   }
 `
 
@@ -110,25 +119,27 @@ export const ChartFooter = ({ data }: ChartFooterProps) => {
         </span>
       </ToggleButton>
       <TableContainer $isOpen={isOpen}>
-        <Table>
-          <thead>
-            <tr>
-              {columns.map(col => (
-                <th key={col}>{col}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.slice(0, 10).map((row, i) => (
-              <tr key={i}>
+        <TableScroller>
+          <Table>
+            <thead>
+              <tr>
                 {columns.map(col => (
-                  <td key={col}>{formatValue(row[col])}</td>
+                  <th key={col}>{col}</th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </Table>
+            </thead>
+            <tbody>
+              {data.slice(0, 10).map((row, i) => (
+                <tr key={i}>
+                  {columns.map(col => (
+                    <td key={col}>{formatValue(row[col])}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </TableScroller>
       </TableContainer>
     </FooterContainer>
-  )
-} 
+  );
+};

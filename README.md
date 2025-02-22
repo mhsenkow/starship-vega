@@ -1,90 +1,95 @@
 # Vega Gallery
-<img width="1289" alt="image" src="https://github.com/user-attachments/assets/9ce72547-2b47-411a-bf95-f23b00e2548a" />
 
+A comprehensive data exploration and visualization platform with three interconnected modes, each providing contextual awareness and AI-powered recommendations to guide your data journey.
 
-An interactive gallery and playground for Vega-Lite visualizations with real-time visual editing capabilities.
+## 🔄 Three Modes
 
-## ✨ Features
+### 🗃️ Data Curation Mode
+- Main workspace: Data transformation and cleaning tools
+- ✅ Side Panels:
+  - 📊 Visualization Suggestions
+    - AI-recommended chart types based on data patterns
+    - Smart preview thumbnails
+    - Auto-generated example visualizations
+  - 📋 Data Lineage
+    - Transformation history
+    - Source tracking
+    - Impact analysis
+  - 🔍 Data Profile & Recommendations
+    - Column statistics
+    - Quality metrics
+    - AI-suggested improvements:
+      - "This column has outliers - consider cleaning"
+      - "These columns often appear together in visualizations"
+      - "Adding a calculated field here could reveal trends"
+- 🤖 Smart Recommendations:
+  - Automated data cleaning suggestions
+  - Common transformation patterns
+  - Schema optimization ideas
+  - Data quality improvements
+  - Related dataset suggestions
 
-### Gallery View
-- ✅ Responsive 3-column grid layout with chart cards
-- ✅ Advanced filtering system:
-  - Category filters (Statistical, Time Series, Hierarchical, Correlation, Part-to-Whole)
-  - Complexity filters (Beginner, Intermediate, Advanced)
-  - Search functionality with keywords
-  - Smart sorting by category and complexity
-- ✅ Interactive chart previews
-- ✅ Consistent 300x180 chart previews
+### 🎨 Visualization Design Mode
+- Main workspace: Chart creation and customization
+- ✅ Side Panels:
+  - 📁 Available Datasets
+    - Smart data source suggestions
+    - AI-recommended transformations
+    - Quick actions based on common patterns
+  - 📈 Chart Gallery & Insights
+    - AI-generated visualization alternatives
+    - "This chart type works well with your data because..."
+    - "Consider adding these encodings to show..."
+    - Similar charts from community
+  - 📱 Usage Context
+    - Recommended dashboard placements
+    - Common usage patterns
+    - Optimization suggestions
+- 🤖 Smart Recommendations:
+  - Encoding suggestions based on data types
+  - Color palette recommendations
+  - Layout optimization tips
+  - Accessibility improvements
+  - Interactive feature suggestions
 
-### Editor View
-- ✅ Three-mode editor:
-  - Visual Editor: No-code chart configuration
-  - Style Editor: Detailed visual customization
-  - Code Editor: Direct JSON specification editing
-- ✅ Live preview with automatic updates
-- ✅ Responsive chart rendering
-- ✅ Error handling for invalid specifications
-- ✅ Dataset compatibility checking
+### 📊 Dashboard Composition Mode
+- Main workspace: Layout and interaction design
+- 🔄 Side Panels:
+  - 📊 Smart Chart Library
+    - AI-curated visualization suggestions
+    - "These charts tell a coherent story"
+    - Compatibility scoring
+  - 🔄 Data Insights
+    - Automated data refresh recommendations
+    - Schema change impact analysis
+    - Data freshness monitoring
+  - 🎯 Interaction Suggestions
+    - "Users often filter these charts together"
+    - "This drill-down path is popular"
+    - Recommended filter combinations
+- 🤖 Smart Recommendations:
+  - Layout optimization suggestions
+  - Interactive pattern recommendations
+  - Cross-filtering suggestions
+  - User flow improvements
+  - Performance optimization tips
 
-### Visualization Types
-- ✅ Statistical Charts:
-  - Scatter plots
-  - Bar charts (Simple, Grouped, Stacked)
-  - Box plots
-  - Violin plots
-  - Histograms with KDE
-  - Q-Q plots
-  - Error bars
-  - Correlation heatmaps
-- ✅ Time Series:
-  - Line charts
-  - Area charts
-  - Stream graphs
-  - Radial plots
-  - Interactive multi-line
-- ✅ Hierarchical:
-  - Treemaps
-  - Sunburst charts
-  - Force-directed graphs
-  - Chord diagrams
-- ✅ Part-to-Whole:
-  - Pie charts
-  - Waffle charts
-- ✅ Specialized:
-  - Heat maps
-  - Bullet charts
-  - Connected scatter plots
-
-### Chart Customization
-- ✅ Dataset selection with compatibility checks
-- ✅ Mark type switching with automatic encoding suggestions
-- ✅ Visual controls for:
-  - Chart dimensions and layout
-  - Colors and opacity
-  - Fonts and typography
-  - Axes and grid styling
-  - Legend configuration
-
-### Data Management
-- ✅ Built-in sample datasets
-- ✅ Custom data upload support:
-  - JSON and CSV formats
-  - Automatic data type detection
-  - Dataset-chart compatibility checking
-- ✅ Smart encoding suggestions
-- ✅ Interactive data preview
+## 🔄 Mode Integration
+- Context-aware mode switching
+- AI-guided workflows:
+  - "Your data would work well in these charts..."
+  - "This chart would fit nicely in dashboard X..."
+  - "Users who transformed data this way also..."
+- Smart relationship suggestions
+- Automated task suggestions
+- Learning from usage patterns
 
 ## 🚀 Getting Started
 
 1. Clone the repository
-2. Install dependencies:
-npm install
-
-3. Start the development server:
-npm start
-
-4. Open your browser and navigate to:
-http://localhost:5173/ 
+2. Install dependencies: `npm install`
+3. Start the development server: `npm run dev`
+4. Open: `http://localhost:5173/`
 
 ## 🛠 Tech Stack
 - React 19
@@ -94,104 +99,52 @@ http://localhost:5173/
 - Styled Components
 - Vite
 
-## 📝 Implementation Details
+## 🎯 Roadmap
 
-### Rendering System
-- SVG-based rendering for crisp visuals
-- Dual-mode rendering:
-  - Fixed dimensions (300x180) for gallery
-  - Container-responsive for editor
-- Optimized performance with smart re-rendering
+### Phase 1: Data Curation (Q2 2024)
+- [ ] Data transformation workspace
+  - Visual transformation builder
+  - Data quality tools
+  - Validation rules
+- [ ] Data source connections
+  - Database integrations
+  - API connectors
+  - Real-time streams
 
-### Styling
-- IBM Plex Sans for UI
-- IBM Plex Mono for code
-- Consistent color scheme and spacing
-- Responsive layout breakpoints
-- Customizable chart themes
+### Phase 2: Enhanced Visualization (Q3 2024)
+- [ ] Advanced chart types
+  - Geographic visualizations
+  - Custom chart templates
+  - Animation support
+- [ ] Enhanced interactions
+  - Cross-filtering
+  - Drill-down flows
+  - Custom events
 
-### Data Management
-- Built-in sample datasets
-- Automatic data type detection
-- Smart encoding suggestions
-- Dataset-chart compatibility checking
-- Support for multiple data formats
+### Phase 3: Dashboard Builder (Q4 2024)
+- [ ] Layout system
+  - Grid-based composition
+  - Responsive layouts
+  - Component library
+- [ ] Interaction system
+  - Event handling
+  - State management
+  - Data flow control
 
-## 🎯 Roadmap & TODOs
+### Phase 4: Integration & AI (Q1 2025)
+- [ ] Advanced AI Features
+  - Personalized recommendations
+  - Pattern recognition
+  - Usage analytics
+  - Automated insights
+- [ ] Smart Assistance
+  - Contextual help
+  - Guided workflows
+  - Best practice suggestions
+  - Performance optimization
 
-### Phase 1: Enhanced Visualization (Q2 2024)
-- [ ] Geographic visualizations
-  - Maps with data overlays
-  - Choropleth maps
-  - Point maps with clustering
-- [ ] Advanced interactions
-  - Cross-filtering between charts
-  - Drill-down capabilities
-  - Custom interaction builders
-- [ ] Animation system
-  - Transition animations
-  - Time-based animations
-  - Interactive playback controls
-- [ ] Fix: Implement missing chart types in `/src/charts/distribution/index.ts`
-- [ ] Fix: Complete implementation of violin plots and KDE histograms
-- [ ] Fix: Add error handling for invalid chart specifications
+## 📄 License
 
-### Phase 2: Data Management (Q3 2024)
-- [ ] Advanced data sources
-  - Database connections
-  - REST API integration
-  - Real-time data streaming
-- [ ] Data transformation
-  - Visual data transformation builder
-  - Custom formula support
-  - Aggregation functions
-  - Data cleaning tools
-- [ ] Fix: Complete data validation in DatasetSelector component
-- [ ] Fix: Implement proper error boundaries for data loading
-- [ ] Fix: Add data type inference for CSV uploads
-
-### Phase 3: Collaboration (Q4 2024)
-- [ ] User management
-  - User accounts
-  - Team workspaces
-  - Access control
-- [ ] Sharing capabilities
-  - Public/private charts
-  - Embeddable visualizations
-  - Export to multiple formats
-- [ ] Version control
-  - Chart version history
-  - Collaborative editing
-  - Change tracking
-- [ ] Fix: Implement missing export functionality
-- [ ] Fix: Add proper state management for user sessions
-
-### Phase 4: Enterprise Features (Q1 2025)
-- [ ] Dashboard builder
-  - Multi-chart layouts
-  - Interactive dashboard filters
-  - Real-time updates
-- [ ] Advanced analytics
-  - Statistical analysis tools
-  - Trend detection
-  - Anomaly highlighting
-- [ ] Integration capabilities
-  - API for external tools
-  - Plugin system
-  - Custom extensions
-- [ ] Fix: Complete implementation of chart interactivity
-- [ ] Fix: Add proper TypeScript types for all chart configurations
-
-### Immediate TODOs
-1. Fix empty distribution charts implementation
-2. Complete missing chart type definitions
-3. Implement proper error handling in chart renderer
-4. Add validation for dataset compatibility
-5. Complete style editor functionality
-6. Add proper TypeScript types for chart configurations
-7. Implement missing chart interactions
-8. Add tests for core components
-9. Fix responsive layout issues
-10. Complete documentation for all components
+This project is open source and available under the MIT License.
 
 Meta isn't allowed to use this but anyone else, feel free. 

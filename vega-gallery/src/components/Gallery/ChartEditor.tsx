@@ -9,11 +9,6 @@ export const ChartEditor: React.FC = () => {
   const [encoding, setEncoding] = useState<ChartEncoding | null>(null);
 
   const handleEncodingChange = (newEncoding: ChartEncoding | null) => {
-    // Randomly change chart type 30% of the time when encoding changes
-    if (Math.random() > 0.7) {
-      const chartTypes: MarkType[] = ['bar', 'point', 'line', 'area'];
-      setChartType(chartTypes[Math.floor(Math.random() * chartTypes.length)]);
-    }
     setEncoding(newEncoding);
   };
 

@@ -1,62 +1,31 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import styled from 'styled-components';
-
-const ErrorContainer = styled.div`
-  padding: 16px;
-  border: 1px solid ${props => props.theme.colors.error};
-  border-radius: 8px;
-  background: ${props => props.theme.colors.errorBg};
-  color: ${props => props.theme.colors.error};
-`;
-
-const ErrorMessage = styled.p`
-  margin: 0 0 8px 0;
-  font-weight: 500;
-`;
-
-const ErrorDetails = styled.pre`
-  margin: 0;
-  font-size: 12px;
-  white-space: pre-wrap;
-`;
+import React from 'react';
 
 interface Props {
-  children: ReactNode;
-  fallback?: ReactNode;
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
 }
 
 interface State {
   hasError: boolean;
-  error: Error | null;
+  error?: Error;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null
-  };
+export class ErrorBoundary extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
-  public static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
-  }
-
-  public render() {
+  render() {
     if (this.state.hasError) {
-      if (this.props.fallback) {
-        return this.props.fallback;
-      }
-
-      return (
-        <ErrorContainer>
-          <ErrorMessage>Something went wrong</ErrorMessage>
-          {this.state.error && (
-            <ErrorDetails>{this.state.error.message}</ErrorDetails>
-          )}
-        </ErrorContainer>
+      return this.props.fallback || (
+        <div style={{ padding: '1rem', color: '#dc3545' }}>
+          Something went wrong rendering this component.
+        </div>
       );
     }
 

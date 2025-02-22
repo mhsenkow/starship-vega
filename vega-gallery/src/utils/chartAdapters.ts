@@ -1,11 +1,3 @@
-/**
- * Chart specification transformation utilities
- * - Converts between different chart formats
- * - Generates random encodings for exploration
- * - Handles chart type compatibility
- * Used by: VisualEditor, GalleryGrid
- */
-
 import { MarkType, ChartEncoding } from '../types/vega';
 import { DatasetMetadata } from '../types/dataset';
 import { detectDataTypes } from './dataUtils';
@@ -208,117 +200,186 @@ const timeUnits = ['year', 'month', 'day', 'hour', 'minute'] as const;
 const scaleTypes = ['linear', 'log', 'sqrt', 'pow'] as const;
 const stackTypes = ['zero', 'normalize', 'center', null] as const;
 
-function generateRandomEncoding(availableFields: string[]): VegaChartEncoding {
-  const channels = ['x', 'y', 'color', 'size', 'shape', 'strokeWidth'];
-  const newEncoding: VegaChartEncoding = {};
-  let remainingFields = [...availableFields];
+// Add these helper functions at the top
+const analyzeField = (field: string, values: any[]) => {
+  const uniqueValues = new Set(values.map(v => v[field])).size;
+  const isNumeric = values.every(v => !isNaN(Number(v[field])));
+  const isTemporal = values.some(v => !isNaN(Date.parse(v[field])));
+  const uniqueRatio = uniqueValues / values.length;
 
-  // Helper function to get random array element
-  const randomChoice = <T>(arr: readonly T[]): T => 
-    arr[Math.floor(Math.random() * arr.length)];
-
-  // Helper function to generate random encoding field
-  const generateEncodingField = (channel: string, field: string): EncodingField => {
-    const baseEncoding: EncodingField = {
-      field,
-      type: getRandomType(channel)
-    };
-
-    // Random chance to add various encoding properties
-    if (Math.random() > 0.5) {
-      baseEncoding.aggregate = randomChoice(aggregateMethods);
-    }
-
-    if (Math.random() > 0.6) {
-      baseEncoding.scale = {
-        zero: Math.random() > 0.5,
-        type: randomChoice(scaleTypes)
-      };
-
-      // Add range for size and strokeWidth
-      if (channel === 'size') {
-        baseEncoding.scale.range = [50, 1000];
-      } else if (channel === 'strokeWidth') {
-        baseEncoding.scale.range = [0.5, 4];
-      }
-    }
-
-    if (Math.random() > 0.7) {
-      baseEncoding.sort = Math.random() > 0.5 ? 'ascending' : 'descending';
-    }
-
-    if (channel === 'x' || channel === 'y') {
-      if (Math.random() > 0.8) {
-        baseEncoding.stack = randomChoice(stackTypes);
-      }
-      
-      if (Math.random() > 0.8) {
-        baseEncoding.bin = Math.random() > 0.5 ? true : {
-          maxbins: Math.floor(Math.random() * 20) + 10
-        };
-      }
-    }
-
-    if (Math.random() > 0.7) {
-      baseEncoding.timeUnit = randomChoice(timeUnits);
-    }
-
-    return baseEncoding;
+  return {
+    uniqueValues,
+    uniqueRatio,
+    isNumeric,
+    isTemporal,
+    cardinality: uniqueValues
   };
+};
 
-  // Helper function to determine type based on channel
-  const getRandomType = (channel: string): string => {
-    switch (channel) {
-      case 'color':
-      case 'shape':
-        return Math.random() > 0.5 ? 'nominal' : 'ordinal';
-      case 'size':
-      case 'strokeWidth':
-        return 'quantitative';
-      default:
-        return Math.random() > 0.7 ? 'nominal' : 'quantitative';
+const getBestEncodingForField = (
+  field: string, 
+  values: any[], 
+  usedEncodings: Set<string>
+): { channel: string; encoding: EncodingField } | null => {
+  const analysis = analyzeField(field, values);
+  
+  // Prioritize encodings based on data characteristics
+  const possibilities: Array<{
+    channel: string;
+    score: number;
+    encoding: EncodingField;
+  }> = [];
+
+  // X-axis possibilities
+  if (!usedEncodings.has('x')) {
+    if (analysis.isTemporal) {
+      possibilities.push({
+        channel: 'x',
+        score: 0.9,
+        encoding: {
+          field,
+          type: 'temporal',
+          scale: { type: 'time' }
+        }
+      });
+    } else if (analysis.isNumeric) {
+      possibilities.push({
+        channel: 'x',
+        score: 0.8,
+        encoding: {
+          field,
+          type: 'quantitative',
+          scale: { zero: true }
+        }
+      });
     }
-  };
-
-  // Assign channels
-  channels.forEach(channel => {
-    if (Math.random() > 0.3 && remainingFields.length > 0) {
-      const randomIndex = Math.floor(Math.random() * remainingFields.length);
-      const field = remainingFields[randomIndex];
-      newEncoding[channel] = generateEncodingField(channel, field);
-      remainingFields = remainingFields.filter(f => f !== field);
-    }
-  });
-
-  // Ensure at least x or y is assigned
-  if (!newEncoding.x && !newEncoding.y && remainingFields.length > 0) {
-    const channel = Math.random() > 0.5 ? 'x' : 'y';
-    const randomIndex = Math.floor(Math.random() * remainingFields.length);
-    newEncoding[channel] = generateEncodingField(channel, remainingFields[randomIndex]);
   }
 
-  // Add tooltips
-  const tooltipFields = availableFields
-    .slice(0, Math.min(4, availableFields.length))
+  // Y-axis possibilities
+  if (!usedEncodings.has('y')) {
+    if (analysis.isNumeric) {
+      possibilities.push({
+        channel: 'y',
+        score: 0.9,
+        encoding: {
+          field,
+          type: 'quantitative',
+          scale: { zero: true }
+        }
+      });
+    }
+  }
+
+  // Color encoding for categorical data
+  if (!usedEncodings.has('color') && analysis.uniqueRatio < 0.3) {
+    possibilities.push({
+      channel: 'color',
+      score: 0.7,
+      encoding: {
+        field,
+        type: 'nominal'
+      }
+    });
+  }
+
+  // Size encoding for numeric data
+  if (!usedEncodings.has('size') && analysis.isNumeric) {
+    possibilities.push({
+      channel: 'size',
+      score: 0.6,
+      encoding: {
+        field,
+        type: 'quantitative',
+        scale: { range: [50, 300] }
+      }
+    });
+  }
+
+  // Shape encoding for low-cardinality categorical data
+  if (!usedEncodings.has('shape') && analysis.uniqueValues <= 6) {
+    possibilities.push({
+      channel: 'shape',
+      score: 0.5,
+      encoding: {
+        field,
+        type: 'nominal'
+      }
+    });
+  }
+
+  // Sort by score and add some randomness
+  possibilities.sort((a, b) => b.score - a.score);
+  const randomIndex = Math.floor(Math.random() * Math.min(3, possibilities.length));
+  const selected = possibilities[randomIndex];
+
+  return selected ? { channel: selected.channel, encoding: selected.encoding } : null;
+};
+
+export const generateRandomEncoding = (fields: string[], values: any[]): ChartEncoding => {
+  const encoding: ChartEncoding = {};
+  const usedFields = new Set<string>();
+
+  // Shuffle fields for randomness
+  const shuffledFields = [...fields].sort(() => Math.random() - 0.5);
+
+  // Always try to assign x and y first
+  const xField = shuffledFields.find(field => !usedFields.has(field));
+  if (xField) {
+    encoding.x = {
+      field: xField,
+      type: getAppropriateType('x', xField, values)
+    };
+    usedFields.add(xField);
+  }
+
+  const yField = shuffledFields.find(field => !usedFields.has(field));
+  if (yField) {
+    encoding.y = {
+      field: yField,
+      type: getAppropriateType('y', yField, values)
+    };
+    usedFields.add(yField);
+  }
+
+  // Try to add color encoding if we have more fields
+  const colorField = shuffledFields.find(field => !usedFields.has(field));
+  if (colorField) {
+    encoding.color = {
+      field: colorField,
+      type: getAppropriateType('color', colorField, values)
+    };
+    usedFields.add(colorField);
+  }
+
+  // Add tooltip with remaining fields
+  encoding.tooltip = shuffledFields
+    .slice(0, Math.min(4, shuffledFields.length))
     .map(field => ({
       field,
-      type: Math.random() > 0.5 ? 'quantitative' : 'nominal',
-      format: '.2f'
+      type: getAppropriateType('tooltip', field, values)
     }));
 
-  if (tooltipFields.length > 0) {
-    newEncoding.tooltip = tooltipFields;
-  }
+  return encoding;
+};
 
-  // Add order for temporal data
-  if (Math.random() > 0.7 && remainingFields.length > 0) {
-    newEncoding.order = generateEncodingField('order', remainingFields[0]);
-  }
+// Helper function to determine appropriate encoding type
+const getAppropriateType = (channel: string, field: string, values: any[]): string => {
+  const isNumeric = values.every(v => !isNaN(Number(v[field])));
+  const isDate = values.some(v => !isNaN(Date.parse(v[field])));
+  const uniqueValues = new Set(values.map(v => v[field])).size;
+  const uniqueRatio = uniqueValues / values.length;
 
-  return newEncoding;
-}
+  if (channel === 'y' && isNumeric) return 'quantitative';
+  if (channel === 'x' && isDate) return 'temporal';
+  if (channel === 'x' && isNumeric && uniqueRatio > 0.7) return 'quantitative';
+  if (channel === 'color' && uniqueRatio < 0.3) return 'nominal';
+  if (isNumeric && uniqueRatio > 0.7) return 'quantitative';
+  if (isDate) return 'temporal';
+  return 'nominal';
+};
 
-export { generateRandomEncoding };
+// Helper function for random choice
+const randomChoice = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
 // Add TypeScript interface for better type safety
 export interface ChartEncoding {

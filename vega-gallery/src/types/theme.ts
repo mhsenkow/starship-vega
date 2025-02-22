@@ -1,55 +1,13 @@
-import { ChartStyle } from './chart';
+import styled from 'styled-components';
 
-export interface ChartColors {
-  primary: string;
-  secondary: string;
-  background: string;
-}
+export const breakpoints = {
+  sm: '576px',
+  md: '768px',
+  lg: '992px',
+  xl: '1200px'
+} as const;
 
-export interface ChartMarks {
-  opacity: number;
-  stroke: string;
-  strokeWidth: number;
-  blend: string;
-}
-
-export interface ChartView {
-  padding: number;
-  backgroundColor?: string;
-  backgroundOpacity?: number;
-}
-
-export interface ChartStyle {
-  colors: ChartColors;
-  marks: ChartMarks;
-  view: ChartView;
-}
-
-export interface AppTheme {
-  colors: {
-    primary: string;
-    border: string;
-    surface: string;
-    background: string;
-  };
-  text: {
-    primary: string;
-    secondary: string;
-  };
-  borderRadius: {
-    sm: string;
-    md: string;
-    lg: string;
-  };
-}
-
-// Combined theme that includes both app and chart styling
-export interface Theme extends AppTheme {
-  chart: ChartStyle;
-}
-
-// Default theme with both app and chart styles
-export const theme: Theme = {
+export const theme = {
   colors: {
     primary: '#4dabf7',
     border: '#e9ecef',
@@ -65,21 +23,27 @@ export const theme: Theme = {
     md: '6px',
     lg: '8px'
   },
-  chart: {
-    colors: {
-      primary: '#4C78A8',
-      secondary: '#72B7B2',
-      background: 'white'
-    },
-    marks: {
-      opacity: 0.6,
-      stroke: 'white',
-      strokeWidth: 1,
-      blend: 'multiply'
-    },
-    view: {
-      padding: 20,
-      backgroundColor: 'white'
-    }
+  media: {
+    sm: `@media (min-width: ${breakpoints.sm})`,
+    md: `@media (min-width: ${breakpoints.md})`,
+    lg: `@media (min-width: ${breakpoints.lg})`,
+    xl: `@media (min-width: ${breakpoints.xl})`
   }
-};
+}
+
+export type Theme = typeof theme
+
+// Add mobile layout for smaller screens
+const Container = styled.div`
+  ${props => props.theme.media.sm} {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+  }
+
+  ${props => props.theme.media.md} {
+    display: grid;
+    grid-template-columns: minmax(320px, 400px) 1fr;
+    height: calc(100vh - 80px);
+  }
+`;
