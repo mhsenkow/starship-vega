@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import styled from 'styled-components'
 import { renderVegaLite } from '../../utils/chartRenderer'
 import { ChartFooter } from './ChartFooter'
-import { MarkType } from '../../types/vega'
+import { TopLevelSpec } from 'vega-lite'
 
 const PreviewContainer = styled.div`
   display: flex;
@@ -16,16 +16,12 @@ const ChartContainer = styled.div<{ $height: number }>`
   min-height: 200px;
   position: relative;
   padding-bottom: 6px;
+  width: 100%;
   
   /* Make the Vega chart responsive */
   .vega-embed {
-    width: 100%;
-    height: 100%;
-    
-    .marks {
-      width: 100% !important;
-      height: 100% !important;
-    }
+    width: 100% !important;
+    height: 100% !important;
   }
 `
 
@@ -80,16 +76,56 @@ const ResizeHandle = styled.div`
     background: ${props => props.theme.colors.primary};
     transform: scaleY(1.5);
   }
-
-  &:hover::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.05);
-  }
 `
+
+interface AspectRatio {
+  name: string;
+  width: number;
+  height: number;
+  description: string;
+}
+
+const ASPECT_RATIOS: AspectRatio[] = [
+  { name: 'Free', width: 0, height: 0, description: 'Freely resizable' },
+  { name: 'Square', width: 1, height: 1, description: 'Instagram, Facebook' },
+  { name: '16:9', width: 16, height: 9, description: 'YouTube, Twitter' },
+  { name: '4:5', width: 4, height: 5, description: 'Instagram Feed' },
+  { name: '9:16', width: 9, height: 16, description: 'Instagram Stories, TikTok' },
+  { name: '1.91:1', width: 1910, height: 1000, description: 'Facebook Feed' },
+  { name: '3:2', width: 3, height: 2, description: 'LinkedIn' },
+  { name: '2.35:1', width: 2350, height: 1000, description: 'Twitter Card' },
+];
+
+const AspectRatioControl = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  overflow-x: auto;
+`;
+
+const RatioButton = styled.button<{ $active: boolean }>`
+  padding: 6px 12px;
+  border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
+  border-radius: 4px;
+  background: ${props => props.$active ? `${props.theme.colors.primary}10` : 'white'};
+  color: ${props => props.$active ? props.theme.colors.primary : props.theme.text.primary};
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 0.9rem;
+
+  &:hover {
+    border-color: ${props => props.theme.colors.primary};
+  }
+
+  .description {
+    font-size: 0.8rem;
+    color: ${props => props.theme.text.secondary};
+    margin-top: 2px;
+  }
+`;
 
 interface PreviewProps {
   spec: string | TopLevelSpec;
@@ -101,85 +137,62 @@ export const Preview = ({ spec }: PreviewProps) => {
   const [data, setData] = useState<any[]>([])
   const [chartHeight, setChartHeight] = useState(400)
   const [isDragging, setIsDragging] = useState(false)
-  const [markType, setMarkType] = useState<MarkType>('point')
-  const [encodings, setEncodings] = useState<Record<string, any>>({})
-  
-  // Keep drag state in ref
-  const dragState = useRef({
-    startY: 0,
-    startHeight: 0
-  })
+  const dragRef = useRef({ startY: 0, startHeight: 0 })
+  const [selectedRatio, setSelectedRatio] = useState<AspectRatio>(ASPECT_RATIOS[0])
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault()
     setIsDragging(true)
-    dragState.current = {
+    dragRef.current = {
       startY: e.clientY,
       startHeight: chartHeight
     }
     document.body.style.cursor = 'ns-resize'
-    document.body.style.userSelect = 'none'
   }
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging) return
-
-    const deltaY = e.clientY - dragState.current.startY
-    const newHeight = Math.max(200, Math.min(
-      window.innerHeight - 300,
-      dragState.current.startHeight + deltaY
-    ))
-    
-    setChartHeight(newHeight)
-  }, [isDragging])
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false)
-    document.body.style.cursor = ''
-    document.body.style.userSelect = ''
-  }, [])
-
-  // Use isDragging state in effect dependencies
   useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return
+
+      const delta = e.clientY - dragRef.current.startY
+      const newHeight = Math.max(200, Math.min(800, dragRef.current.startHeight + delta))
+      setChartHeight(newHeight)
+      
+      // Trigger immediate chart resize
+      requestAnimationFrame(() => {
+        renderChart()
+      })
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false)
+      document.body.style.cursor = ''
+    }
+
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove)
       window.addEventListener('mouseup', handleMouseUp)
-    } else {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
     }
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [isDragging, handleMouseMove, handleMouseUp])
+  }, [isDragging])
 
-  // Define renderChart first
-  const renderChart = async () => {
+  const renderChart = useCallback(async () => {
     try {
       const parsedSpec = typeof spec === 'string' ? JSON.parse(spec) : spec;
       
-      // Create a complete valid spec with defaults
       const validSpec = {
         $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+        ...parsedSpec,
         width: 'container',
-        height: 300,
-        mark: parsedSpec.mark || { type: 'point', filled: true },
-        data: parsedSpec.data || { values: [] },
-        encoding: parsedSpec.encoding || {},
-        transform: parsedSpec.transform,
-        config: {
-          ...parsedSpec.config,
-          mark: {
-            filled: true,
-            ...parsedSpec.config?.mark
-          },
-          view: {
-            continuousWidth: true,
-            continuousHeight: true,
-            ...parsedSpec.config?.view
-          }
+        height: 'container',
+        autosize: {
+          type: 'fit',
+          contains: 'padding',
+          resize: true
         }
       };
 
@@ -192,73 +205,84 @@ export const Preview = ({ spec }: PreviewProps) => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to render chart');
     }
-  };
+  }, [spec]);
 
-  // Render chart when spec changes
+  // Initial render
   useEffect(() => {
-    renderChart()
-  }, [spec])
+    renderChart();
+  }, [renderChart]);
 
-  // Render chart when height changes
+  // Handle resize
   useEffect(() => {
-    renderChart()
-  }, [chartHeight])
+    const observer = new ResizeObserver(() => {
+      requestAnimationFrame(() => {
+        renderChart();
+      });
+    });
 
-  // Add effect to get mark type from spec
-  useEffect(() => {
-    try {
-      const parsedSpec = typeof spec === 'string' ? JSON.parse(spec) : spec;
-      const mark = parsedSpec.mark
-      setMarkType(typeof mark === 'string' ? mark : mark.type)
-      setEncodings(parsedSpec.encoding || {})
-    } catch (err) {
-      console.error('Failed to parse spec:', err)
+    if (chartRef.current) {
+      observer.observe(chartRef.current);
     }
-  }, [spec])
 
-  // Add handler for encoding changes
-  const handleEncodingChange = (channel: string, field: string) => {
-    const newEncodings = {
-      ...encodings,
-      [channel]: field ? { field, type: 'quantitative' } : undefined
-    }
-    setEncodings(newEncodings)
+    return () => observer.disconnect();
+  }, [renderChart]);
+
+  const updateHeightForRatio = useCallback(() => {
+    if (selectedRatio.width === 0 || !containerRef.current) return;
     
-    // Update spec with new encodings
-    try {
-      const parsedSpec = typeof spec === 'string' ? JSON.parse(spec) : spec;
-      const updatedSpec = {
-        ...parsedSpec,
-        encoding: newEncodings
-      }
-      // Call parent update function or handle spec update
-    } catch (err) {
-      console.error('Failed to update encodings:', err)
+    const containerWidth = containerRef.current.clientWidth;
+    const newHeight = (containerWidth * selectedRatio.height) / selectedRatio.width;
+    setChartHeight(Math.min(1200, Math.max(200, newHeight)));
+  }, [selectedRatio]);
+
+  useEffect(() => {
+    if (selectedRatio.width > 0) {
+      updateHeightForRatio();
     }
-  }
+  }, [selectedRatio, updateHeightForRatio]);
+
+  useEffect(() => {
+    if (selectedRatio.width === 0) return;
+
+    const handleResize = () => {
+      updateHeightForRatio();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [selectedRatio, updateHeightForRatio]);
 
   return (
-    <PreviewContainer>
+    <PreviewContainer ref={containerRef}>
+      <AspectRatioControl>
+        {ASPECT_RATIOS.map((ratio) => (
+          <RatioButton
+            key={ratio.name}
+            $active={selectedRatio.name === ratio.name}
+            onClick={() => setSelectedRatio(ratio)}
+            title={ratio.description}
+          >
+            <div>{ratio.name}</div>
+            <div className="description">{ratio.description}</div>
+          </RatioButton>
+        ))}
+      </AspectRatioControl>
       <ChartContainer ref={chartRef} $height={chartHeight}>
         <div style={{ width: '100%', height: '100%' }} />
       </ChartContainer>
       {error && <ErrorMessage>{error}</ErrorMessage>}
-      <ResizeHandle 
-        onMouseDown={handleMouseDown}
-        onTouchStart={(e) => {
-          e.preventDefault()
-          const touch = e.touches[0]
-          handleMouseDown({ clientY: touch.clientY } as any)
-        }}
-      />
-      <DataContainer>
-        <ChartFooter 
-          data={data}
-          markType={markType}
-          currentEncodings={encodings}
-          onEncodingChange={handleEncodingChange}
+      {selectedRatio.width === 0 && (
+        <ResizeHandle 
+          onMouseDown={handleMouseDown}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            handleMouseDown({ clientY: e.touches[0].clientY } as React.MouseEvent);
+          }}
         />
+      )}
+      <DataContainer>
+        <ChartFooter data={data} />
       </DataContainer>
     </PreviewContainer>
-  )
-}
+  );
+};
