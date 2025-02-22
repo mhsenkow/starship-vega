@@ -501,5 +501,17 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       volume: Math.round(Math.random() * 1000),
       sentiment: Math.round(Math.random() * 5 * 10) / 10
     }))
+  },
+  newDatasetType: {
+    id: 'new-dataset-id',
+    name: 'New Dataset Name',
+    description: 'Description of the dataset',
+    type: 'categorical',
+    compatibleCharts: ['bar', 'line', 'your-new-chart-type'],
+    values: [
+      { x: 10, y: 20, category: 'A' },
+      { x: 15, y: 25, category: 'B' },
+      { x: 20, y: 30, category: 'C' }
+    ]
   }
 } 

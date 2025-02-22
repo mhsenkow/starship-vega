@@ -119,6 +119,16 @@ export const determineChartEncodings = (
 
     // Add more chart types as needed...
 
+    case 'your-new-chart-type':
+      return {
+        x: quantitativeFields[0] ? 
+          { field: quantitativeFields[0], type: 'quantitative' } : undefined,
+        y: quantitativeFields[1] ? 
+          { field: quantitativeFields[1], type: 'quantitative' } : undefined,
+        color: categoricalFields.length ? 
+          { field: categoricalFields[0], type: 'nominal' } : undefined
+      };
+
     default:
       return {};
   }
@@ -315,67 +325,138 @@ const getBestEncodingForField = (
   return selected ? { channel: selected.channel, encoding: selected.encoding } : null;
 };
 
-export const generateRandomEncoding = (fields: string[], values: any[]): ChartEncoding => {
+// Add this mapping of available encodings by mark type
+const AVAILABLE_ENCODINGS_BY_MARK = {
+  bar: {
+    required: ['x', 'y'],
+    optional: ['color', 'opacity', 'size', 'tooltip']
+  },
+  line: {
+    required: ['x', 'y'],
+    optional: ['color', 'strokeWidth', 'opacity', 'tooltip', 'order']
+  },
+  point: {
+    required: ['x', 'y'],
+    optional: ['color', 'size', 'shape', 'opacity', 'tooltip']
+  },
+  circle: {
+    required: ['x', 'y'],
+    optional: ['color', 'size', 'opacity', 'tooltip']
+  },
+  area: {
+    required: ['x', 'y'],
+    optional: ['color', 'opacity', 'tooltip', 'order']
+  },
+  text: {
+    required: ['text'],
+    optional: ['x', 'y', 'color', 'size', 'angle', 'opacity', 'tooltip']
+  },
+  arc: {
+    required: ['theta'],
+    optional: ['radius', 'color', 'opacity', 'tooltip']
+  }
+} as const;
+
+export const generateRandomEncoding = (
+  markType: string, 
+  fields: string[], 
+  dataTypes: Record<string, string>
+): ChartEncoding => {
   const encoding: ChartEncoding = {};
   const usedFields = new Set<string>();
+  
+  const availableEncodings = AVAILABLE_ENCODINGS_BY_MARK[markType as keyof typeof AVAILABLE_ENCODINGS_BY_MARK] || {
+    required: [],
+    optional: ['x', 'y', 'color']
+  };
 
-  // Shuffle fields for randomness
-  const shuffledFields = [...fields].sort(() => Math.random() - 0.5);
+  // Helper to get appropriate fields for encoding type
+  const getCompatibleFields = (encodingChannel: string) => {
+    return fields.filter(field => {
+      const type = dataTypes[field];
+      switch (encodingChannel) {
+        case 'x':
+        case 'y':
+          return type === 'quantitative' || type === 'temporal';
+        case 'color':
+        case 'shape':
+          return type === 'nominal' || type === 'ordinal';
+        case 'size':
+        case 'strokeWidth':
+          return type === 'quantitative';
+        case 'theta':
+        case 'radius':
+          return type === 'quantitative';
+        case 'text':
+          return true; // Any field can be used as text
+        default:
+          return true;
+      }
+    }).filter(field => !usedFields.has(field));
+  };
 
-  // Always try to assign x and y first
-  const xField = shuffledFields.find(field => !usedFields.has(field));
-  if (xField) {
-    encoding.x = {
-      field: xField,
-      type: getAppropriateType('x', xField, values)
-    };
-    usedFields.add(xField);
+  // First assign required encodings
+  for (const channel of availableEncodings.required) {
+    const compatibleFields = getCompatibleFields(channel);
+    if (compatibleFields.length > 0) {
+      const field = compatibleFields[Math.floor(Math.random() * compatibleFields.length)];
+      encoding[channel] = {
+        field,
+        type: getAppropriateType(channel, field, dataTypes[field])
+      };
+      usedFields.add(field);
+    }
   }
 
-  const yField = shuffledFields.find(field => !usedFields.has(field));
-  if (yField) {
-    encoding.y = {
-      field: yField,
-      type: getAppropriateType('y', yField, values)
-    };
-    usedFields.add(yField);
+  // Then randomly assign optional encodings
+  const optionalEncodings = [...availableEncodings.optional]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 2); // Randomly pick up to 2 optional encodings
+
+  for (const channel of optionalEncodings) {
+    const compatibleFields = getCompatibleFields(channel);
+    if (compatibleFields.length > 0) {
+      const field = compatibleFields[Math.floor(Math.random() * compatibleFields.length)];
+      encoding[channel] = {
+        field,
+        type: getAppropriateType(channel, field, dataTypes[field])
+      };
+      usedFields.add(field);
+    }
   }
 
-  // Try to add color encoding if we have more fields
-  const colorField = shuffledFields.find(field => !usedFields.has(field));
-  if (colorField) {
-    encoding.color = {
-      field: colorField,
-      type: getAppropriateType('color', colorField, values)
-    };
-    usedFields.add(colorField);
-  }
-
-  // Add tooltip with remaining fields
-  encoding.tooltip = shuffledFields
-    .slice(0, Math.min(4, shuffledFields.length))
-    .map(field => ({
+  // Always add tooltip with remaining unused fields
+  const unusedFields = fields.filter(f => !usedFields.has(f));
+  if (unusedFields.length > 0) {
+    encoding.tooltip = unusedFields.slice(0, 3).map(field => ({
       field,
-      type: getAppropriateType('tooltip', field, values)
+      type: getAppropriateType('tooltip', field, dataTypes[field])
     }));
+  }
 
   return encoding;
 };
 
-// Helper function to determine appropriate encoding type
-const getAppropriateType = (channel: string, field: string, values: any[]): string => {
-  const isNumeric = values.every(v => !isNaN(Number(v[field])));
-  const isDate = values.some(v => !isNaN(Date.parse(v[field])));
-  const uniqueValues = new Set(values.map(v => v[field])).size;
-  const uniqueRatio = uniqueValues / values.length;
-
-  if (channel === 'y' && isNumeric) return 'quantitative';
-  if (channel === 'x' && isDate) return 'temporal';
-  if (channel === 'x' && isNumeric && uniqueRatio > 0.7) return 'quantitative';
-  if (channel === 'color' && uniqueRatio < 0.3) return 'nominal';
-  if (isNumeric && uniqueRatio > 0.7) return 'quantitative';
-  if (isDate) return 'temporal';
-  return 'nominal';
+// Helper to determine appropriate encoding type
+const getAppropriateType = (channel: string, field: string, dataType: string): string => {
+  switch (channel) {
+    case 'x':
+    case 'y':
+      return dataType === 'temporal' ? 'temporal' : 'quantitative';
+    case 'color':
+    case 'shape':
+      return dataType === 'nominal' || dataType === 'ordinal' ? dataType : 'nominal';
+    case 'size':
+    case 'strokeWidth':
+    case 'theta':
+    case 'radius':
+      return 'quantitative';
+    case 'text':
+    case 'tooltip':
+      return dataType || 'nominal';
+    default:
+      return dataType || 'nominal';
+  }
 };
 
 // Helper function for random choice

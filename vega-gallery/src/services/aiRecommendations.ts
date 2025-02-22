@@ -267,6 +267,20 @@ export const getChartRecommendations = (dataset: DatasetMetadata): ChartRecommen
     });
   }
 
+  // Add new recommendation logic
+  if (numericFields.length >= 2 && categoricalFields.length >= 1) {
+    recommendations.push({
+      chartType: 'your-new-chart-type',
+      confidence: 0.85,
+      reason: 'Reason for recommending this chart type',
+      suggestedEncodings: {
+        x: { field: numericFields[0], type: 'quantitative' },
+        y: { field: numericFields[1], type: 'quantitative' },
+        color: { field: categoricalFields[0], type: 'nominal' }
+      }
+    });
+  }
+
   // Sort by confidence and limit to top 5 most confident recommendations
   return recommendations
     .sort((a, b) => b.confidence - a.confidence)

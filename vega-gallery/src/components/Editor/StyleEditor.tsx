@@ -106,6 +106,30 @@ const FontPreview = styled.div<{ $font: string }>`
   color: ${props => props.theme.text.primary};
 `;
 
+const TypographySection = styled(StyleSection)`
+  .preview-text {
+    margin: 8px 0;
+    padding: 12px;
+    border: 1px solid ${props => props.theme.colors.border};
+    border-radius: 6px;
+  }
+`;
+
+const FontScaleControl = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+`;
+
+const ScalePreview = styled.div<{ $scale: number }>`
+  h1 { font-size: ${props => 2.5 * props.$scale}rem; }
+  h2 { font-size: ${props => 2 * props.$scale}rem; }
+  h3 { font-size: ${props => 1.5 * props.$scale}rem; }
+  .body { font-size: ${props => 1 * props.$scale}rem; }
+  .small { font-size: ${props => 0.875 * props.$scale}rem; }
+`;
+
 interface StyleEditorProps {
   spec: ExtendedSpec;
   onChange: (updates: Partial<ExtendedSpec>) => void;
@@ -120,100 +144,6 @@ interface MarkSizeConfig {
 // Update the mark-specific controls
 const getMarkSpecificControls = (markType: string, currentMark: any, updateMark: Function) => {
   switch (markType) {
-    case 'bar':
-      return (
-        <>
-          <Control>
-            <Label>Bar Width</Label>
-            <RangeInput
-              type="range"
-              min="1"
-              max="100"
-              value={currentMark?.width || 'auto'}
-              onChange={e => updateMark({ width: parseInt(e.target.value) })}
-            />
-          </Control>
-          <Control>
-            <Label>Corner Radius</Label>
-            <RangeInput
-              type="range"
-              min="0"
-              max="20"
-              value={currentMark?.cornerRadius || 0}
-              onChange={e => updateMark({ cornerRadius: parseInt(e.target.value) })}
-            />
-          </Control>
-          <Control>
-            <Label>Fill Color</Label>
-            <ColorInput
-              type="color"
-              value={currentMark?.fill || '#4c78a8'}
-              onChange={e => updateMark({ fill: e.target.value })}
-            />
-          </Control>
-          <Control>
-            <Label>Border Width</Label>
-            <RangeInput
-              type="range"
-              min="0"
-              max="5"
-              step="0.5"
-              value={currentMark?.strokeWidth || 0}
-              onChange={e => updateMark({ strokeWidth: parseFloat(e.target.value) })}
-            />
-          </Control>
-        </>
-      );
-
-    case 'line':
-      return (
-        <>
-          <Control>
-            <Label>Line Width</Label>
-            <RangeInput
-              type="range"
-              min="1"
-              max="10"
-              value={currentMark?.strokeWidth || 2}
-              onChange={e => updateMark({ strokeWidth: parseInt(e.target.value) })}
-            />
-          </Control>
-          <Control>
-            <Label>Line Style</Label>
-            <Select
-              value={currentMark?.interpolate || 'linear'}
-              onChange={e => updateMark({ interpolate: e.target.value })}
-            >
-              <option value="linear">Linear</option>
-              <option value="step">Step</option>
-              <option value="stepAfter">Step After</option>
-              <option value="stepBefore">Step Before</option>
-              <option value="basis">Basis</option>
-              <option value="cardinal">Cardinal</option>
-              <option value="monotone">Monotone</option>
-            </Select>
-          </Control>
-          <Control>
-            <Label>Line Color</Label>
-            <ColorInput
-              type="color"
-              value={currentMark?.stroke || '#4c78a8'}
-              onChange={e => updateMark({ stroke: e.target.value })}
-            />
-          </Control>
-          <Control>
-            <Label>Point Size</Label>
-            <RangeInput
-              type="range"
-              min="0"
-              max="100"
-              value={currentMark?.point?.size || 0}
-              onChange={e => updateMark({ point: { size: parseInt(e.target.value) } })}
-            />
-          </Control>
-        </>
-      );
-
     case 'point':
     case 'circle':
       return (
@@ -223,13 +153,13 @@ const getMarkSpecificControls = (markType: string, currentMark: any, updateMark:
             <RangeInput
               type="range"
               min="1"
-              max="200"
-              value={currentMark?.size || 50}
+              max="100"
+              value={Math.sqrt(currentMark?.size || 50)}
               onChange={e => {
-                const size = parseInt(e.target.value);
+                const sliderValue = parseInt(e.target.value);
+                const size = sliderValue * sliderValue;
                 updateMark({ 
                   size,
-                  // Keep filled true to maintain data-driven fill colors
                   filled: true
                 });
               }}
@@ -283,6 +213,89 @@ const getMarkSpecificControls = (markType: string, currentMark: any, updateMark:
                 strokeWidth: parseFloat(e.target.value),
                 filled: true  // Keep filled true
               })}
+            />
+          </Control>
+        </>
+      );
+
+    case 'bar':
+      return (
+        <>
+          <Control>
+            <Label>Bar Width</Label>
+            <RangeInput
+              type="range"
+              min="1"
+              max="100"
+              value={currentMark?.width || 'auto'}
+              onChange={e => updateMark({ width: parseInt(e.target.value) })}
+            />
+          </Control>
+          <Control>
+            <Label>Corner Radius</Label>
+            <RangeInput
+              type="range"
+              min="0"
+              max="20"
+              value={currentMark?.cornerRadius || 0}
+              onChange={e => updateMark({ cornerRadius: parseInt(e.target.value) })}
+            />
+          </Control>
+          <Control>
+            <Label>Fill Color</Label>
+            <ColorInput
+              type="color"
+              value={currentMark?.fill || '#4c78a8'}
+              onChange={e => updateMark({ fill: e.target.value })}
+            />
+          </Control>
+        </>
+      );
+
+    case 'line':
+      return (
+        <>
+          <Control>
+            <Label>Line Width</Label>
+            <RangeInput
+              type="range"
+              min="1"
+              max="10"
+              value={currentMark?.strokeWidth || 2}
+              onChange={e => updateMark({ strokeWidth: parseInt(e.target.value) })}
+            />
+          </Control>
+          <Control>
+            <Label>Line Style</Label>
+            <Select
+              value={currentMark?.interpolate || 'linear'}
+              onChange={e => updateMark({ interpolate: e.target.value })}
+            >
+              <option value="linear">Linear</option>
+              <option value="step">Step</option>
+              <option value="stepAfter">Step After</option>
+              <option value="stepBefore">Step Before</option>
+              <option value="basis">Basis</option>
+              <option value="cardinal">Cardinal</option>
+              <option value="monotone">Monotone</option>
+            </Select>
+          </Control>
+          <Control>
+            <Label>Line Color</Label>
+            <ColorInput
+              type="color"
+              value={currentMark?.stroke || '#4c78a8'}
+              onChange={e => updateMark({ stroke: e.target.value })}
+            />
+          </Control>
+          <Control>
+            <Label>Point Size</Label>
+            <RangeInput
+              type="range"
+              min="0"
+              max="100"
+              value={currentMark?.point?.size || 0}
+              onChange={e => updateMark({ point: { size: parseInt(e.target.value) } })}
             />
           </Control>
         </>
@@ -379,7 +392,34 @@ const getMarkSpecificControls = (markType: string, currentMark: any, updateMark:
         </>
       );
 
+    // Add case for new chart type
+    case 'your-new-chart-type':
+      return (
+        <>
+          <Control>
+            <Label>Point Size</Label>
+            <RangeInput
+              type="range"
+              min="1"
+              max="100"
+              value={currentMark?.size || 50}
+              onChange={e => updateMark({ size: parseInt(e.target.value) })}
+            />
+          </Control>
+          <Control>
+            <Label>Color</Label>
+            <ColorInput
+              type="color"
+              value={currentMark?.color || '#4c78a8'}
+              onChange={e => updateMark({ color: e.target.value })}
+            />
+          </Control>
+        </>
+      );
+
     // Add more chart types...
+    default:
+      return null;
   }
 };
 
@@ -408,29 +448,44 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
   const updateMark = (updates: Partial<VegaMarkConfig>) => {
     const currentMark = typeof spec.mark === 'string' ? { type: spec.mark } : spec.mark;
     
+    // Remove incompatible encodings based on mark type
+    const compatibleUpdates = { ...updates };
+    if (markType === 'line' || markType === 'bar') {
+      delete compatibleUpdates.theta;
+      delete compatibleUpdates.radius;
+    }
+
+    // Ensure valid color values
+    if (compatibleUpdates.fill && compatibleUpdates.fill.length === 4) {
+      // Convert #RGB to #RRGGBB
+      compatibleUpdates.fill = compatibleUpdates.fill.replace(/#([0-9a-f])([0-9a-f])([0-9a-f])/i, 
+        (_, r, g, b) => `#${r}${r}${g}${g}${b}${b}`);
+    }
+    if (compatibleUpdates.stroke && compatibleUpdates.stroke.length === 4) {
+      compatibleUpdates.stroke = compatibleUpdates.stroke.replace(/#([0-9a-f])([0-9a-f])([0-9a-f])/i,
+        (_, r, g, b) => `#${r}${r}${g}${g}${b}${b}`);
+    }
+
     // Create the new mark configuration
     const newMark = {
       ...currentMark,
-      ...updates
+      ...compatibleUpdates
     };
 
     // Update the spec with new mark config and encoding
     onChange({
       ...spec,
       mark: newMark,
-      // Add encoding updates if needed
       encoding: {
         ...spec.encoding,
-        // Add opacity as an encoding if it's set
-        ...(updates.opacity !== undefined && {
+        // Only add valid numerical values to encodings
+        ...(updates.opacity !== undefined && !isNaN(updates.opacity) && {
           opacity: { value: updates.opacity }
         }),
-        // Add size as an encoding if it's set
-        ...(updates.size !== undefined && {
+        ...(updates.size !== undefined && !isNaN(updates.size) && {
           size: { value: updates.size }
         }),
-        // Add color as an encoding if it's set
-        ...(updates.fill !== undefined && {
+        ...(updates.fill && {
           color: { value: updates.fill }
         })
       }
@@ -494,6 +549,31 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
     });
   };
 
+  const validateData = (data: any[]) => {
+    return data.map(row => {
+      const validRow = { ...row };
+      Object.entries(row).forEach(([key, value]) => {
+        // Convert strings to numbers where appropriate
+        if (typeof value === 'string' && !isNaN(Number(value))) {
+          validRow[key] = Number(value);
+        }
+        // Handle invalid numbers
+        if (typeof value === 'number' && !isFinite(value)) {
+          validRow[key] = 0;
+        }
+      });
+      return validRow;
+    });
+  };
+
+  const enhancedSpec = {
+    ...spec,
+    data: {
+      ...spec.data,
+      values: spec.data?.values ? validateData(spec.data.values) : []
+    }
+  };
+
   return (
     <Container>
       <StyleSection>
@@ -513,42 +593,98 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
         <Control>
           <Label>Font Family</Label>
           <Select
-            value={spec.config?.font || 'sans-serif'}
-            onChange={e => updateConfig({ font: e.target.value })}
+            value={spec.config?.font || 'Inter'}
+            onChange={e => updateConfig({ 
+              font: e.target.value,
+              // Update all related font configs
+              axis: { ...spec.config?.axis, labelFont: e.target.value },
+              legend: { ...spec.config?.legend, labelFont: e.target.value },
+              title: { ...spec.config?.title, font: e.target.value }
+            })}
           >
             <option value="Inter">Inter</option>
             <option value="IBM Plex Sans">IBM Plex Sans</option>
             <option value="Roboto">Roboto</option>
             <option value="system-ui">System Default</option>
           </Select>
-          <FontPreview $font={spec.config?.font || 'sans-serif'}>
-            The quick brown fox jumps over the lazy dog
-          </FontPreview>
         </Control>
 
         <Control>
-          <Label>Font Weight</Label>
+          <Label>Text Scale Factor</Label>
+          <RangeInput
+            type="range"
+            min="0.5"
+            max="3.0"
+            step="0.1"
+            value={spec.config?.textScale || 1}
+            onChange={e => {
+              const scale = parseFloat(e.target.value);
+              updateConfig({
+                textScale: scale,
+                axis: {
+                  ...spec.config?.axis,
+                  labelFontSize: Math.round(11 * scale),
+                  titleFontSize: Math.round(13 * scale)
+                },
+                legend: {
+                  ...spec.config?.legend,
+                  labelFontSize: Math.round(11 * scale),
+                  titleFontSize: Math.round(13 * scale)
+                },
+                title: {
+                  ...spec.config?.title,
+                  fontSize: Math.round(14 * scale)
+                }
+              });
+            }}
+          />
+          <div style={{ fontSize: '0.8rem', color: '#666' }}>
+            {`${((spec.config?.textScale || 1) * 100).toFixed(0)}%`}
+          </div>
+          <ScalePreview $scale={spec.config?.textScale || 1}>
+            <div className="preview-text">
+              <h3>Title Text</h3>
+              <div className="body">Body Text</div>
+              <div className="small">Small Text</div>
+            </div>
+          </ScalePreview>
+        </Control>
+
+        <Control>
+          <Label>Text Weight</Label>
           <Select
             value={spec.config?.fontWeight || 400}
-            onChange={e => updateConfig({ fontWeight: parseInt(e.target.value) })}
+            onChange={e => {
+              const weight = parseInt(e.target.value);
+              updateConfig({
+                fontWeight: weight,
+                axis: { ...spec.config?.axis, labelFontWeight: weight },
+                legend: { ...spec.config?.legend, labelFontWeight: weight },
+                title: { ...spec.config?.title, fontWeight: weight + 100 } // Title slightly bolder
+              });
+            }}
           >
             <option value="300">Light</option>
             <option value="400">Regular</option>
             <option value="500">Medium</option>
             <option value="600">Semi Bold</option>
-            <option value="700">Bold</option>
           </Select>
         </Control>
 
         <Control>
-          <Label>Letter Spacing</Label>
-          <RangeInput
-            type="range"
-            min="-2"
-            max="10"
-            step="0.5"
-            value={spec.config?.letterSpacing || 0}
-            onChange={e => updateConfig({ letterSpacing: parseFloat(e.target.value) })}
+          <Label>Text Color</Label>
+          <ColorInput
+            type="color"
+            value={spec.config?.color || '#2c3e50'}
+            onChange={e => {
+              const color = e.target.value;
+              updateConfig({
+                color,
+                axis: { ...spec.config?.axis, labelColor: color },
+                legend: { ...spec.config?.legend, labelColor: color },
+                title: { ...spec.config?.title, color }
+              });
+            }}
           />
         </Control>
       </StyleSection>
@@ -616,7 +752,7 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
           <Label>Grid Color</Label>
           <ColorInput
             type="color"
-            value={spec.config?.axis?.gridColor || '#ddd'}
+            value={spec.config?.axis?.gridColor || '#dddddd'}
             onChange={e => updateConfig({ axis: { gridColor: e.target.value } })}
           />
         </Control>

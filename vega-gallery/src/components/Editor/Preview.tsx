@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import styled from 'styled-components'
 import { renderVegaLite } from '../../utils/chartRenderer'
 import { ChartFooter } from './ChartFooter'
+import { MarkType } from '../../types/vega'
 
 const PreviewContainer = styled.div`
   display: flex;
@@ -91,7 +92,7 @@ const ResizeHandle = styled.div`
 `
 
 interface PreviewProps {
-  spec: string;
+  spec: string | TopLevelSpec;
 }
 
 export const Preview = ({ spec }: PreviewProps) => {
@@ -100,6 +101,8 @@ export const Preview = ({ spec }: PreviewProps) => {
   const [data, setData] = useState<any[]>([])
   const [chartHeight, setChartHeight] = useState(400)
   const [isDragging, setIsDragging] = useState(false)
+  const [markType, setMarkType] = useState<MarkType>('point')
+  const [encodings, setEncodings] = useState<Record<string, any>>({})
   
   // Keep drag state in ref
   const dragState = useRef({
@@ -155,25 +158,41 @@ export const Preview = ({ spec }: PreviewProps) => {
   // Define renderChart first
   const renderChart = async () => {
     try {
-      const parsedSpec = JSON.parse(spec)
-      setData(parsedSpec.data?.values || [])
+      const parsedSpec = typeof spec === 'string' ? JSON.parse(spec) : spec;
+      
+      // Create a complete valid spec with defaults
+      const validSpec = {
+        $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+        width: 'container',
+        height: 300,
+        mark: parsedSpec.mark || { type: 'point', filled: true },
+        data: parsedSpec.data || { values: [] },
+        encoding: parsedSpec.encoding || {},
+        transform: parsedSpec.transform,
+        config: {
+          ...parsedSpec.config,
+          mark: {
+            filled: true,
+            ...parsedSpec.config?.mark
+          },
+          view: {
+            continuousWidth: true,
+            continuousHeight: true,
+            ...parsedSpec.config?.view
+          }
+        }
+      };
+
+      setData(validSpec.data?.values || []);
       
       if (chartRef.current) {
-        await renderVegaLite(chartRef.current, {
-          ...parsedSpec,
-          width: 'container',
-          height: 'container',
-          autosize: {
-            type: 'fit',
-            contains: 'padding'
-          }
-        })
-        setError(null)
+        await renderVegaLite(chartRef.current, validSpec);
+        setError(null);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to render chart')
+      setError(err instanceof Error ? err.message : 'Failed to render chart');
     }
-  }
+  };
 
   // Render chart when spec changes
   useEffect(() => {
@@ -184,6 +203,39 @@ export const Preview = ({ spec }: PreviewProps) => {
   useEffect(() => {
     renderChart()
   }, [chartHeight])
+
+  // Add effect to get mark type from spec
+  useEffect(() => {
+    try {
+      const parsedSpec = typeof spec === 'string' ? JSON.parse(spec) : spec;
+      const mark = parsedSpec.mark
+      setMarkType(typeof mark === 'string' ? mark : mark.type)
+      setEncodings(parsedSpec.encoding || {})
+    } catch (err) {
+      console.error('Failed to parse spec:', err)
+    }
+  }, [spec])
+
+  // Add handler for encoding changes
+  const handleEncodingChange = (channel: string, field: string) => {
+    const newEncodings = {
+      ...encodings,
+      [channel]: field ? { field, type: 'quantitative' } : undefined
+    }
+    setEncodings(newEncodings)
+    
+    // Update spec with new encodings
+    try {
+      const parsedSpec = typeof spec === 'string' ? JSON.parse(spec) : spec;
+      const updatedSpec = {
+        ...parsedSpec,
+        encoding: newEncodings
+      }
+      // Call parent update function or handle spec update
+    } catch (err) {
+      console.error('Failed to update encodings:', err)
+    }
+  }
 
   return (
     <PreviewContainer>
@@ -200,7 +252,12 @@ export const Preview = ({ spec }: PreviewProps) => {
         }}
       />
       <DataContainer>
-        <ChartFooter data={data} />
+        <ChartFooter 
+          data={data}
+          markType={markType}
+          currentEncodings={encodings}
+          onEncodingChange={handleEncodingChange}
+        />
       </DataContainer>
     </PreviewContainer>
   )

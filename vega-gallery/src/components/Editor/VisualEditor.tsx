@@ -19,6 +19,7 @@ import { inferDataTypes } from '../../utils/dataUtils'
 import { getChartRecommendations } from '../../services/aiRecommendations'
 import AutoGraphIcon from '@mui/icons-material/AutoGraph'
 import RecommendIcon from '@mui/icons-material/Recommend'
+import { detectDataTypes } from '../../utils/dataUtils'
 
 const Container = styled.div`
   padding: 16px;
@@ -502,13 +503,189 @@ interface VisualEditorProps {
   onChange: (updates: Partial<ExtendedSpec>) => void;
 }
 
+// Add mark-specific encoding definitions
+const MARK_ENCODINGS: Record<MarkType, {
+  channels: EncodingChannel[];
+  description: string;
+  hints: Record<string, string>;
+  icon: string;
+}> = {
+  arc: {
+    channels: ['theta', 'radius', 'color', 'opacity', 'tooltip', 'x', 'y'],
+    description: 'Radial visualization - single pie or multiple pies in a grid',
+    hints: {
+      theta: 'Use quantitative values for angle',
+      radius: 'Optional: Use for hierarchical data',
+      color: 'Categories work well for segments',
+      x: 'Optional: Position multiple pie charts horizontally',
+      y: 'Optional: Position multiple pie charts vertically'
+    },
+    icon: '🥧'
+  },
+  bar: {
+    channels: ['x', 'y', 'color', 'size', 'tooltip', 'opacity'],
+    description: 'Rectangular marks for comparisons',
+    hints: {
+      x: 'Categories or time for x-axis',
+      y: 'Numbers work best for height',
+      color: 'Optional: Use for grouping'
+    },
+    icon: '📊'
+  },
+  line: {
+    channels: ['x', 'y', 'color', 'strokeWidth', 'opacity', 'order', 'tooltip'],
+    description: 'Connected points showing trends over time',
+    hints: {
+      x: 'Time or ordered values',
+      y: 'Numeric measurements',
+      color: 'Use for multiple series'
+    },
+    icon: '📈'
+  },
+  point: {
+    channels: ['x', 'y', 'color', 'size', 'shape', 'opacity', 'tooltip'],
+    description: 'Individual marks for each data point',
+    hints: {
+      x: 'Any type of value',
+      y: 'Any type of value',
+      size: 'Optional: Use numbers for size'
+    },
+    icon: '🔵'
+  },
+  area: {
+    channels: ['x', 'y', 'color', 'opacity', 'order', 'tooltip'],
+    description: 'Filled areas between lines',
+    hints: {
+      x: 'Usually time or ordered values',
+      y: 'Numeric values to fill to'
+    },
+    icon: '🟢'
+  },
+  boxplot: {
+    channels: ['x', 'y', 'color', 'size', 'tooltip'],
+    description: 'Statistical distribution with quartiles',
+    hints: {
+      x: 'Categories to group by',
+      y: 'Numbers to show distribution'
+    },
+    icon: '📊'
+  },
+  errorbar: {
+    channels: ['x', 'y', 'color', 'extent', 'tooltip'],
+    description: 'Show uncertainty ranges',
+    hints: {
+      x: 'Categories or time',
+      y: 'Numeric value with error margins'
+    },
+    icon: '🔴'
+  },
+  text: {
+    channels: ['x', 'y', 'text', 'color', 'size', 'angle', 'tooltip'],
+    description: 'Text labels on the chart',
+    hints: {
+      text: 'The text to display',
+      angle: 'Optional: Rotate labels'
+    },
+    icon: '🔤'
+  },
+  // Add all other mark types...
+  treemap: {
+    channels: ['size', 'color', 'tooltip', 'label'],
+    description: 'Hierarchical data as nested rectangles',
+    hints: {
+      size: 'Numeric value for rectangle size',
+      color: 'Categories or numbers for color'
+    },
+    icon: '🟠'
+  },
+  sunburst: {
+    channels: ['theta', 'radius', 'color', 'tooltip'],
+    description: 'Hierarchical data in radial layout',
+    hints: {
+      theta: 'Angle for segment size',
+      radius: 'Level in hierarchy'
+    },
+    icon: '🟡'
+  }
+};
+
+// Helper functions should be at the top, before the component
+const getCompatibleTypes = (field: string, values: any[]): string[] => {
+  if (!values.length || !values[0]?.[field]) return ['nominal'];
+  
+  const sampleValue = values[0][field];
+  const allValues = values.map(v => v[field]).filter(v => v != null);
+  
+  const types = [];
+  
+  // Check for quantitative
+  if (allValues.every(v => typeof v === 'number' && isFinite(v))) {
+    types.push('quantitative');
+  }
+  
+  // Check for temporal
+  if (allValues.every(v => !isNaN(Date.parse(String(v))))) {
+    types.push('temporal');
+  }
+  
+  // Check for ordinal
+  const uniqueValues = new Set(allValues);
+  if (uniqueValues.size <= 20) {
+    types.push('ordinal');
+  }
+  
+  // Always allow nominal
+  types.push('nominal');
+  
+  return types;
+};
+
+const getDefaultEncoding = (channel: string, field: string, type: string = 'quantitative') => {
+  return {
+    field,
+    type,
+    ...(type === 'quantitative' ? { scale: { zero: true } } : {})
+  };
+};
+
+// Add safe type checking for mark type
+const getMarkType = (spec: any): MarkType => {
+  if (!spec) return 'point';
+  if (typeof spec.mark === 'string') return spec.mark as MarkType;
+  if (typeof spec.mark?.type === 'string') return spec.mark.type as MarkType;
+  return 'point';
+};
+
 export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
   const [currentDataset, setCurrentDataset] = useState<string | null>(null);
   const [customDatasets, setCustomDatasets] = useState<Record<string, DatasetMetadata>>({});
   const [filterField, setFilterField] = useState('');
   const [filterType, setFilterType] = useState('equals');
   const [filterValue, setFilterValue] = useState('');
-  const currentMark = typeof spec.mark === 'string' ? spec.mark : spec.mark?.type;
+  const [currentMark, setCurrentMark] = useState<MarkType>(() => {
+    try {
+      if (typeof spec === 'string') {
+        const parsed = JSON.parse(spec);
+        return typeof parsed.mark === 'string' ? parsed.mark : parsed.mark?.type || 'point';
+      }
+      return typeof spec.mark === 'string' ? spec.mark : spec.mark?.type || 'point';
+    } catch (e) {
+      console.error('Failed to parse spec:', e);
+      return 'point';
+    }
+  });
+  const [encodings, setEncodings] = useState(() => {
+    try {
+      if (typeof spec === 'string') {
+        const parsed = JSON.parse(spec);
+        return parsed.encoding || {};
+      }
+      return spec.encoding || {};
+    } catch (e) {
+      console.error('Failed to parse spec:', e);
+      return {};
+    }
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const loadSavedStates = (): AccordionStates => {
@@ -617,93 +794,25 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
     });
   };
 
-  const handleMarkTypeChange = (markType: MarkType) => {
-    // Get current encodings that are compatible with the new mark type
-    const compatibleEncodings = {};
-    const currentEncodings = spec.encoding || {};
-    
-    // Smart defaults based on mark type
-    switch (markType) {
-      case 'bar':
-        // Try to make categorical x-axis and quantitative y-axis
-        if (currentEncodings.x?.field) {
-          compatibleEncodings['x'] = {
-            ...currentEncodings.x,
-            type: 'nominal' // Force categorical for bars
-          };
-        }
-        if (currentEncodings.y?.field) {
-          compatibleEncodings['y'] = {
-            ...currentEncodings.y,
-            type: 'quantitative',
-            aggregate: 'sum' // Add aggregation for bars
-          };
-        }
-        break;
+  const handleMarkTypeChange = (newMarkType: MarkType) => {
+    setCurrentMark(newMarkType);
 
-      case 'line':
-        // Try to make x temporal if possible
-        if (currentEncodings.x?.field) {
-          const field = currentEncodings.x.field;
-          const isTimeField = spec.data?.values?.some(d => !isNaN(Date.parse(d[field])));
-          compatibleEncodings['x'] = {
-            ...currentEncodings.x,
-            type: isTimeField ? 'temporal' : currentEncodings.x.type
-          };
-        }
-        break;
+    // Get available encodings for the new mark type
+    const availableEncodings = MARK_ENCODINGS[newMarkType].channels;
 
-      case 'arc':
-        // Convert to pie chart configuration
-        if (currentEncodings.y?.field) {
-          compatibleEncodings['theta'] = {
-            field: currentEncodings.y.field,
-            type: 'quantitative'
-          };
-        }
-        if (currentEncodings.x?.field) {
-          compatibleEncodings['color'] = {
-            field: currentEncodings.x.field,
-            type: 'nominal'
-          };
-        }
-        break;
+    // Filter out incompatible encodings and keep compatible ones
+    const updatedEncodings = Object.entries(encodings).reduce((acc, [channel, encoding]) => {
+      if (availableEncodings.includes(channel as EncodingChannel)) {
+        acc[channel] = encoding;
+      }
+      return acc;
+    }, {});
 
-      // Add more cases for other mark types
-    }
-
-    // Add mark-specific configurations
-    const markConfig = {
-      type: markType,
-      tooltip: true,
-      ...(markType === 'point' && {
-        type: 'point',
-        size: 50,
-        filled: true,
-        shape: 'circle',
-        stroke: '#4c78a8',
-        strokeWidth: 2
-      }),
-      ...(markType === 'line' && { 
-        point: true,
-        interpolate: 'monotone'
-      }),
-      ...(markType === 'area' && { 
-        line: true,
-        opacity: 0.7
-      }),
-      ...(markType === 'bar' && {
-        cornerRadius: 2
-      }),
-      ...(markType === 'circle' && {
-        opacity: 0.7
-      })
-    };
-
+    // Update the spec with new mark type and filtered encodings
     onChange({
       ...spec,
-      mark: markConfig,
-      encoding: compatibleEncodings
+      mark: newMarkType,
+      encoding: updatedEncodings
     });
   };
 
@@ -763,53 +872,7 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
   }, [spec.data?.values])
 
   const getAvailableEncodings = (): EncodingChannel[] => {
-    try {
-      const mark = typeof spec.mark === 'string' ? spec.mark : spec.mark?.type
-      switch (mark) {
-        case 'text':
-          return ['x', 'y', 'text', 'color', 'size', 'angle', 'tooltip'];
-        case 'circle':
-          return ['x', 'y', 'size', 'color', 'tooltip'];
-        case 'point':
-          return ['x', 'y', 'size', 'color', 'shape', 'tooltip'];
-        case 'bar':
-          return ['x', 'y', 'color', 'tooltip', 'order'];
-        case 'line':
-          return ['x', 'y', 'color', 'strokeWidth', 'tooltip', 'order'];
-        case 'area':
-          return ['x', 'y', 'color', 'tooltip', 'order'];
-        case 'boxplot':
-          return ['x', 'y', 'color', 'tooltip'];
-        case 'text':
-          return ['x', 'y', 'text', 'color', 'size', 'tooltip'];
-        default:
-          return ['x', 'y', 'color', 'tooltip'];
-      }
-    } catch (err) {
-      console.error('Error getting available encodings:', err)
-      return ['x', 'y']
-    }
-  }
-
-  const detectDataTypes = (values: any[]): Record<string, string> => {
-    if (!values.length) return {}
-    
-    const sampleRow = values[0]
-    const types: Record<string, string> = {}
-    
-    Object.entries(sampleRow).forEach(([field, value]) => {
-      if (typeof value === 'number') {
-        types[field] = 'quantitative'
-      } else if (value instanceof Date || !isNaN(Date.parse(value as string))) {
-        types[field] = 'temporal'
-      } else if (typeof value === 'string') {
-        // Check if it's ordinal (numbers as strings) or nominal
-        const isNumeric = !isNaN(Number(value))
-        types[field] = isNumeric ? 'ordinal' : 'nominal'
-      }
-    })
-    
-    return types
+    return MARK_ENCODINGS[currentMark]?.channels || [];
   }
 
   const suggestEncodings = () => {
@@ -843,31 +906,40 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
     return suggestions;
   };
 
-  const handleRandomize = () => {
-    if (!spec.data?.values?.length) return;
-
-    // Get available fields from data
-    const fields = Object.keys(spec.data.values[0]);
+  const handleRandomizeEncodings = () => {
+    const markConfig = MARK_ENCODINGS[currentMark];
+    const newEncodings = {};
     
-    // Generate random encodings
-    const newEncodings = generateRandomEncoding(fields, spec.data.values);
-
-    // Preserve the current mark configuration while updating encodings
-    const currentMark = typeof spec.mark === 'string' ? { type: spec.mark } : spec.mark;
-    
-    onChange({
-      ...spec,
-      mark: {
-        ...currentMark,
-        // Ensure we keep mark-specific configurations
-        ...(currentMark.type === 'point' && {
-          filled: true,
-          stroke: currentMark.stroke || '#4c78a8',
-          strokeWidth: currentMark.strokeWidth || 2
-        })
-      },
-      encoding: newEncodings
+    markConfig.channels.forEach(channel => {
+      const compatibleFields = fields.filter(field => {
+        switch (channel) {
+          case 'theta':
+          case 'radius':
+          case 'size':
+            return fieldTypes[field] === 'quantitative';
+          case 'color':
+            return fieldTypes[field] === 'nominal';
+          case 'x':
+          case 'y':
+            return true; // Accept any type
+          default:
+            return true;
+        }
+      });
+      
+      if (compatibleFields.length) {
+        const randomField = compatibleFields[
+          Math.floor(Math.random() * compatibleFields.length)
+        ];
+        newEncodings[channel] = {
+          field: randomField,
+          type: fieldTypes[randomField]
+        };
+      }
     });
+    
+    setEncodings(newEncodings);
+    onChange({ ...spec, encoding: newEncodings });
   };
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1072,6 +1144,35 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
     onChange(newSpec);
   };
 
+  // Detect field types
+  const fieldTypes = fields.reduce((acc, field) => {
+    const value = spec.data?.values?.[0]?.[field];
+    acc[field] = typeof value === 'number' ? 'quantitative' : 
+                 value instanceof Date ? 'temporal' : 'nominal';
+    return acc;
+  }, {} as Record<string, string>);
+
+  // Safe spec parsing
+  const parsedSpec = useMemo(() => {
+    try {
+      return typeof spec === 'string' ? JSON.parse(spec) : spec;
+    } catch (e) {
+      console.error('Failed to parse spec:', e);
+      return {
+        mark: { type: 'point' },
+        encoding: {},
+        data: { values: [] }
+      };
+    }
+  }, [spec]);
+
+  // Safe mark type access
+  const markType = useMemo(() => {
+    if (!parsedSpec) return 'point';
+    if (typeof parsedSpec.mark === 'string') return parsedSpec.mark;
+    return parsedSpec.mark?.type || 'point';
+  }, [parsedSpec]);
+
   if (!spec) {
     return <div>Invalid specification</div>
   }
@@ -1195,20 +1296,20 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
             Choose the best visual mark for your data. Different marks work better for different types of data and comparisons.
           </p>
           <MarkTypeGrid>
-            {markTypes.map(mark => (
+            {Object.entries(MARK_ENCODINGS).map(([type, config]) => (
               <MarkTypeCard
-                key={mark.type}
-                $active={currentMark === mark.type}
-                onClick={() => handleMarkTypeChange(mark.type)}
+                key={type}
+                $active={currentMark === type}
+                onClick={() => handleMarkTypeChange(type as MarkType)}
               >
-                <MarkIcon>{mark.icon}</MarkIcon>
-                <MarkName>{mark.name}</MarkName>
+                <MarkIcon>{config.icon}</MarkIcon>
+                <MarkName>{type}</MarkName>
                 <MarkTooltip>
-                  <div>{mark.description}</div>
-                  {mark.bestFor && (
+                  <div>{config.description}</div>
+                  {config.hints && (
                     <ul>
-                      {mark.bestFor.map(use => (
-                        <li key={use}>{use}</li>
+                      {Object.entries(config.hints).map(([hint, description]) => (
+                        <li key={hint}>{hint}: {description}</li>
                       ))}
                     </ul>
                   )}
@@ -1236,12 +1337,11 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
               gap: '8px',
               marginBottom: '16px' 
             }}>
-              <RandomizeButton onClick={handleRandomize}>
-                🎲 Randomize Encodings
+              <RandomizeButton onClick={handleRandomizeEncodings}>
+                🎲 Random
               </RandomizeButton>
               <RecommendButton onClick={handleRecommendEncodings}>
-                <RecommendIcon />
-                Smart Recommend
+                🤖 Smart
               </RecommendButton>
             </div>
 
@@ -1279,16 +1379,28 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
                   <Label>{channel.toUpperCase()}</Label>
                   <EncodingControl>
                     <Select
-                      value={spec.encoding?.[channel]?.field || ''}
-                      onChange={(e) => handleEncodingChange(channel, { field: e.target.value })}
+                      value={encodings[channel]?.field || ''}
+                      onChange={(e) => {
+                        const newEncodings = {
+                          ...encodings,
+                          [channel]: e.target.value ? {
+                            field: e.target.value,
+                            type: fieldTypes[e.target.value]
+                          } : undefined
+                        };
+                        setEncodings(newEncodings);
+                        onChange({ ...spec, encoding: newEncodings });
+                      }}
                     >
                       <option value="">Select field</option>
                       {fields.map(field => (
-                        <option key={field} value={field}>{field}</option>
+                        <option key={field} value={field}>
+                          {field} ({fieldTypes[field]})
+                        </option>
                       ))}
                     </Select>
                     
-                    {spec.encoding?.[channel]?.field && (
+                    {encodings[channel]?.field && (
                       <>
                         <TypeButtons>
                           {[
@@ -1297,7 +1409,7 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
                             { type: 'nominal', icon: <CategoryIcon />, label: 'Category' },
                             { type: 'ordinal', icon: <BarChartIcon />, label: 'Ordered' }
                           ].map(({ type, icon, label }) => {
-                            const field = spec.encoding?.[channel]?.field;
+                            const field = encodings[channel]?.field;
                             const compatibleTypes = field ? 
                               getCompatibleTypes(field, spec.data?.values || []) : 
                               [];
@@ -1307,7 +1419,7 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
                               <Tooltip key={type} title={label}>
                                 <span>
                                   <EncodingTypeButton
-                                    $active={spec.encoding?.[channel]?.type === type}
+                                    $active={encodings[channel]?.type === type}
                                     $compatible={isCompatible}
                                     onClick={() => isCompatible && handleEncodingChange(channel, { type })}
                                     size="small"
@@ -1408,42 +1520,4 @@ const isCompatibleEncoding = (channel: string, markType: MarkType): boolean => {
   };
 
   return compatibleChannels[markType]?.includes(channel) ?? false;
-};
-
-const getDefaultEncoding = (channel: string, field: string, type: string = 'quantitative') => {
-  return {
-    field,
-    type,
-    ...(type === 'quantitative' ? { scale: { zero: true } } : {})
-  };
-};
-
-const getCompatibleTypes = (field: string, values: any[]): string[] => {
-  if (!values.length || !values[0]?.[field]) return ['nominal'];
-  
-  const sampleValue = values[0][field];
-  const allValues = values.map(v => v[field]).filter(v => v != null);
-  
-  const types = [];
-  
-  // Check for quantitative
-  if (allValues.every(v => typeof v === 'number' && isFinite(v))) {
-    types.push('quantitative');
-  }
-  
-  // Check for temporal
-  if (allValues.every(v => !isNaN(Date.parse(String(v))))) {
-    types.push('temporal');
-  }
-  
-  // Check for ordinal
-  const uniqueValues = new Set(allValues);
-  if (uniqueValues.size <= 20) {
-    types.push('ordinal');
-  }
-  
-  // Always allow nominal
-  types.push('nominal');
-  
-  return types;
 }; 

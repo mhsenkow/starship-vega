@@ -167,26 +167,39 @@ export const renderVegaLite = async (
   options: RenderOptions = {}
 ) => {
   try {
-    // Add proper configuration for effects
+    // Helper to determine if mark should be filled
+    const shouldFillMark = (markType: string) => {
+      const filledMarks = ['bar', 'arc', 'area', 'rect', 'square'];
+      return filledMarks.includes(markType);
+    };
+
+    // Process mark configuration
+    const processedMark = (() => {
+      if (typeof spec.mark === 'string') {
+        return shouldFillMark(spec.mark) ? { type: spec.mark, filled: true } : { type: spec.mark };
+      }
+      if (typeof spec.mark === 'object') {
+        return shouldFillMark(spec.mark.type) 
+          ? { ...spec.mark, filled: true }
+          : spec.mark;
+      }
+      return { type: 'point' };
+    })();
+
     const enhancedSpec = {
-      ...spec,
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      width: spec.width || element.clientWidth || 600,
+      height: spec.height || element.clientHeight || 400,
+      mark: processedMark,
+      data: spec.data || { values: [] },
+      encoding: spec.encoding || {},
+      transform: spec.transform,
       config: {
         ...spec.config,
-        // Enable animations
-        animation: spec.config?.animation || true,
-        // Add mark-specific configs
-        mark: {
-          ...spec.config?.mark,
-          // Enable tooltips
-          tooltip: true,
-          // Enable transitions
-          transition: true
-        },
-        // Add view configs
         view: {
-          ...spec.config?.view,
-          // Enable continuousWidth for responsive sizing
-          continuousWidth: true
+          continuousWidth: true,
+          continuousHeight: true,
+          ...spec.config?.view
         }
       }
     };
@@ -194,7 +207,7 @@ export const renderVegaLite = async (
     await vegaEmbed(element, enhancedSpec, {
       actions: false,
       renderer: 'svg',
-      hover: true // Enable hover effects
+      hover: true
     });
 
     // Apply visual effects after the chart is rendered
@@ -202,6 +215,5 @@ export const renderVegaLite = async (
 
   } catch (error) {
     console.error('Error rendering chart:', error);
-    throw error;
   }
 }; 

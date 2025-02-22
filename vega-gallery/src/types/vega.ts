@@ -1,13 +1,18 @@
 import { TopLevelSpec as VegaLiteSpec } from 'vega-lite'
 import { DatasetMetadata } from './dataset'
 
-export type EncodingChannel = 'x' | 'y' | 'color' | 'size' | 'theta' | 'radius' | 'tooltip' | 'order' | 'text' | 'shape' | 'strokeWidth'
+export type EncodingChannel = 
+  | 'x' | 'y' | 'color' | 'size' | 'tooltip' | 'opacity'
+  | 'strokeWidth' | 'shape' | 'text' | 'angle'
+  | 'theta' | 'radius' | 'x2' | 'y2'
+  | 'url' | 'width' | 'height' | 'order';
 export type MarkType = 
   | 'bar' | 'line' | 'point' | 'arc' | 'area' | 'boxplot' 
   | 'rect' | 'rule' | 'text' | 'tick' | 'trail' | 'square'
   | 'circle' | 'image' | 'geoshape' | 'errorband' | 'errorbar'
   | 'violin' | 'sunburst' | 'treemap' | 'force-directed' 
   | 'chord-diagram' | 'wordcloud'
+  | 'your-new-type';
 
 export interface EncodingUpdate {
   field?: string
@@ -196,7 +201,10 @@ export interface VegaMarkConfig {
 export interface ExtendedSpec extends TopLevelSpec {
   mark?: string | (VegaMarkConfig & { type: string });
   config?: {
-    mark?: VegaMarkConfig;
+    mark?: {
+      filled?: boolean;
+      [key: string]: any;
+    };
     axis?: {
       gridColor?: string;
       gridOpacity?: number;
@@ -226,6 +234,8 @@ export interface ExtendedSpec extends TopLevelSpec {
       [key: string]: any;
     };
     view?: {
+      continuousWidth?: boolean;
+      continuousHeight?: boolean;
       fill?: string;
       fillOpacity?: number;
       stroke?: string;

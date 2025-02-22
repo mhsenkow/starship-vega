@@ -1,95 +1,61 @@
 # Vega Gallery
 
-A comprehensive data exploration and visualization platform with three interconnected modes, each providing contextual awareness and AI-powered recommendations to guide your data journey.
+An AI-powered data storytelling platform that helps you find patterns, shape insights, create visualizations, and build compelling data narratives.
 
-## 🔄 Three Modes
+## ✨ Key Features
 
-### 🗃️ Data Curation Mode
-- Main workspace: Data transformation and cleaning tools
-- ✅ Side Panels:
-  - 📊 Visualization Suggestions
-    - AI-recommended chart types based on data patterns
-    - Smart preview thumbnails
-    - Auto-generated example visualizations
-  - 📋 Data Lineage
-    - Transformation history
-    - Source tracking
-    - Impact analysis
-  - 🔍 Data Profile & Recommendations
-    - Column statistics
-    - Quality metrics
-    - AI-suggested improvements:
-      - "This column has outliers - consider cleaning"
-      - "These columns often appear together in visualizations"
-      - "Adding a calculated field here could reveal trends"
-- 🤖 Smart Recommendations:
-  - Automated data cleaning suggestions
-  - Common transformation patterns
-  - Schema optimization ideas
-  - Data quality improvements
-  - Related dataset suggestions
+### 🔍 Data Discovery & Curation
+- Smart data import (CSV/JSON)
+- Automated pattern detection
+- Quality metrics and cleaning
+- AI-suggested transformations
+- Data relationship discovery
 
-### 🎨 Visualization Design Mode
-- Main workspace: Chart creation and customization
-- ✅ Side Panels:
-  - 📁 Available Datasets
-    - Smart data source suggestions
-    - AI-recommended transformations
-    - Quick actions based on common patterns
-  - 📈 Chart Gallery & Insights
-    - AI-generated visualization alternatives
-    - "This chart type works well with your data because..."
-    - "Consider adding these encodings to show..."
-    - Similar charts from community
-  - 📱 Usage Context
-    - Recommended dashboard placements
-    - Common usage patterns
-    - Optimization suggestions
-- 🤖 Smart Recommendations:
-  - Encoding suggestions based on data types
-  - Color palette recommendations
-  - Layout optimization tips
-  - Accessibility improvements
-  - Interactive feature suggestions
+### 📊 Visualization Studio
+1. **Visual Editor**
+   - Smart encoding suggestions
+   - Pattern-based chart recommendations
+   - Context-aware field mapping
+   - AI-guided data transformations
 
-### 📊 Dashboard Composition Mode
-- Main workspace: Layout and interaction design
-- 🔄 Side Panels:
-  - 📊 Smart Chart Library
-    - AI-curated visualization suggestions
-    - "These charts tell a coherent story"
-    - Compatibility scoring
-  - 🔄 Data Insights
-    - Automated data refresh recommendations
-    - Schema change impact analysis
-    - Data freshness monitoring
-  - 🎯 Interaction Suggestions
-    - "Users often filter these charts together"
-    - "This drill-down path is popular"
-    - Recommended filter combinations
-- 🤖 Smart Recommendations:
-  - Layout optimization suggestions
-  - Interactive pattern recommendations
-  - Cross-filtering suggestions
-  - User flow improvements
-  - Performance optimization tips
+2. **Style Editor**
+   - Theme customization
+   - Narrative-focused styling
+   - Animation controls
+   - Accessibility features
 
-## 🔄 Mode Integration
-- Context-aware mode switching
-- AI-guided workflows:
-  - "Your data would work well in these charts..."
-  - "This chart would fit nicely in dashboard X..."
-  - "Users who transformed data this way also..."
-- Smart relationship suggestions
-- Automated task suggestions
-- Learning from usage patterns
+3. **Code Editor**
+   - Vega-Lite specification
+   - Advanced customization
+   - Real-time preview
+   - Error handling
+
+4. **Chart Types**
+   - Basic Charts: Bar, Line, Scatter
+   - Statistical: Box Plot, Violin Plot
+   - Comparison: Grouped Bar, Bullet Chart
+   - Multi-dimensional: Heatmap, Parallel Coordinates
+   - And more...
+
+### 📚 Story Builder
+- Dashboard composition
+- Narrative flow design
+- Interactive storytelling
+- AI-suggested story paths
+- Cross-chart interactions
 
 ## 🚀 Getting Started
 
 1. Clone the repository
-2. Install dependencies: `npm install`
-3. Start the development server: `npm run dev`
-4. Open: `http://localhost:5173/`
+2. Install dependencies:
+```bash
+npm install
+```
+3. Start development server:
+```bash
+npm run dev
+```
+4. Open `http://localhost:5173/`
 
 ## 🛠 Tech Stack
 - React 19
@@ -97,54 +63,70 @@ A comprehensive data exploration and visualization platform with three interconn
 - Vega-Lite
 - Monaco Editor
 - Styled Components
+- Material UI
 - Vite
+
+## 📋 Current Progress
+
+### ✅ Completed
+- Basic chart gallery implementation
+- Three-mode editor framework
+- Data upload and preview
+- Chart style customization
+- Basic AI recommendations
+- Responsive layout system
+- Advanced comparison charts (Violin, Heatmap, Parallel Coordinates)
+
+### 🔄 In Progress
+- Enhanced data transformation tools
+- Advanced chart interactions
+- More visualization templates
+- Improved AI suggestions
 
 ## 🎯 Roadmap
 
-### Phase 1: Data Curation (Q2 2024)
-- [ ] Data transformation workspace
-  - Visual transformation builder
-  - Data quality tools
-  - Validation rules
-- [ ] Data source connections
-  - Database integrations
-  - API connectors
-  - Real-time streams
+### Phase 1: Data Intelligence (Q2 2024)
+- [ ] Advanced pattern detection
+  - Automated insight discovery
+  - Relationship mapping
+  - Anomaly detection
+- [ ] Smart transformations
+- [ ] Data quality tools
 
 ### Phase 2: Enhanced Visualization (Q3 2024)
-- [ ] Advanced chart types
-  - Geographic visualizations
-  - Custom chart templates
-  - Animation support
-- [ ] Enhanced interactions
+- [ ] Additional chart types
+- [ ] Custom templates
+- [ ] Animation system
+- [ ] Interactive features
   - Cross-filtering
-  - Drill-down flows
-  - Custom events
+  - Drill-downs
+  - Story-driven interactions
 
-### Phase 3: Dashboard Builder (Q4 2024)
-- [ ] Layout system
-  - Grid-based composition
-  - Responsive layouts
+### Phase 3: Story Building (Q4 2024)
+- [ ] Dashboard composer
+  - Grid-based layout
+  - Responsive design
   - Component library
-- [ ] Interaction system
-  - Event handling
-  - State management
-  - Data flow control
+- [ ] Narrative tools
+  - Story flow builder
+  - Transition designer
+  - Annotation system
+- [ ] AI story suggestions
+  - Flow recommendations
+  - Layout optimization
+  - Content suggestions
 
-### Phase 4: Integration & AI (Q1 2025)
-- [ ] Advanced AI Features
-  - Personalized recommendations
-  - Pattern recognition
-  - Usage analytics
-  - Automated insights
-- [ ] Smart Assistance
-  - Contextual help
-  - Guided workflows
-  - Best practice suggestions
-  - Performance optimization
+### Phase 4: Collaboration & Publishing (Q1 2025)
+- [ ] Story sharing
+- [ ] Template library
+- [ ] Export options
+- [ ] Team features
+- [ ] Publishing platform
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read our contributing guidelines for details.
 
 ## 📄 License
 
-This project is open source and available under the MIT License.
-
-Meta isn't allowed to use this but anyone else, feel free. 
+This project is licensed under the MIT License - see the LICENSE file for details. 

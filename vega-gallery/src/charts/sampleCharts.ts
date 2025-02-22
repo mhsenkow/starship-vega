@@ -1,6 +1,7 @@
 import { ChartConfig } from '../types/chart';
 import { TopLevelSpec } from 'vega-lite';
 import { Spec as VegaSpec } from 'vega';
+import { ChartCategory, Complexity } from '../types/chart';
 
 // Statistical Charts
 export const statistical = {
@@ -192,6 +193,57 @@ export const comparison = {
       y: { field: 'value', type: 'quantitative' },
       xOffset: { field: 'group' },
       color: { field: 'group', type: 'nominal' }
+    }
+  } as TopLevelSpec,
+  'violin-plot': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: {
+      values: Array.from({ length: 100 }, () => ({
+        category: ['A', 'B', 'C'][Math.floor(Math.random() * 3)],
+        value: Math.random() * 100
+      }))
+    },
+    mark: 'violin',
+    encoding: {
+      x: { field: 'category', type: 'nominal' },
+      y: { field: 'value', type: 'quantitative' }
+    }
+  } as TopLevelSpec,
+  'heatmap': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: {
+      values: Array.from({ length: 9 }, (_, i) => 
+        Array.from({ length: 9 }, (_, j) => ({
+          x: i,
+          y: j,
+          value: Math.random()
+        }))
+      ).flat()
+    },
+    mark: 'rect',
+    encoding: {
+      x: { field: 'x', type: 'ordinal' },
+      y: { field: 'y', type: 'ordinal' },
+      color: { field: 'value', type: 'quantitative' }
+    }
+  } as TopLevelSpec,
+  'parallel-coordinates': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: {
+      values: Array.from({ length: 100 }, () => ({
+        id: Math.floor(Math.random() * 10),
+        dim1: Math.random() * 100,
+        dim2: Math.random() * 100,
+        dim3: Math.random() * 100,
+        dim4: Math.random() * 100,
+        category: ['A', 'B', 'C'][Math.floor(Math.random() * 3)]
+      }))
+    },
+    mark: 'line',
+    encoding: {
+      x: { field: 'id', type: 'ordinal' },
+      y: { field: 'value', type: 'quantitative' },
+      color: { field: 'category', type: 'nominal' }
     }
   } as TopLevelSpec
 };
@@ -470,5 +522,89 @@ export const sampleCharts: ChartConfig[] = [
     category: 'Time Series',
     complexity: 'Advanced',
     spec: timeSeries['interactive-multiline']
+  },
+  {
+    id: 'violin-plot',
+    title: 'Violin Plot',
+    description: 'Distribution visualization showing density across categories',
+    category: 'Comparison',
+    complexity: 'Intermediate',
+    spec: comparison['violin-plot'],
+    metadata: {
+      tags: ['distribution', 'density', 'categories'],
+      dataRequirements: {
+        requiredFields: ['category', 'value', 'group']
+      }
+    }
+  },
+  {
+    id: 'heatmap',
+    title: 'Correlation Heatmap',
+    description: 'Interactive heatmap showing correlation between variables',
+    category: 'Comparison',
+    complexity: 'Intermediate',
+    spec: comparison['heatmap'],
+    metadata: {
+      tags: ['correlation', 'matrix', 'intensity'],
+      dataRequirements: {
+        requiredFields: ['x', 'y', 'value']
+      }
+    }
+  },
+  {
+    id: 'parallel-coordinates',
+    title: 'Parallel Coordinates',
+    description: 'Multi-dimensional data visualization for comparing variables',
+    category: 'Comparison',
+    complexity: 'Advanced',
+    spec: comparison['parallel-coordinates'],
+    metadata: {
+      tags: ['multi-dimensional', 'comparison', 'lines'],
+      dataRequirements: {
+        requiredFields: ['id', 'dim1', 'dim2', 'dim3', 'dim4', 'category']
+      }
+    }
+  },
+  {
+    id: 'stacked-bar',
+    title: 'Stacked Bar',
+    description: 'Bar chart with stacked values showing part-to-whole relationships',
+    category: ChartCategory.Comparison,
+    complexity: Complexity.Intermediate,
+    spec: comparison['stacked-bar'],
+    metadata: {
+      tags: ['stacked', 'bar', 'comparison'],
+      dataRequirements: {
+        requiredFields: ['x', 'value', 'category']
+      }
+    }
+  },
+  {
+    id: 'stacked-area',
+    title: 'Stacked Area',
+    description: 'Area chart with stacked values showing temporal patterns',
+    category: ChartCategory.TimeSeries,
+    complexity: Complexity.Intermediate,
+    spec: comparison['stacked-area'],
+    metadata: {
+      tags: ['stacked', 'area', 'time series'],
+      dataRequirements: {
+        requiredFields: ['time', 'value', 'category']
+      }
+    }
+  },
+  {
+    id: 'normalized-bar',
+    title: '100% Stacked Bar',
+    description: 'Bar chart showing proportional relationships as percentages',
+    category: ChartCategory.PartToWhole,
+    complexity: Complexity.Intermediate,
+    spec: comparison['normalized-bar'],
+    metadata: {
+      tags: ['normalized', 'percentage', 'proportional'],
+      dataRequirements: {
+        requiredFields: ['x', 'value', 'category']
+      }
+    }
   }
 ]; 

@@ -1,9 +1,13 @@
 import { TopLevelSpec } from 'vega-lite';
 
 export enum ChartCategory {
-  Correlation = 'correlation',
-  Hierarchical = 'hierarchical',
-  TimeSeries = 'timeSeries'
+  Statistical = 'Statistical',
+  TimeSeries = 'Time Series',
+  Comparison = 'Comparison',
+  Correlation = 'Correlation',
+  PartToWhole = 'Part-to-Whole',
+  Hierarchical = 'Hierarchical',
+  TextAnalysis = 'Text Analysis'
 }
 
 export enum Complexity {

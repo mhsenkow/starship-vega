@@ -132,7 +132,15 @@ interface EditorLayoutProps {
 }
 
 export const EditorLayout = ({ chartId, onBack }: EditorLayoutProps) => {
-  const [spec, setSpec] = useState(JSON.stringify(chartSpecs[chartId as keyof typeof chartSpecs], null, 2))
+  const [spec, setSpec] = useState(() => {
+    try {
+      const initialSpec = chartSpecs[chartId as keyof typeof chartSpecs];
+      return JSON.stringify(initialSpec || {}, null, 2);
+    } catch (e) {
+      console.error('Error parsing initial spec:', e);
+      return '{}';
+    }
+  });
   const [mode, setMode] = useState<'visual' | 'style' | 'code'>('visual')
   const [dataset, setDataset] = useState<DatasetMetadata | null>(null)
 
