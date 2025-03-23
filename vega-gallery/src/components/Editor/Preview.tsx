@@ -184,13 +184,17 @@ export const Preview = ({ spec }: PreviewProps) => {
     if (!chartRef.current) return;
     
     try {
+      // Parse the spec if it's a string
       const parsedSpec = typeof spec === 'string' ? JSON.parse(spec) : spec;
       
-      // Ensure mark configuration is properly set
-      const markConfig = typeof parsedSpec.mark === 'string' 
-        ? { type: parsedSpec.mark } 
-        : parsedSpec.mark;
+      // Ensure we have valid data
+      if (!parsedSpec.data?.values || !Array.isArray(parsedSpec.data.values)) {
+        console.error('Invalid data structure:', parsedSpec);
+        setError('No valid data found');
+        return;
+      }
 
+      // Create the valid spec
       const validSpec = {
         $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
         ...parsedSpec,
@@ -198,49 +202,21 @@ export const Preview = ({ spec }: PreviewProps) => {
         height: 'container',
         autosize: {
           type: 'fit',
-          contains: 'padding',
-          resize: true
-        },
-        mark: {
-          ...markConfig,
-          // Ensure required properties are set based on mark type
-          ...(markConfig.type === 'point' && {
-            filled: true,
-            size: markConfig.size || 100,
-            opacity: markConfig.opacity || 0.7
-          }),
-          ...(markConfig.type === 'line' && {
-            point: markConfig.point || false,
-            strokeWidth: markConfig.strokeWidth || 2
-          }),
-          ...(markConfig.type === 'area' && {
-            opacity: markConfig.opacity || 0.6,
-            line: markConfig.line || false
-          })
+          contains: 'padding'
         },
         config: {
           ...parsedSpec.config,
           view: {
-            stroke: null,
-            continuousWidth: 400,
-            continuousHeight: 300
-          },
-          legend: {
-            symbolLimit: 50,
-            labelLimit: 200,
-            columns: 2
-          },
-          mark: {
-            ...parsedSpec.config?.mark,
-            invalid: 'filter',
-            tooltip: true
+            stroke: null
           }
         }
       };
 
+      console.log('Rendering spec:', validSpec);
       await renderVegaLite(chartRef.current, validSpec);
       setError(null);
     } catch (err) {
+      console.error('Error rendering chart:', err);
       setError(err instanceof Error ? err.message : 'Failed to render chart');
     }
   }, [spec]);

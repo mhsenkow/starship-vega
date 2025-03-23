@@ -1,32 +1,76 @@
 import { MarkType } from '../types/vega';
 import { DatasetMetadata } from '../types/dataset';
 
-export const detectDataTypes = (values: any[]): Record<string, string> => {
-  if (!values.length) return {};
+export const detectDataTypes = (data: any[]): Record<string, string> => {
+  if (!data || data.length === 0) return {};
+  
+  const firstRow = data[0];
+  const columns = Object.keys(firstRow);
+  
+  return columns.reduce((types, col) => {
+    // Get a sample of values for this column
+    const sampleValues = data
+      .slice(0, 100)  // Take first 100 rows as sample
+      .map(row => row[col])
+      .filter(val => val != null);  // Remove null/undefined
 
-  const sample = values[0];
-  const types: Record<string, string> = {};
-
-  Object.entries(sample).forEach(([key, value]) => {
-    if (typeof value === 'number') {
-      types[key] = 'quantitative';
-    } else if (value instanceof Date || (typeof value === 'string' && !isNaN(Date.parse(value)))) {
-      types[key] = 'temporal';
-    } else if (typeof value === 'string') {
-      // Check if it's a hierarchical relationship field
-      if (key.includes('parent') || key.includes('source') || key.includes('target')) {
-        types[key] = 'hierarchical';
-      } else {
-        // Attempt to determine if it's ordinal or nominal
-        const uniqueValues = new Set(values.map(v => v[key]));
-        types[key] = uniqueValues.size < values.length * 0.3 ? 'ordinal' : 'nominal';
-      }
-    } else if (typeof value === 'boolean') {
-      types[key] = 'nominal';
+    if (sampleValues.length === 0) {
+      types[col] = 'nominal';
+      return types;
     }
-  });
 
-  return types;
+    // Check if all values are numbers
+    const isNumeric = sampleValues.every(val => 
+      typeof val === 'number' || 
+      (typeof val === 'string' && !isNaN(Number(val)) && val.trim() !== '')
+    );
+    if (isNumeric) {
+      types[col] = 'quantitative';
+      return types;
+    }
+
+    // Check if all values are dates
+    const isDate = sampleValues.every(val => !isNaN(Date.parse(String(val))));
+    if (isDate) {
+      types[col] = 'temporal';
+      return types;
+    }
+
+    // Check if it could be ordinal (limited unique values)
+    const uniqueValues = new Set(sampleValues);
+    if (uniqueValues.size <= 20) {
+      types[col] = 'ordinal';
+      return types;
+    }
+
+    // Default to nominal
+    types[col] = 'nominal';
+    return types;
+  }, {} as Record<string, string>);
+};
+
+// Helper function to detect a single column type
+export const detectColumnType = (values: any[]): string => {
+  const cleanValues = values.filter(v => v != null);
+  if (cleanValues.length === 0) return 'nominal';
+
+  // Check if all values are numbers
+  const isNumeric = cleanValues.every(val => 
+    typeof val === 'number' || 
+    (typeof val === 'string' && !isNaN(Number(val)) && val.trim() !== '')
+  );
+  if (isNumeric) return 'quantitative';
+
+  // Check if all values are dates
+  const isDate = cleanValues.every(val => !isNaN(Date.parse(String(val))));
+  if (isDate) return 'temporal';
+
+  // Check if it could be ordinal
+  const uniqueValues = new Set(cleanValues);
+  if (uniqueValues.size <= 20) return 'ordinal';
+
+  // Default to nominal
+  return 'nominal';
 };
 
 export const inferChartType = (dataTypes: Record<string, string>): string[] => {

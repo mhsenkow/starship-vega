@@ -10,7 +10,9 @@ import { MarkType } from '../../types/vega'
 import { DatasetMetadata } from '../../types/dataset'
 import { LoadingState } from '../common/LoadingState'
 import { Tabs, Tab } from '@mui/material'
-import { getAllDatasets } from '../../utils/indexedDB'
+import { getAllDatasets, initDB } from '../../utils/indexedDB'
+import { DatasetSection } from './DatasetSection'
+import { detectDataTypes, detectColumnType } from '../../utils/dataUtils'
 
 const Container = styled.div`
   margin-top: 16px;
@@ -74,6 +76,8 @@ interface DatasetSelectorProps {
   currentDataset: string;
   onSelect: (datasetId: string) => void;
   allowUpload?: boolean;
+  datasetCache: Record<string, DatasetMetadata>;
+  setDatasetCache: (cache: Record<string, DatasetMetadata>) => void;
 }
 
 export const DatasetSelector = ({ 
@@ -85,15 +89,32 @@ export const DatasetSelector = ({
   const [activeTab, setActiveTab] = useState(0);
   const [uploadedDatasets, setUploadedDatasets] = useState<DatasetMetadata[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Initialize IndexedDB and load datasets
   useEffect(() => {
     const loadDatasets = async () => {
       try {
         setIsLoading(true);
-        const loadedDatasets = await getAllDatasets() as DatasetMetadata[];
-        setUploadedDatasets(loadedDatasets);
+        setError(null);
+        
+        // Initialize IndexedDB
+        await initDB();
+        
+        // Get all datasets
+        const datasets = await getAllDatasets();
+        console.log('Loaded datasets:', datasets); // Debug log
+        
+        if (Array.isArray(datasets)) {
+          setUploadedDatasets(datasets);
+        } else {
+          console.error('Invalid datasets format:', datasets);
+          setUploadedDatasets([]);
+        }
       } catch (error) {
         console.error('Failed to load datasets:', error);
+        setError('Failed to load datasets. Please try again.');
+        setUploadedDatasets([]);
       } finally {
         setIsLoading(false);
       }
@@ -102,16 +123,47 @@ export const DatasetSelector = ({
     loadDatasets();
   }, []);
 
-  const handleSelect = (dataset: DatasetMetadata | string) => {
-    if (typeof dataset === 'string') {
-      onSelect(dataset);
-    } else {
-      onSelect(dataset.id);
+  const handleSelect = async (dataset: DatasetMetadata | string) => {
+    try {
+      // If it's a sample dataset (string ID)
+      if (typeof dataset === 'string') {
+        const sampleDataset = sampleDatasets[dataset];
+        if (sampleDataset) {
+          onSelect({
+            id: dataset,
+            ...sampleDataset
+          });
+          return;
+        }
+      } else {
+        // It's an uploaded dataset
+        onSelect(dataset);
+      }
+    } catch (error) {
+      console.error('Error selecting dataset:', error);
     }
   };
 
   return (
     <Container>
+      {error && (
+        <div style={{ color: 'red', marginBottom: '16px' }}>{error}</div>
+      )}
+      
+      {allowUpload && (
+        <DatasetSection 
+          onDatasetLoad={(dataset) => {
+            // Refresh the dataset list after upload
+            getAllDatasets().then(datasets => {
+              if (Array.isArray(datasets)) {
+                setUploadedDatasets(datasets);
+              }
+            });
+            handleSelect(dataset);
+          }}
+        />
+      )}
+      
       <Tabs 
         value={activeTab} 
         onChange={(_, newValue) => setActiveTab(newValue)}
@@ -152,7 +204,7 @@ export const DatasetSelector = ({
               >
                 <DatasetName>{dataset.name}</DatasetName>
                 <DatasetDescription>
-                  {dataset.description || `${dataset.rowCount} rows, ${dataset.columnCount} columns`}
+                  {dataset.rowCount} rows, {dataset.columnCount} columns
                 </DatasetDescription>
                 <DatasetMeta>
                   <Badge>Upload</Badge>
@@ -164,7 +216,7 @@ export const DatasetSelector = ({
             ))}
             {uploadedDatasets.length === 0 && (
               <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-                No uploaded datasets. Visit the Data Management page to upload your data.
+                No uploaded datasets
               </div>
             )}
           </DatasetList>

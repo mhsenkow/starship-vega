@@ -10,6 +10,8 @@ export interface DatasetMetadata {
     | 'chord-diagram' | 'violin' | 'wordcloud'
   >;
   values: any[];
+  columns: string[];
+  dataTypes: Record<string, string>;
 }
 
 export const generateBoxPlotData = () => {
@@ -143,8 +145,8 @@ export const generateCategoricalBreakdown = () => {
 export const sampleDatasets: Record<string, DatasetMetadata> = {
   categoricalSales: {
     id: 'categorical-sales',
-    name: 'Product Sales',
-    description: 'Sales data across product categories',
+    name: 'Categorical Sales',
+    description: 'Sample sales data by category',
     type: 'categorical',
     compatibleCharts: ['bar', 'arc'],
     values: [
@@ -153,7 +155,13 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { category: 'Books', value: 230, quarter: 'Q1' },
       { category: 'Food', value: 180, quarter: 'Q1' },
       { category: 'Sports', value: 280, quarter: 'Q1' }
-    ]
+    ],
+    columns: ['category', 'sales', 'profit'],
+    dataTypes: {
+      category: 'nominal',
+      sales: 'quantitative',
+      profit: 'quantitative'
+    }
   },
   timeSeriesTemp: {
     id: 'timeseries-temp',
@@ -165,7 +173,13 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       date: new Date(2024, 0, i + 1).toISOString().split('T')[0],
       temperature: Math.round(20 + Math.sin(i / 3) * 5),
       humidity: Math.round(60 + Math.cos(i / 3) * 10)
-    }))
+    })),
+    columns: ['date', 'temperature', 'humidity'],
+    dataTypes: {
+      date: 'temporal',
+      temperature: 'quantitative',
+      humidity: 'quantitative'
+    }
   },
   scatterHealth: {
     id: 'scatter-health',
@@ -178,7 +192,14 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       weight: Math.round(60 + Math.random() * 40),
       bmi: Math.round((20 + Math.random() * 10) * 10) / 10,
       group: ['Male', 'Female'][Math.floor(Math.random() * 2)]
-    }))
+    })),
+    columns: ['height', 'weight', 'bmi', 'group'],
+    dataTypes: {
+      height: 'quantitative',
+      weight: 'quantitative',
+      bmi: 'quantitative',
+      group: 'nominal'
+    }
   },
   marketShare: {
     id: 'market-share',
@@ -192,7 +213,12 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { company: 'Company C', share: 20 },
       { company: 'Company D', share: 15 },
       { company: 'Others', share: 5 }
-    ]
+    ],
+    columns: ['company', 'share'],
+    dataTypes: {
+      company: 'nominal',
+      share: 'quantitative'
+    }
   },
   boxplotExample: {
     id: 'boxplot-example',
@@ -200,7 +226,13 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     description: 'Distribution of values across categories',
     type: 'categorical',
     compatibleCharts: ['boxplot'],
-    values: generateBoxPlotData()
+    values: generateBoxPlotData(),
+    columns: ['category', 'value', 'group'],
+    dataTypes: {
+      category: 'nominal',
+      value: 'quantitative',
+      group: 'nominal'
+    }
   },
   textAnnotations: {
     id: 'text-annotations',
@@ -213,7 +245,14 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       y: Math.random() * 100,
       label: `Point ${String.fromCharCode(65 + i)}`,
       value: Math.round(Math.random() * 100)
-    }))
+    })),
+    columns: ['x', 'y', 'label', 'value'],
+    dataTypes: {
+      x: 'quantitative',
+      y: 'quantitative',
+      label: 'nominal',
+      value: 'quantitative'
+    }
   },
   ruleGuides: {
     id: 'rule-guides',
@@ -225,7 +264,13 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { start: 0, end: 100, category: 'Threshold 1' },
       { start: 20, end: 80, category: 'Threshold 2' },
       { start: 40, end: 60, category: 'Threshold 3' }
-    ]
+    ],
+    columns: ['start', 'end', 'category'],
+    dataTypes: {
+      start: 'quantitative',
+      end: 'quantitative',
+      category: 'nominal'
+    }
   },
   tickDistribution: {
     id: 'tick-distribution',
@@ -233,7 +278,12 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     description: 'Distribution of values using tick marks',
     type: 'numerical',
     compatibleCharts: ['tick', 'point'],
-    values: generateTickData()
+    values: generateTickData(),
+    columns: ['value', 'category'],
+    dataTypes: {
+      value: 'quantitative',
+      category: 'nominal'
+    }
   },
   boxplotStats: {
     id: 'boxplot-stats',
@@ -241,7 +291,12 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     description: 'Statistical distribution across categories',
     type: 'numerical',
     compatibleCharts: ['boxplot', 'point'],
-    values: generateBoxPlotData()
+    values: generateBoxPlotData(),
+    columns: ['category', 'value'],
+    dataTypes: {
+      category: 'nominal',
+      value: 'quantitative'
+    }
   },
   areaTimeSeries: {
     id: 'area-timeseries',
@@ -253,7 +308,13 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       date: new Date(2024, 0, i + 1).toISOString().split('T')[0],
       value: Math.floor(100 + i * 10 + Math.random() * 50),
       category: ['Revenue', 'Costs'][Math.floor(Math.random() * 2)]
-    }))
+    })),
+    columns: ['date', 'value', 'category'],
+    dataTypes: {
+      date: 'temporal',
+      value: 'quantitative',
+      category: 'nominal'
+    }
   },
   trailProgress: {
     id: 'trail-progress',
@@ -265,7 +326,13 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       date: new Date(2024, 0, i + 1).toISOString().split('T')[0],
       progress: Math.floor(i * 5 + Math.random() * 10),
       velocity: Math.random() * 5
-    }))
+    })),
+    columns: ['date', 'progress', 'velocity'],
+    dataTypes: {
+      date: 'temporal',
+      progress: 'quantitative',
+      velocity: 'quantitative'
+    }
   },
   organizationHierarchy: {
     id: 'organization-hierarchy',
@@ -284,7 +351,13 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { name: "B2", parent: "B", value: 15 },
       { name: "C1", parent: "C", value: 10 },
       { name: "C2", parent: "C", value: 10 }
-    ]
+    ],
+    columns: ['name', 'parent', 'value'],
+    dataTypes: {
+      name: 'nominal',
+      parent: 'nominal',
+      value: 'quantitative'
+    }
   },
   fileSystem: {
     id: 'file-system',
@@ -303,7 +376,13 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { name: 'Family', parent: 'Pictures', value: 15 },
       { name: 'OS', parent: 'System', value: 20 },
       { name: 'Apps', parent: 'System', value: 10 }
-    ]
+    ],
+    columns: ['name', 'parent', 'value'],
+    dataTypes: {
+      name: 'nominal',
+      parent: 'nominal',
+      value: 'quantitative'
+    }
   },
   dependencies: {
     id: 'dependencies',
@@ -320,7 +399,13 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { source: 'App', target: 'Router', value: 5 },
       { source: 'Redux', target: 'Store', value: 7 },
       { source: 'Store', target: 'State', value: 4 }
-    ]
+    ],
+    columns: ['source', 'target', 'value'],
+    dataTypes: {
+      source: 'nominal',
+      target: 'nominal',
+      value: 'quantitative'
+    }
   },
   socialNetwork: {
     id: 'social-network',
@@ -337,7 +422,13 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { source: 'Alice', target: 'Eve', value: 4 },
       { source: 'Frank', target: 'Carol', value: 5 },
       { source: 'Eve', target: 'Frank', value: 3 }
-    ]
+    ],
+    columns: ['source', 'target', 'value'],
+    dataTypes: {
+      source: 'nominal',
+      target: 'nominal',
+      value: 'quantitative'
+    }
   },
   teamCollaboration: {
     id: 'team-collaboration',
@@ -354,7 +445,13 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { source: 'Frontend', target: 'QA', value: 5 },
       { source: 'Design', target: 'Backend', value: 2 },
       { source: 'DevOps', target: 'Frontend', value: 7 }
-    ]
+    ],
+    columns: ['source', 'target', 'value'],
+    dataTypes: {
+      source: 'nominal',
+      target: 'nominal',
+      value: 'quantitative'
+    }
   },
   statisticalDistribution: {
     id: 'statistical-distribution',
@@ -362,7 +459,14 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     description: 'Various statistical distributions for advanced analysis',
     type: 'numerical',
     compatibleCharts: ['violin', 'boxplot', 'point'],
-    values: generateStatisticalData()
+    values: generateStatisticalData(),
+    columns: ['group', 'value', 'category', 'outlier'],
+    dataTypes: {
+      group: 'nominal',
+      value: 'quantitative',
+      category: 'nominal',
+      outlier: 'boolean'
+    }
   },
   detailedTimeSeries: {
     id: 'detailed-timeseries',
@@ -370,7 +474,13 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     description: 'Time series with seasonal patterns and trends',
     type: 'temporal',
     compatibleCharts: ['line', 'area', 'point'],
-    values: generateTimeSeriesData()
+    values: generateTimeSeriesData(),
+    columns: ['date', 'value', 'category'],
+    dataTypes: {
+      date: 'temporal',
+      value: 'quantitative',
+      category: 'nominal'
+    }
   },
   complexHierarchy: {
     id: 'complex-hierarchy',
@@ -396,7 +506,13 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { id: "Python", parentId: "Backend", value: 8 },
       { id: "AWS", parentId: "DevOps", value: 8 },
       { id: "K8s", parentId: "DevOps", value: 7 }
-    ]
+    ],
+    columns: ['id', 'parentId', 'value'],
+    dataTypes: {
+      id: 'nominal',
+      parentId: 'nominal',
+      value: 'quantitative'
+    }
   },
   hierarchicalOrg: {
     id: 'hierarchical-org',
@@ -404,7 +520,12 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     description: 'Complex organizational hierarchy',
     type: 'hierarchical',
     compatibleCharts: ['treemap', 'sunburst'],
-    values: [generateHierarchicalData()].flat()
+    values: [generateHierarchicalData()].flat(),
+    columns: ['name', 'value'],
+    dataTypes: {
+      name: 'nominal',
+      value: 'quantitative'
+    }
   },
   networkConnections: {
     id: 'network-connections',
@@ -421,7 +542,13 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { source: 'Auth', target: 'Database', value: 4 },
       { source: 'Frontend', target: 'Analytics', value: 3 },
       { source: 'Analytics', target: 'Database', value: 5 }
-    ]
+    ],
+    columns: ['source', 'target', 'value'],
+    dataTypes: {
+      source: 'nominal',
+      target: 'nominal',
+      value: 'quantitative'
+    }
   },
   textAnalysis: {
     id: 'text-analysis',
@@ -445,7 +572,12 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { text: 'Performance', value: 30 },
       { text: 'Growth', value: 25 },
       { text: 'Strategy', value: 20 }
-    ]
+    ],
+    columns: ['text', 'value'],
+    dataTypes: {
+      text: 'nominal',
+      value: 'quantitative'
+    }
   },
   wordFrequencies: {
     id: 'word-frequencies',
@@ -469,7 +601,12 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       {text: "Network", size: 35},
       {text: "Security", size: 30},
       {text: "API", size: 25}
-    ]
+    ],
+    columns: ['text', 'size'],
+    dataTypes: {
+      text: 'nominal',
+      size: 'quantitative'
+    }
   },
   multiMetricAnalysis: {
     id: 'multi-metric-analysis',
@@ -477,7 +614,17 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     description: 'Multiple metrics across categories and time',
     type: 'numerical',
     compatibleCharts: ['bar', 'line', 'point', 'area', 'boxplot', 'violin'],
-    values: generateMultiMetricData()
+    values: generateMultiMetricData(),
+    columns: ['id', 'category', 'metric1', 'metric2', 'metric3', 'date', 'group'],
+    dataTypes: {
+      id: 'quantitative',
+      category: 'nominal',
+      metric1: 'quantitative',
+      metric2: 'quantitative',
+      metric3: 'quantitative',
+      date: 'temporal',
+      group: 'nominal'
+    }
   },
   retailBreakdown: {
     id: 'retail-breakdown',
@@ -485,7 +632,16 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
     description: 'Detailed breakdown of retail categories with multiple metrics',
     type: 'categorical',
     compatibleCharts: ['bar', 'point', 'treemap', 'sunburst', 'heatmap'],
-    values: generateCategoricalBreakdown()
+    values: generateCategoricalBreakdown(),
+    columns: ['category', 'subcategory', 'value', 'growth', 'units', 'satisfaction'],
+    dataTypes: {
+      category: 'nominal',
+      subcategory: 'nominal',
+      value: 'quantitative',
+      growth: 'quantitative',
+      units: 'quantitative',
+      satisfaction: 'quantitative'
+    }
   },
   combinedMetrics: {
     id: 'combined-metrics',
@@ -500,7 +656,16 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       trend: Math.sin(i / 10) * 50 + 50,
       volume: Math.round(Math.random() * 1000),
       sentiment: Math.round(Math.random() * 5 * 10) / 10
-    }))
+    })),
+    columns: ['date', 'category', 'value', 'trend', 'volume', 'sentiment'],
+    dataTypes: {
+      date: 'temporal',
+      category: 'nominal',
+      value: 'quantitative',
+      trend: 'quantitative',
+      volume: 'quantitative',
+      sentiment: 'quantitative'
+    }
   },
   newDatasetType: {
     id: 'new-dataset-id',
@@ -512,6 +677,12 @@ export const sampleDatasets: Record<string, DatasetMetadata> = {
       { x: 10, y: 20, category: 'A' },
       { x: 15, y: 25, category: 'B' },
       { x: 20, y: 30, category: 'C' }
-    ]
+    ],
+    columns: ['x', 'y', 'category'],
+    dataTypes: {
+      x: 'quantitative',
+      y: 'quantitative',
+      category: 'nominal'
+    }
   }
 } 

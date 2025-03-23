@@ -658,6 +658,8 @@ const getMarkType = (spec: any): MarkType => {
 };
 
 export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
+  // Add state for dataset cache
+  const [datasetCache, setDatasetCache] = useState<Record<string, DatasetMetadata>>({});
   const [currentDataset, setCurrentDataset] = useState<string | null>(null);
   const [customDatasets, setCustomDatasets] = useState<Record<string, DatasetMetadata>>({});
   const [filterField, setFilterField] = useState('');
@@ -772,113 +774,57 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
   };
 
   // Handle dataset selection
-  const handleDatasetSelect = async (datasetId: string) => {
+  const handleDatasetSelect = async (datasetId: string | DatasetMetadata) => {
     try {
-      setCurrentDataset(datasetId);
-
       let dataset;
-      let values;
 
-      if (sampleDatasets[datasetId]) {
-        dataset = sampleDatasets[datasetId];
-        values = dataset.values;
+      // If it's a string ID, try to get from sample datasets first
+      if (typeof datasetId === 'string') {
+        if (sampleDatasets[datasetId]) {
+          dataset = {
+            id: datasetId,
+            ...sampleDatasets[datasetId]
+          };
+        } else {
+          // Try to get from IndexedDB
+          dataset = await getDataset(datasetId);
+        }
       } else {
-        dataset = await getDataset(datasetId);
-        // Convert object to array if necessary and handle both data structures
-        values = dataset?.values || dataset?.data;
-        
-        // Handle case where data is an object with numeric keys
-        if (values && typeof values === 'object' && !Array.isArray(values)) {
-          values = Object.values(values);
-        }
-
-        if (!Array.isArray(values)) {
-          console.warn('Invalid data format received:', values);
-          return;
-        }
+        // It's already a dataset object
+        dataset = datasetId;
       }
 
-      // Filter out any null or undefined values
-      values = values.filter(Boolean);
-
-      // Ensure we have valid data
-      if (values.length === 0) {
-        console.warn('No data found in dataset');
+      if (!dataset || !dataset.values) {
+        console.error('Dataset not found or invalid:', datasetId);
         return;
       }
 
-      // Take a sample of the data for initial visualization if it's too large
-      const sampleSize = 1000;
-      const dataToVisualize = values.length > sampleSize ? 
-        values.slice(0, sampleSize) : values;
+      // Set current dataset ID
+      setCurrentDataset(typeof datasetId === 'string' ? datasetId : dataset.id);
 
-      // Get the first two appropriate fields for visualization
-      const fields = Object.keys(dataToVisualize[0] || {});
-      
-      if (fields.length === 0) {
-        console.warn('No fields found in dataset');
-        return;
-      }
-
-      const quantFields = fields.filter(f => {
-        const sample = dataToVisualize.find(row => row[f] !== null && row[f] !== undefined);
-        return sample && typeof sample[f] === 'number';
-      });
-
-      const nominalFields = fields.filter(f => !quantFields.includes(f));
-
-      // Choose appropriate fields for x and y axes
-      const xField = nominalFields[0] || fields[0];
-      const yField = quantFields[0] || fields[1] || fields[0];
-
-      // Create the updated spec
-      const updatedSpec = {
-        ...spec,
-        data: { values: dataToVisualize },
-        mark: { 
-          ...spec.mark,
-          tooltip: true 
+      // Create Vega-Lite spec with the dataset
+      const newSpec = {
+        $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+        description: dataset.description || '',
+        data: {
+          values: dataset.values
         },
+        mark: currentMark || 'area',
         encoding: {
           x: {
-            field: xField,
-            type: quantFields.includes(xField) ? 'quantitative' : 'nominal',
-            axis: { labelLimit: 200 }
+            field: dataset.columns?.[0] || Object.keys(dataset.values[0])[0],
+            type: dataset.dataTypes?.[dataset.columns?.[0]] || 'nominal'
           },
           y: {
-            field: yField,
-            type: quantFields.includes(yField) ? 'quantitative' : 'nominal',
-            axis: { labelLimit: 200 }
-          },
-          tooltip: fields.map(field => ({
-            field,
-            type: quantFields.includes(field) ? 'quantitative' : 'nominal'
-          }))
-        },
-        config: {
-          ...spec.config,
-          legend: {
-            maxSymbolsPerRow: 10,
-            symbolLimit: 50,
-            labelLimit: 200,
-            columns: 2
-          },
-          axis: {
-            labelLimit: 200,
-            labelOverlap: true
-          },
-          mark: {
-            invalid: 'filter'
+            field: dataset.columns?.find(col => dataset.dataTypes?.[col] === 'quantitative') 
+              || Object.keys(dataset.values[0])[1],
+            type: 'quantitative'
           }
         }
       };
 
-      onChange(updatedSpec);
+      onChange(newSpec);
 
-      // Log sampling information if available
-      if (dataset?.sampleRate) {
-        console.info(`Showing ${dataToVisualize.length} rows (sampled 1/${dataset.sampleRate})`);
-      }
     } catch (error) {
       console.error('Failed to load dataset:', error);
     }
@@ -1345,8 +1291,10 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
           <div>
             <DatasetSelector
               chartId={currentMark}
-              currentDataset={currentDataset}
+              currentDataset={currentDataset || ''}
               onSelect={handleDatasetSelect}
+              datasetCache={datasetCache}
+              setDatasetCache={setDatasetCache}
             />
           </div>
         </AccordionContent>

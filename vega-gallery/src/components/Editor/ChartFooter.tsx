@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 
 const FooterContainer = styled.div`
@@ -203,10 +203,11 @@ const ActionButton = styled.button`
 `;
 
 interface ChartFooterProps {
-  data: any[];
+  data: any;
 }
 
-export const ChartFooter = ({ data }: { data: any[] }) => {
+export const ChartFooter = ({ data }: { data: any }) => {
+  // 1. All useState hooks
   const [isOpen, setIsOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -215,68 +216,91 @@ export const ChartFooter = ({ data }: { data: any[] }) => {
     key: string;
     direction: 'asc' | 'desc';
   } | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 100);
-  }, [searchTerm, sortConfig, currentPage, rowsPerPage]);
+  // 2. Extract data and columns with useMemo
+  const { validData, columns } = useMemo(() => {
+    if (!data) return { validData: [], columns: [] };
 
-  if (!data || !Array.isArray(data) || data.length === 0) {
-    return (
-      <div style={{ padding: '16px', color: '#666', textAlign: 'center' }}>
-        No data available to display
-      </div>
-    );
-  }
+    console.log('Processing data:', data);
 
-  const fields = Object.keys(data[0]);
-  const fieldTypes = fields.reduce((acc, field) => {
-    const value = data[0][field];
-    acc[field] = typeof value === 'number' ? 'quantitative' : 
-                 value instanceof Date ? 'temporal' : 'nominal';
-    return acc;
-  }, {} as Record<string, string>);
+    // Handle array structure
+    if (Array.isArray(data)) {
+      // Find the data object in the array (usually at index 3)
+      const dataObj = data.find(item => item && typeof item === 'object' && 'values' in item);
+      if (dataObj) {
+        return {
+          validData: dataObj.values || [],
+          columns: dataObj.columns || []
+        };
+      }
+    }
 
-  const filteredData = data.filter(row =>
-    Object.values(row).some(value =>
-      String(value).toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+    // Handle object structure
+    if (data.data?.values && data.data?.columns) {
+      return {
+        validData: data.data.values,
+        columns: data.data.columns
+      };
+    }
 
-  const sortedData = sortConfig
-    ? [...filteredData].sort((a, b) => {
-        const aVal = a[sortConfig.key];
-        const bVal = b[sortConfig.key];
-        const direction = sortConfig.direction === 'asc' ? 1 : -1;
-        return aVal > bVal ? direction : -direction;
-      })
-    : filteredData;
+    // Handle direct values and columns
+    if (data.values && data.columns) {
+      return {
+        validData: data.values,
+        columns: data.columns
+      };
+    }
 
+    console.error('Invalid data structure:', data);
+    return { validData: [], columns: [] };
+  }, [data]);
+
+  // 3. Filter data with useMemo
+  const filteredData = useMemo(() => {
+    if (!validData.length) return [];
+    
+    return validData.filter((row: any) => {
+      if (!row) return false;
+      return Object.values(row).some(value => 
+        String(value).toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    });
+  }, [validData, searchTerm]);
+
+  // 4. Sort data with useMemo
+  const sortedData = useMemo(() => {
+    if (!sortConfig || !filteredData.length) return filteredData;
+
+    return [...filteredData].sort((a: any, b: any) => {
+      if (!a || !b) return 0;
+      const aVal = a[sortConfig.key];
+      const bVal = b[sortConfig.key];
+      const direction = sortConfig.direction === 'asc' ? 1 : -1;
+      
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return (aVal - bVal) * direction;
+      }
+      return String(aVal).localeCompare(String(bVal)) * direction;
+    });
+  }, [filteredData, sortConfig]);
+
+  // 5. Calculate pagination values
   const totalPages = Math.ceil(sortedData.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const endIndex = startIndex + rowsPerPage;
-  const paginatedData = sortedData.slice(startIndex, endIndex);
+  const paginatedData = sortedData.slice(startIndex, startIndex + rowsPerPage);
+
+  // Early return if no data
+  if (validData.length === 0 || columns.length === 0) {
+    return <div>No data available</div>;
+  }
 
   const formatValue = (value: any): string => {
-    if (typeof value === 'number') {
-      return value.toLocaleString(undefined, { 
-        maximumFractionDigits: 2 
-      });
-    }
-    if (value instanceof Date) {
-      return value.toLocaleDateString();
-    }
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'number') return value.toLocaleString();
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (value instanceof Date) return value.toLocaleDateString();
+    if (typeof value === 'object') return JSON.stringify(value);
     return String(value);
-  };
-
-  const handleSort = (key: string) => {
-    setSortConfig(current => ({
-      key,
-      direction: current?.key === key && current.direction === 'asc' ? 'desc' : 'asc'
-    }));
   };
 
   return (
@@ -295,7 +319,7 @@ export const ChartFooter = ({ data }: { data: any[] }) => {
         </svg>
         {isOpen ? 'Hide Data' : 'Show Data'}
         <span style={{ color: '#868e96', marginLeft: 'auto' }}>
-          {data.length} rows
+          {validData.length} rows
         </span>
       </ToggleButton>
 
@@ -316,11 +340,13 @@ export const ChartFooter = ({ data }: { data: any[] }) => {
           <Table>
             <thead>
               <tr>
-                {fields.map(col => (
+                {columns.map(col => (
                   <th 
                     key={col}
-                    onClick={() => handleSort(col)}
-                    style={{ cursor: 'pointer' }}
+                    onClick={() => setSortConfig({
+                      key: col,
+                      direction: sortConfig?.key === col && sortConfig.direction === 'asc' ? 'desc' : 'asc'
+                    })}
                   >
                     {col}
                     {sortConfig?.key === col && (
@@ -331,9 +357,9 @@ export const ChartFooter = ({ data }: { data: any[] }) => {
               </tr>
             </thead>
             <tbody>
-              {paginatedData.map((row, i) => (
-                <tr key={i}>
-                  {fields.map(col => (
+              {paginatedData.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {columns.map(col => (
                     <td key={col}>{formatValue(row[col])}</td>
                   ))}
                 </tr>
@@ -388,12 +414,6 @@ export const ChartFooter = ({ data }: { data: any[] }) => {
           </div>
         </PaginationControls>
       </TableContainer>
-
-      {isLoading && (
-        <LoadingOverlay>
-          Loading...
-        </LoadingOverlay>
-      )}
     </FooterContainer>
   );
 }; 

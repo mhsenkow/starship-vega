@@ -3,7 +3,7 @@
  * Uses styled-components for styling and maintains selected chart state.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import styled, { ThemeProvider } from 'styled-components'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Layout } from './components/common/Layout'
@@ -11,6 +11,7 @@ import { GalleryGrid } from './components/Gallery/GalleryGrid'
 import { EditorLayout } from './components/Editor/EditorLayout'
 import { DataManagement } from './components/DataManagement/DataManagement'
 import { theme } from './types/theme'
+import { initDB } from './utils/indexedDB'
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -19,6 +20,12 @@ const AppContainer = styled.div`
 
 function App() {
   const [selectedChart, setSelectedChart] = useState<string | null>(null)
+
+  useEffect(() => {
+    initDB().catch(error => {
+      console.error('Failed to initialize database:', error);
+    });
+  }, []);
 
   return (
     <ThemeProvider theme={theme}>

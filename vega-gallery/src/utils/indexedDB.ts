@@ -1,40 +1,77 @@
-export const initDB = async () => {
+import { DatasetMetadata } from '../types/dataset';
+
+const DB_NAME = 'vegaGalleryDB';
+const STORE_NAME = 'datasets';
+const DB_VERSION = 1;
+
+export const initDB = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('VegaGalleryDB', 1);
-    
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
     request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
     
-    request.onupgradeneeded = (event: any) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains('datasets')) {
-        db.createObjectStore('datasets', { keyPath: 'id' });
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
       }
+    };
+
+    request.onsuccess = () => resolve();
+  });
+};
+
+export const storeDataset = async (dataset: DatasetMetadata): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME);
+
+    request.onerror = () => reject(request.error);
+
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const putRequest = store.put(dataset);
+
+      putRequest.onerror = () => reject(putRequest.error);
+      putRequest.onsuccess = () => resolve();
     };
   });
 };
 
-export const getAllDatasets = async () => {
-  const db: IDBDatabase = await initDB() as IDBDatabase;
+export const getDataset = async (id: string): Promise<DatasetMetadata | null> => {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['datasets'], 'readonly');
-    const store = transaction.objectStore('datasets');
-    const request = store.getAll();
-    
-    request.onsuccess = () => resolve(request.result);
+    const request = indexedDB.open(DB_NAME);
+
     request.onerror = () => reject(request.error);
+
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction(STORE_NAME, 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const getRequest = store.get(id);
+
+      getRequest.onerror = () => reject(getRequest.error);
+      getRequest.onsuccess = () => resolve(getRequest.result || null);
+    };
   });
 };
 
-export const getDataset = async (id: string) => {
-  const db: IDBDatabase = await initDB() as IDBDatabase;
+export const getAllDatasets = async (): Promise<any[]> => {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['datasets'], 'readonly');
-    const store = transaction.objectStore('datasets');
-    const request = store.get(id);
-    
-    request.onsuccess = () => resolve(request.result);
+    const request = indexedDB.open(DB_NAME);
+
     request.onerror = () => reject(request.error);
+
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction(STORE_NAME, 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const getAllRequest = store.getAll();
+
+      getAllRequest.onerror = () => reject(getAllRequest.error);
+      getAllRequest.onsuccess = () => resolve(getAllRequest.result);
+    };
   });
 };
 

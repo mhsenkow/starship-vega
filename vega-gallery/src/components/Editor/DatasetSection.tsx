@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react';
 import styled from 'styled-components';
-import { LoadingState } from '../common/LoadingState';
 import Papa from 'papaparse';
+import { LoadingState } from '../common/LoadingState';
+import { detectDataTypes } from '../../utils/dataUtils';
+import { storeDataset } from '../../utils/indexedDB';
 
 const Section = styled.div`
   margin-bottom: 24px;
@@ -34,49 +36,19 @@ const FileInput = styled.div`
   gap: 8px;
 `;
 
-const ChooseFileButton = styled.button`
-  background: #212529;
-  color: white;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #343a40;
-  }
-`;
-
-const FileName = styled.span`
-  color: #495057;
-  font-size: 0.9rem;
-`;
-
-const UploadButton = styled.button`
-  background: ${props => props.theme.colors.primary};
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
+const UploadButton = styled.button<{ $disabled: boolean }>`
   width: 100%;
-  cursor: pointer;
-  font-weight: 500;
+  padding: 10px;
+  background: ${props => props.$disabled ? '#e9ecef' : props.theme.colors.primary};
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
+  opacity: ${props => props.$disabled ? 0.7 : 1};
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    opacity: 0.9;
-  }
-
-  &:disabled {
-    background: #ced4da;
-    cursor: not-allowed;
-  }
 `;
 
 const DatasetList = styled.div`
@@ -113,6 +85,26 @@ const DatasetInfo = styled.div`
   color: ${props => props.theme.text.secondary};
 `;
 
+const EditableDatasetName = styled.input`
+  font-weight: 500;
+  color: ${props => props.theme.text.primary};
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 4px 8px;
+  border-radius: 4px;
+  width: 100%;
+
+  &:hover {
+    border-color: ${props => props.theme.colors.border};
+  }
+
+  &:focus {
+    border-color: ${props => props.theme.colors.primary};
+    outline: none;
+    background: white;
+  }
+`;
+
 interface Dataset {
   id: string;
   name: string;
@@ -127,13 +119,18 @@ interface Dataset {
 }
 
 interface DatasetSectionProps {
-  onDatasetLoad: (data: any[]) => void;
+  onDatasetLoad: (data: any) => void;
 }
 
 export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedDatasets, setUploadedDatasets] = useState<DatasetMetadata[]>([]);
+
+  const handleDelete = (id: string) => {
+    setUploadedDatasets(prev => prev.filter(dataset => dataset.id !== id));
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -142,26 +139,102 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
     }
   };
 
-  const handleUpload = () => {
-    if (!selectedFile) return;
-    setIsLoading(true);
+  const handleUpload = async (file: File) => {
+    try {
+      const results = await new Promise((resolve, reject) => {
+        Papa.parse(file, {
+          header: true,
+          dynamicTyping: true,
+          complete: resolve,
+          error: reject
+        });
+      });
 
-    Papa.parse(selectedFile, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        onDatasetLoad(results.data);  // Just pass the raw parsed data
-        setIsLoading(false);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      }
-    });
+      const values = results.data.filter(row => Object.keys(row).length > 0);
+      const columns = Object.keys(values[0] || {});
+      
+      const dataset = {
+        id: `dataset-${Date.now()}`,
+        name: file.name.split('.')[0],
+        description: `Uploaded on ${new Date().toLocaleDateString()}`,
+        values,
+        columns,
+        rowCount: values.length,
+        columnCount: columns.length,
+        source: 'upload',
+        uploadDate: new Date().toISOString(),
+        dataTypes: detectDataTypes(values)
+      };
+
+      // Store in IndexedDB
+      await storeDataset(dataset);
+      
+      // Notify parent
+      onDatasetLoad(dataset);
+      
+    } catch (error) {
+      console.error('Error uploading dataset:', error);
+    }
+  };
+
+  // Helper function to detect column type
+  const detectColumnType = (values: any[]): string => {
+    // Remove null/undefined values
+    const cleanValues = values.filter(v => v != null);
+    if (cleanValues.length === 0) return 'nominal';
+
+    // Check if all values are numbers
+    if (cleanValues.every(v => typeof v === 'number')) {
+      return 'quantitative';
+    }
+
+    // Check if all values are valid dates
+    if (cleanValues.every(v => !isNaN(Date.parse(String(v))))) {
+      return 'temporal';
+    }
+
+    // Check if it's ordinal (small set of unique values)
+    const uniqueValues = new Set(cleanValues);
+    if (uniqueValues.size <= 20) {
+      return 'ordinal';
+    }
+
+    // Default to nominal
+    return 'nominal';
   };
 
   return (
     <Section>
       <Title>Dataset</Title>
+      {uploadedDatasets.length > 0 && (
+        <Table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Rows</th>
+              <th>Columns</th>
+              <th>Upload Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {uploadedDatasets.map(dataset => (
+              <tr key={dataset.id}>
+                <td>{dataset.name}</td>
+                <td>{dataset.rowCount}</td>
+                <td>{dataset.columnCount}</td>
+                <td>{new Date(dataset.uploadDate).toLocaleDateString()}</td>
+                <td>
+                  <DeleteButton onClick={() => handleDelete(dataset.id)}>
+                    Delete
+                  </DeleteButton>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
+
       <UploadArea>
         <FileInput>
           <input
@@ -171,15 +244,26 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
             style={{ display: 'none' }}
             onChange={handleFileSelect}
           />
-          <ChooseFileButton onClick={() => fileInputRef.current?.click()}>
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              padding: '8px 16px',
+              background: '#212529',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
             Choose File
-          </ChooseFileButton>
-          <FileName>
+          </button>
+          <span style={{ color: '#495057' }}>
             {selectedFile?.name || 'No file chosen'}
-          </FileName>
+          </span>
         </FileInput>
         <UploadButton 
-          onClick={handleUpload}
+          onClick={() => selectedFile && handleUpload(selectedFile)}
+          $disabled={!selectedFile || isLoading}
           disabled={!selectedFile || isLoading}
         >
           {isLoading ? (
@@ -191,4 +275,36 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
       </UploadArea>
     </Section>
   );
-}; 
+};
+
+// Add these styled components
+const Table = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+
+  th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid ${props => props.theme.colors.border};
+  }
+
+  th {
+    font-weight: 500;
+    color: ${props => props.theme.text.secondary};
+    background: #f8f9fa;
+  }
+`;
+
+const DeleteButton = styled.button`
+  padding: 4px 8px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background: #c82333;
+  }
+`; 
