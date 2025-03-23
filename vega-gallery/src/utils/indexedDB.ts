@@ -87,14 +87,38 @@ export const saveDataset = async (dataset: any) => {
   });
 };
 
-export const deleteDataset = async (id: string) => {
-  const db: IDBDatabase = await initDB() as IDBDatabase;
+export const deleteDataset = async (id: string): Promise<void> => {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['datasets'], 'readwrite');
-    const store = transaction.objectStore('datasets');
-    const request = store.delete(id);
-    
-    request.onsuccess = () => resolve(request.result);
+    const request = indexedDB.open(DB_NAME);
+
     request.onerror = () => reject(request.error);
+
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const deleteRequest = store.delete(id);
+
+      deleteRequest.onerror = () => reject(deleteRequest.error);
+      deleteRequest.onsuccess = () => resolve();
+    };
+  });
+};
+
+export const clearAllDatasets = async (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME);
+
+    request.onerror = () => reject(request.error);
+
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const clearRequest = store.clear();
+
+      clearRequest.onerror = () => reject(clearRequest.error);
+      clearRequest.onsuccess = () => resolve();
+    };
   });
 }; 
