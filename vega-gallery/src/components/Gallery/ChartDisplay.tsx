@@ -1,146 +1,102 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { ChartStyle } from '../../types/chart';
 import { renderVegaLite } from '../../utils/chartRenderer';
 import { determineChartEncodings, generateRandomEncoding } from '../../utils/chartAdapters';
-import { TopLevelSpec, MarkType } from 'vega-lite';
-import { ChartControls, ChartContainer } from './ChartDisplay.styles';
-import { EncodingConfig } from '../../types/vega';
-import { ChartEncoding } from '../../types/vega';
+import { TopLevelSpec } from 'vega-lite';
+import {
+  ChartContainer,
+  ChartControls,
+  ChartWrapper
+} from './ChartDisplay.styles';
+import { MarkType, ExtendedSpec, ChartEncoding } from '../../types/vega';
+import { ErrorBoundary } from '../ErrorBoundary';
+import { enhanceChartSpec } from '../../utils/chartEnhancements';
 
 interface ChartDisplayProps {
   chartType: MarkType;
-  dataset: any;
+  dataset: {
+    values: Record<string, unknown>[];
+    [key: string]: unknown;
+  };
   encoding: ChartEncoding | null;
   style?: Partial<ChartStyle>;
 }
 
-export const ChartDisplay: React.FC<ChartDisplayProps> = ({ 
-  chartType,
-  dataset,
-  encoding,
-  style
-}) => {
-  const [spec, setSpec] = useState<TopLevelSpec | null>(null);
-  const [encodings, setEncodings] = useState<EncodingConfig | null>(null);
+export const ChartDisplay = ({ chartType, dataset, encoding, style }: ChartDisplayProps) => {
+  const [spec, setSpec] = useState<ExtendedSpec | null>(null);
+  const [encodings, setEncodings] = useState<ChartEncoding | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
+  const renderTimeout = useRef<number | undefined>(undefined);
 
-  const generateSpec = (encodingConfig: EncodingConfig | null) => {
-    if (!dataset || !chartType) return;
+  // Memoize the base spec to prevent unnecessary recalculations
+  const baseSpec = useMemo<ExtendedSpec>(() => ({
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: { values: dataset?.values || [] },
+    mark: { type: chartType },
+    width: 'container',
+    height: 300
+  }), [chartType, dataset?.values]);
 
-    // Use provided encodings or determine automatically
+  const generateSpec = useCallback((encodingConfig: ChartEncoding | null) => {
+    if (!dataset?.values?.length || !chartType) return;
+
     const finalEncodings = encodingConfig || determineChartEncodings(chartType, dataset);
+    setSpec(enhanceChartSpec({ ...baseSpec, encoding: finalEncodings }, chartType));
+  }, [chartType, dataset, baseSpec]);
 
-    const baseSpec: TopLevelSpec = {
-      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-      data: { values: dataset.values },
-      mark: chartType,
-      encoding: finalEncodings,
-      width: 'container',
-      height: 300
-    };
+  // Debounced chart rendering
+  const renderChart = useCallback(() => {
+    if (!chartRef.current || !spec) return;
 
-    const enhancedSpec = enhanceChartSpec(baseSpec, chartType);
-    setSpec(enhancedSpec);
-  };
+    if (renderTimeout.current) {
+      window.clearTimeout(renderTimeout.current);
+    }
+
+    renderTimeout.current = window.setTimeout(() => {
+      renderVegaLite(chartRef.current!, spec, { style })
+        .catch(error => console.error('Failed to render chart:', error));
+    }, 100);
+  }, [spec, style]);
 
   useEffect(() => {
-    generateSpec(encodings);
-  }, [chartType, dataset, encodings]);
+    renderChart();
+    return () => {
+      if (renderTimeout.current) {
+        window.clearTimeout(renderTimeout.current);
+      }
+    };
+  }, [renderChart]);
 
   const handleRandomize = () => {
     const newEncodings = generateRandomEncoding(chartType, dataset);
     setEncodings(newEncodings);
   };
 
-  useEffect(() => {
-    if (chartRef.current && spec) {
-      renderVegaLite(chartRef.current, spec, { style });
-    }
-  }, [spec, style]);
-
   if (!spec) {
     return <div>No chart specification available</div>;
   }
 
   return (
-    <ChartContainer>
-      <ChartControls>
-        <button 
-          onClick={handleRandomize}
-          title="Try different data combinations"
-        >
-          <span role="img" aria-label="dice">🎲</span>
-          Explore Data
-        </button>
-        <button 
-          onClick={() => setEncodings(null)}
-          title="Reset to default view"
-        >
-          <span role="img" aria-label="reset">↺</span>
-          Reset View
-        </button>
-      </ChartControls>
-      <div 
-        ref={chartRef} 
-        style={{ 
-          width: '100%', 
-          height: '400px',
-          border: '1px solid #eee',
-          borderRadius: '8px',
-          overflow: 'hidden'
-        }} 
-      />
-    </ChartContainer>
+    <ErrorBoundary fallback={<div>Failed to render chart</div>}>
+      <ChartContainer>
+        <ChartControls>
+          <button 
+            onClick={handleRandomize}
+            title="Try different data combinations"
+          >
+            <span role="img" aria-label="dice">🎲</span>
+            Explore Data
+          </button>
+          <button 
+            onClick={() => setEncodings(null)}
+            title="Reset to default view"
+          >
+            <span role="img" aria-label="reset">↺</span>
+            Reset View
+          </button>
+        </ChartControls>
+        <ChartWrapper ref={chartRef} />
+      </ChartContainer>
+    </ErrorBoundary>
   );
-};
-
-const enhanceChartSpec = (spec: TopLevelSpec, chartType: MarkType): TopLevelSpec => {
-  switch (chartType) {
-    case 'bar':
-      return {
-        ...spec,
-        mark: { type: 'bar', tooltip: true },
-        encoding: {
-          ...spec.encoding,
-          y: { ...spec.encoding?.y, stack: 'zero' }
-        }
-      };
-
-    case 'line':
-      return {
-        ...spec,
-        mark: { type: 'line', point: true, tooltip: true }
-      };
-
-    case 'boxplot':
-      return {
-        ...spec,
-        mark: { type: 'boxplot', extent: 1.5 }
-      };
-
-    case 'area':
-      return {
-        ...spec,
-        mark: { type: 'area', tooltip: true, line: true }
-      };
-
-    case 'wordcloud':
-      return {
-        ...spec,
-        mark: 'text',
-        transform: [
-          {
-            type: 'wordcloud',
-            size: [800, 400],
-            text: { field: spec.encoding?.text?.field || 'text' },
-            fontSize: { field: spec.encoding?.size?.field || 'value' }
-          }
-        ]
-      };
-
-    // Add more chart-specific enhancements...
-
-    default:
-      return spec;
-  }
 }; 

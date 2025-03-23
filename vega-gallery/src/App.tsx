@@ -1,3 +1,8 @@
+/**
+ * Main App component that handles routing between gallery and editor views.
+ * Uses styled-components for styling and maintains selected chart state.
+ */
+
 import { useState } from 'react'
 import styled, { ThemeProvider } from 'styled-components'
 import { Layout } from './components/common/Layout'

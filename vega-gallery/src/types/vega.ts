@@ -1,4 +1,4 @@
-import { TopLevelSpec as VegaLiteSpec } from 'vega-lite'
+import { TopLevelSpec } from 'vega-lite'
 import { DatasetMetadata } from './dataset'
 
 export type EncodingChannel = 
@@ -7,12 +7,17 @@ export type EncodingChannel =
   | 'theta' | 'radius' | 'x2' | 'y2'
   | 'url' | 'width' | 'height' | 'order';
 export type MarkType = 
-  | 'bar' | 'line' | 'point' | 'arc' | 'area' | 'boxplot' 
-  | 'rect' | 'rule' | 'text' | 'tick' | 'trail' | 'square'
-  | 'circle' | 'image' | 'geoshape' | 'errorband' | 'errorbar'
-  | 'violin' | 'sunburst' | 'treemap' | 'force-directed' 
-  | 'chord-diagram' | 'wordcloud'
-  | 'your-new-type';
+  | 'bar' 
+  | 'line' 
+  | 'area' 
+  | 'point' 
+  | 'circle' 
+  | 'square'
+  | 'rect'
+  | 'rule'
+  | 'text'
+  | 'tick'
+  | 'arc';
 
 export interface EncodingUpdate {
   field?: string
@@ -49,15 +54,11 @@ export interface EncodingField {
 }
 
 export interface ChartEncoding {
-  x?: EncodingField;
-  y?: EncodingField;
-  color?: EncodingField;
-  size?: EncodingField;
-  shape?: EncodingField;
-  strokeWidth?: EncodingField;
-  tooltip?: EncodingField | EncodingField[];
-  order?: EncodingField;
-  [key: string]: EncodingField | EncodingField[] | undefined;
+  x?: EncodingChannel;
+  y?: EncodingChannel;
+  color?: EncodingChannel;
+  size?: EncodingChannel;
+  [key: string]: EncodingChannel | undefined;
 }
 
 // First, let's extend our Vega spec type to include all possible properties
@@ -198,82 +199,12 @@ export interface VegaMarkConfig {
   blendMode?: 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten';
 }
 
-export interface ExtendedSpec extends TopLevelSpec {
-  mark?: string | (VegaMarkConfig & { type: string });
-  config?: {
-    mark?: {
-      filled?: boolean;
-      [key: string]: any;
-    };
-    axis?: {
-      gridColor?: string;
-      gridOpacity?: number;
-      gridWidth?: number;
-      gridDash?: number[];
-      labelFontSize?: number;
-      labelFont?: string;
-      labelColor?: string;
-      labelAngle?: number;
-      titleFontSize?: number;
-      titleFont?: string;
-      titleColor?: string;
-      [key: string]: any;
-    };
-    legend?: {
-      orient?: 'left' | 'right' | 'top' | 'bottom';
-      offset?: number;
-      padding?: number;
-      titleFontSize?: number;
-      titleFont?: string;
-      titleColor?: string;
-      labelFontSize?: number;
-      labelFont?: string;
-      labelColor?: string;
-      symbolSize?: number;
-      symbolType?: string;
-      [key: string]: any;
-    };
-    view?: {
-      continuousWidth?: boolean;
-      continuousHeight?: boolean;
-      fill?: string;
-      fillOpacity?: number;
-      stroke?: string;
-      strokeWidth?: number;
-      padding?: number | { top?: number; bottom?: number; left?: number; right?: number };
-      [key: string]: any;
-    };
-    style?: {
-      guide?: {
-        labelFontSize?: number;
-        labelFont?: string;
-        labelColor?: string;
-        titleFontSize?: number;
-        titleFont?: string;
-        titleColor?: string;
-      };
-      cell?: {
-        stroke?: string;
-        strokeWidth?: number;
-      };
-    };
-    animation?: {
-      duration?: number;
-      easing?: string;
-    };
-    background?: string | GradientConfig | PatternConfig;
-    padding?: number | {
-      top?: number;
-      bottom?: number;
-      left?: number;
-      right?: number;
-    };
-    autosize?: {
-      type?: 'pad' | 'fit' | 'fit-x' | 'fit-y' | 'none';
-      contains?: 'padding' | 'content';
-      resize?: boolean;
-    };
-    [key: string]: any;
+export interface ExtendedSpec extends Omit<TopLevelSpec, 'mark'> {
+  mark?: {
+    type: MarkType;
+    tooltip?: boolean;
+    point?: boolean;
+    [key: string]: unknown;
   };
 }
 

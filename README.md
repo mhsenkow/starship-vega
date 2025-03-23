@@ -1,6 +1,37 @@
 # Vega Gallery
 
-An AI-powered data storytelling platform that helps you find patterns, shape insights, create visualizations, and build compelling data narratives.
+A React-based visualization gallery and editor built with Vega-Lite. Create, customize, and explore data visualizations with an intuitive interface.
+
+## Features
+
+- Interactive chart gallery with filtering and search
+- Visual chart editor with live preview
+- Data transformation and curation tools
+- Multiple chart types and encoding options
+- Customizable styles and themes
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/vega-gallery.git
+
+# Install dependencies
+cd vega-gallery
+npm install
+
+# Start development server
+npm run dev
+```
+
+## Project Structure
 
 ## ✨ Key Features
 

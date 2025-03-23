@@ -23,6 +23,12 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'react-hooks/exhaustive-deps': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      'no-unused-vars': 'warn',
+      'prefer-const': 'warn'
     },
   },
 )

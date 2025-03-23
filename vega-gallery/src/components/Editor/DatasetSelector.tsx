@@ -1,4 +1,9 @@
-import { useState } from 'react'
+/**
+ * Handles dataset selection and management.
+ * Supports both sample and custom uploaded datasets.
+ */
+
+import { useState, useMemo, useCallback, memo } from 'react'
 import styled from 'styled-components'
 import { sampleDatasets } from '../../utils/sampleData'
 import { MarkType } from '../../types/vega'
@@ -67,47 +72,71 @@ export const DatasetSelector = ({
   onSelect,
   customDatasets = {}
 }: DatasetSelectorProps) => {
-  // Combine sample and custom datasets
-  const allDatasets = {
-    ...sampleDatasets,
-    ...customDatasets
-  };
+  // Memoize dataset stats calculation
+  const datasetStats = useMemo(() => ({
+    custom: Object.entries(customDatasets).map(([id, dataset]) => ({
+      id,
+      dataset,
+      columnCount: Object.keys(dataset.values[0] || {}).length,
+      rowCount: dataset.values.length
+    })),
+    sample: Object.entries(sampleDatasets).map(([id, dataset]) => ({
+      id,
+      dataset,
+      columnCount: Object.keys(dataset.values[0] || {}).length,
+      rowCount: dataset.values.length
+    }))
+  }), [customDatasets]);
+
+  const DatasetCardMemo = memo(({ 
+    id, 
+    dataset, 
+    columnCount, 
+    rowCount, 
+    isCustom 
+  }: {
+    id: string;
+    dataset: DatasetMetadata;
+    columnCount: number;
+    rowCount: number;
+    isCustom: boolean;
+  }) => (
+    <DatasetCard
+      $active={currentDataset === id}
+      onClick={() => onSelect(id)}
+    >
+      <DatasetName>{dataset.name}</DatasetName>
+      <DatasetDescription>{dataset.description}</DatasetDescription>
+      <DatasetMeta>
+        <span>Rows: {rowCount}</span>
+        <span>Columns: {columnCount}</span>
+        <Badge>{isCustom ? 'Uploaded' : 'Sample'}</Badge>
+      </DatasetMeta>
+    </DatasetCard>
+  ));
 
   return (
     <Container>
       <DatasetList>
-        {/* Show uploaded datasets first */}
-        {Object.entries(customDatasets).map(([id, dataset]) => (
-          <DatasetCard
+        {datasetStats.custom.map(({ id, dataset, columnCount, rowCount }) => (
+          <DatasetCardMemo
             key={id}
-            $active={currentDataset === id}
-            onClick={() => onSelect(id)}
-          >
-            <DatasetName>{dataset.name}</DatasetName>
-            <DatasetDescription>{dataset.description}</DatasetDescription>
-            <DatasetMeta>
-              <span>Rows: {dataset.values.length}</span>
-              <span>Columns: {Object.keys(dataset.values[0] || {}).length}</span>
-              <Badge>Uploaded</Badge>
-            </DatasetMeta>
-          </DatasetCard>
+            id={id}
+            dataset={dataset}
+            columnCount={columnCount}
+            rowCount={rowCount}
+            isCustom={true}
+          />
         ))}
-
-        {/* Then show sample datasets */}
-        {Object.entries(sampleDatasets).map(([id, dataset]) => (
-          <DatasetCard
+        {datasetStats.sample.map(({ id, dataset, columnCount, rowCount }) => (
+          <DatasetCardMemo
             key={id}
-            $active={currentDataset === id}
-            onClick={() => onSelect(id)}
-          >
-            <DatasetName>{dataset.name}</DatasetName>
-            <DatasetDescription>{dataset.description}</DatasetDescription>
-            <DatasetMeta>
-              <span>Rows: {dataset.values.length}</span>
-              <span>Columns: {Object.keys(dataset.values[0] || {}).length}</span>
-              <Badge>Sample</Badge>
-            </DatasetMeta>
-          </DatasetCard>
+            id={id}
+            dataset={dataset}
+            columnCount={columnCount}
+            rowCount={rowCount}
+            isCustom={false}
+          />
         ))}
       </DatasetList>
     </Container>

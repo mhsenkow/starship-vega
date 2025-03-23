@@ -126,6 +126,11 @@ const Tab = styled.button<{ $active: boolean }>`
   }
 `
 
+/**
+ * Main editor layout component that provides the interface for customizing charts.
+ * Includes tabs for visual editing, styling, and code editing.
+ */
+
 interface EditorLayoutProps {
   chartId: string;
   onBack: () => void;
