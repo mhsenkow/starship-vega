@@ -206,7 +206,7 @@ interface ChartFooterProps {
   data: any[];
 }
 
-export const ChartFooter = ({ data, ...props }: ChartFooterProps) => {
+export const ChartFooter = ({ data }: { data: any[] }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -225,7 +225,11 @@ export const ChartFooter = ({ data, ...props }: ChartFooterProps) => {
   }, [searchTerm, sortConfig, currentPage, rowsPerPage]);
 
   if (!data || !Array.isArray(data) || data.length === 0) {
-    return null;
+    return (
+      <div style={{ padding: '16px', color: '#666', textAlign: 'center' }}>
+        No data available to display
+      </div>
+    );
   }
 
   const fields = Object.keys(data[0]);

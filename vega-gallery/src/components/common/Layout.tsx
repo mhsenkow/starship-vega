@@ -1,4 +1,5 @@
 import styled from 'styled-components'
+import { Header } from './Header'
 
 const LayoutContainer = styled.div`
   width: 100%;
@@ -12,5 +13,10 @@ interface LayoutProps {
 }
 
 export const Layout = ({ children }: LayoutProps) => {
-  return <LayoutContainer>{children}</LayoutContainer>
+  return (
+    <LayoutContainer>
+      <Header />
+      {children}
+    </LayoutContainer>
+  )
 }

@@ -120,6 +120,10 @@ interface Dataset {
   columns: number;
   uploadDate: Date;
   data: any[];
+  fullData?: any[]; // Store full dataset if needed
+  sampleRate?: number;
+  totalRows?: number;
+  totalColumns?: number;
 }
 
 interface DatasetSectionProps {
@@ -144,20 +148,13 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
 
     Papa.parse(selectedFile, {
       header: true,
-      dynamicTyping: true,
+      skipEmptyLines: true,
       complete: (results) => {
-        onDatasetLoad(results.data);
+        onDatasetLoad(results.data);  // Just pass the raw parsed data
         setIsLoading(false);
-        setSelectedFile(null);
-        
-        // Reset file input
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
-      },
-      error: (error) => {
-        console.error('Error parsing CSV:', error);
-        setIsLoading(false);
       }
     });
   };
@@ -186,21 +183,9 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
           disabled={!selectedFile || isLoading}
         >
           {isLoading ? (
-            <>
-              <LoadingState size="small" />
-              Uploading...
-            </>
+            <LoadingState size="small" />
           ) : (
-            <>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 2v8M5 5l3-3 3 3M3 13h10" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round"
-                />
-              </svg>
-              Upload Dataset
-            </>
+            'Upload Dataset'
           )}
         </UploadButton>
       </UploadArea>

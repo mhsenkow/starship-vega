@@ -3,11 +3,14 @@
  * Supports both sample and custom uploaded datasets.
  */
 
-import { useState, useMemo, useCallback, memo } from 'react'
+import React, { useState, useEffect } from 'react'
 import styled from 'styled-components'
 import { sampleDatasets } from '../../utils/sampleData'
 import { MarkType } from '../../types/vega'
 import { DatasetMetadata } from '../../types/dataset'
+import { LoadingState } from '../common/LoadingState'
+import { Tabs, Tab } from '@mui/material'
+import { getAllDatasets } from '../../utils/indexedDB'
 
 const Container = styled.div`
   margin-top: 16px;
@@ -61,84 +64,112 @@ const Badge = styled.span`
   font-size: 0.8rem;
 `
 
+const TabPanel = styled.div<{ $active: boolean }>`
+  display: ${props => props.$active ? 'block' : 'none'};
+  padding: 16px 0;
+`;
+
 interface DatasetSelectorProps {
+  chartId: string;
   currentDataset: string;
   onSelect: (datasetId: string) => void;
-  customDatasets?: Record<string, DatasetMetadata>;
+  allowUpload?: boolean;
 }
 
 export const DatasetSelector = ({ 
+  chartId,
   currentDataset, 
   onSelect,
-  customDatasets = {}
+  allowUpload = false
 }: DatasetSelectorProps) => {
-  // Memoize dataset stats calculation
-  const datasetStats = useMemo(() => ({
-    custom: Object.entries(customDatasets).map(([id, dataset]) => ({
-      id,
-      dataset,
-      columnCount: Object.keys(dataset.values[0] || {}).length,
-      rowCount: dataset.values.length
-    })),
-    sample: Object.entries(sampleDatasets).map(([id, dataset]) => ({
-      id,
-      dataset,
-      columnCount: Object.keys(dataset.values[0] || {}).length,
-      rowCount: dataset.values.length
-    }))
-  }), [customDatasets]);
+  const [activeTab, setActiveTab] = useState(0);
+  const [uploadedDatasets, setUploadedDatasets] = useState<DatasetMetadata[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const DatasetCardMemo = memo(({ 
-    id, 
-    dataset, 
-    columnCount, 
-    rowCount, 
-    isCustom 
-  }: {
-    id: string;
-    dataset: DatasetMetadata;
-    columnCount: number;
-    rowCount: number;
-    isCustom: boolean;
-  }) => (
-    <DatasetCard
-      $active={currentDataset === id}
-      onClick={() => onSelect(id)}
-    >
-      <DatasetName>{dataset.name}</DatasetName>
-      <DatasetDescription>{dataset.description}</DatasetDescription>
-      <DatasetMeta>
-        <span>Rows: {rowCount}</span>
-        <span>Columns: {columnCount}</span>
-        <Badge>{isCustom ? 'Uploaded' : 'Sample'}</Badge>
-      </DatasetMeta>
-    </DatasetCard>
-  ));
+  useEffect(() => {
+    const loadDatasets = async () => {
+      try {
+        setIsLoading(true);
+        const loadedDatasets = await getAllDatasets() as DatasetMetadata[];
+        setUploadedDatasets(loadedDatasets);
+      } catch (error) {
+        console.error('Failed to load datasets:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDatasets();
+  }, []);
+
+  const handleSelect = (dataset: DatasetMetadata | string) => {
+    if (typeof dataset === 'string') {
+      onSelect(dataset);
+    } else {
+      onSelect(dataset.id);
+    }
+  };
 
   return (
     <Container>
-      <DatasetList>
-        {datasetStats.custom.map(({ id, dataset, columnCount, rowCount }) => (
-          <DatasetCardMemo
-            key={id}
-            id={id}
-            dataset={dataset}
-            columnCount={columnCount}
-            rowCount={rowCount}
-            isCustom={true}
-          />
-        ))}
-        {datasetStats.sample.map(({ id, dataset, columnCount, rowCount }) => (
-          <DatasetCardMemo
-            key={id}
-            id={id}
-            dataset={dataset}
-            columnCount={columnCount}
-            rowCount={rowCount}
-            isCustom={false}
-          />
-        ))}
-      </DatasetList>
+      <Tabs 
+        value={activeTab} 
+        onChange={(_, newValue) => setActiveTab(newValue)}
+        sx={{ borderBottom: 1, borderColor: 'divider' }}
+      >
+        <Tab label="Sample Data" />
+        <Tab label="My Uploads" />
+      </Tabs>
+
+      <TabPanel $active={activeTab === 0}>
+        <DatasetList>
+          {Object.entries(sampleDatasets).map(([id, dataset]) => (
+            <DatasetCard
+              key={id}
+              $active={currentDataset === id}
+              onClick={() => handleSelect(id)}
+            >
+              <DatasetName>{dataset.name}</DatasetName>
+              <DatasetDescription>{dataset.description}</DatasetDescription>
+              <DatasetMeta>
+                <Badge>Sample</Badge>
+              </DatasetMeta>
+            </DatasetCard>
+          ))}
+        </DatasetList>
+      </TabPanel>
+
+      <TabPanel $active={activeTab === 1}>
+        {isLoading ? (
+          <LoadingState />
+        ) : (
+          <DatasetList>
+            {uploadedDatasets.map(dataset => (
+              <DatasetCard
+                key={dataset.id}
+                $active={currentDataset === dataset.id}
+                onClick={() => handleSelect(dataset)}
+              >
+                <DatasetName>{dataset.name}</DatasetName>
+                <DatasetDescription>
+                  {dataset.description || `${dataset.rowCount} rows, ${dataset.columnCount} columns`}
+                </DatasetDescription>
+                <DatasetMeta>
+                  <Badge>Upload</Badge>
+                  {dataset.uploadDate && (
+                    <span>{new Date(dataset.uploadDate).toLocaleDateString()}</span>
+                  )}
+                </DatasetMeta>
+              </DatasetCard>
+            ))}
+            {uploadedDatasets.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                No uploaded datasets. Visit the Data Management page to upload your data.
+              </div>
+            )}
+          </DatasetList>
+        )}
+      </TabPanel>
     </Container>
   );
 } 

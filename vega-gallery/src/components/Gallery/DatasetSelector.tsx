@@ -73,6 +73,29 @@ export const DatasetSelector: React.FC<DatasetSelectorProps> = ({
   setCustomDatasets,
   allowUpload = false
 }) => {
+  const handleSelect = async (dataset: DatasetMetadata | string) => {
+    if (typeof dataset === 'string') {
+      onSelect(dataset);
+    } else {
+      // Ensure data is in array format
+      const values = Array.isArray(dataset.values) ? 
+        dataset.values : 
+        Object.values(dataset.values);
+
+      // Ensure we're passing the correct data structure
+      const dataToPass = {
+        id: dataset.id,
+        values: values, // Pass as array
+        name: dataset.name,
+        description: dataset.description,
+        source: dataset.source,
+        uploadDate: dataset.uploadDate,
+        dataTypes: dataset.dataTypes
+      };
+      onSelect(dataset.id);
+    }
+  };
+
   const handleNewDataset = (dataset: DatasetMetadata) => {
     if (setCustomDatasets) {
       setCustomDatasets({
@@ -101,7 +124,7 @@ export const DatasetSelector: React.FC<DatasetSelectorProps> = ({
         <DatasetCard
           key={id}
           $active={currentDataset === id}
-          onClick={() => onSelect(id)}
+          onClick={() => handleSelect(dataset)}
         >
           <DatasetName>
             {dataset.name}

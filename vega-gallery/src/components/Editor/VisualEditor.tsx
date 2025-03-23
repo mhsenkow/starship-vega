@@ -20,6 +20,7 @@ import { getChartRecommendations } from '../../services/aiRecommendations'
 import AutoGraphIcon from '@mui/icons-material/AutoGraph'
 import RecommendIcon from '@mui/icons-material/Recommend'
 import { detectDataTypes } from '../../utils/dataUtils'
+import { initDB, getDataset } from '../../utils/indexedDB'
 
 const Container = styled.div`
   padding: 16px;
@@ -771,27 +772,116 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
   };
 
   // Handle dataset selection
-  const handleDatasetSelect = (datasetId: string) => {
-    const dataset = customDatasets[datasetId] || sampleDatasets[datasetId];
-    if (!dataset) return;
+  const handleDatasetSelect = async (datasetId: string) => {
+    try {
+      setCurrentDataset(datasetId);
 
-    setCurrentDataset(datasetId);
-    
-    // Preserve current mark type and encoding while updating data
-    const currentMark = typeof spec.mark === 'string' ? spec.mark : spec.mark?.type;
-    const currentEncoding = spec.encoding;
-    
-    onChange({
-      ...spec,
-      data: { values: dataset.values },
-      // Ensure mark type persists
-      mark: typeof spec.mark === 'string' ? currentMark : { 
-        ...spec.mark, 
-        type: currentMark 
-      },
-      // Keep current encoding if it exists
-      encoding: currentEncoding
-    });
+      let dataset;
+      let values;
+
+      if (sampleDatasets[datasetId]) {
+        dataset = sampleDatasets[datasetId];
+        values = dataset.values;
+      } else {
+        dataset = await getDataset(datasetId);
+        // Convert object to array if necessary and handle both data structures
+        values = dataset?.values || dataset?.data;
+        
+        // Handle case where data is an object with numeric keys
+        if (values && typeof values === 'object' && !Array.isArray(values)) {
+          values = Object.values(values);
+        }
+
+        if (!Array.isArray(values)) {
+          console.warn('Invalid data format received:', values);
+          return;
+        }
+      }
+
+      // Filter out any null or undefined values
+      values = values.filter(Boolean);
+
+      // Ensure we have valid data
+      if (values.length === 0) {
+        console.warn('No data found in dataset');
+        return;
+      }
+
+      // Take a sample of the data for initial visualization if it's too large
+      const sampleSize = 1000;
+      const dataToVisualize = values.length > sampleSize ? 
+        values.slice(0, sampleSize) : values;
+
+      // Get the first two appropriate fields for visualization
+      const fields = Object.keys(dataToVisualize[0] || {});
+      
+      if (fields.length === 0) {
+        console.warn('No fields found in dataset');
+        return;
+      }
+
+      const quantFields = fields.filter(f => {
+        const sample = dataToVisualize.find(row => row[f] !== null && row[f] !== undefined);
+        return sample && typeof sample[f] === 'number';
+      });
+
+      const nominalFields = fields.filter(f => !quantFields.includes(f));
+
+      // Choose appropriate fields for x and y axes
+      const xField = nominalFields[0] || fields[0];
+      const yField = quantFields[0] || fields[1] || fields[0];
+
+      // Create the updated spec
+      const updatedSpec = {
+        ...spec,
+        data: { values: dataToVisualize },
+        mark: { 
+          ...spec.mark,
+          tooltip: true 
+        },
+        encoding: {
+          x: {
+            field: xField,
+            type: quantFields.includes(xField) ? 'quantitative' : 'nominal',
+            axis: { labelLimit: 200 }
+          },
+          y: {
+            field: yField,
+            type: quantFields.includes(yField) ? 'quantitative' : 'nominal',
+            axis: { labelLimit: 200 }
+          },
+          tooltip: fields.map(field => ({
+            field,
+            type: quantFields.includes(field) ? 'quantitative' : 'nominal'
+          }))
+        },
+        config: {
+          ...spec.config,
+          legend: {
+            maxSymbolsPerRow: 10,
+            symbolLimit: 50,
+            labelLimit: 200,
+            columns: 2
+          },
+          axis: {
+            labelLimit: 200,
+            labelOverlap: true
+          },
+          mark: {
+            invalid: 'filter'
+          }
+        }
+      };
+
+      onChange(updatedSpec);
+
+      // Log sampling information if available
+      if (dataset?.sampleRate) {
+        console.info(`Showing ${dataToVisualize.length} rows (sampled 1/${dataset.sampleRate})`);
+      }
+    } catch (error) {
+      console.error('Failed to load dataset:', error);
+    }
   };
 
   const handleMarkTypeChange = (newMarkType: MarkType) => {
@@ -801,18 +891,80 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
     const availableEncodings = MARK_ENCODINGS[newMarkType].channels;
 
     // Filter out incompatible encodings and keep compatible ones
-    const updatedEncodings = Object.entries(encodings).reduce((acc, [channel, encoding]) => {
+    const updatedEncodings = Object.entries(spec.encoding || {}).reduce((acc, [channel, encoding]) => {
       if (availableEncodings.includes(channel as EncodingChannel)) {
         acc[channel] = encoding;
       }
       return acc;
     }, {});
 
+    // Define default mark configurations based on type
+    const getDefaultMarkConfig = (type: MarkType) => {
+      const baseConfig = {
+        type,
+        tooltip: true
+      };
+
+      switch (type) {
+        case 'point':
+        case 'circle':
+          return {
+            ...baseConfig,
+            filled: true,
+            size: 100,
+            opacity: 0.7
+          };
+        case 'bar':
+          return {
+            ...baseConfig,
+            cornerRadius: 0,
+            opacity: 0.8
+          };
+        case 'line':
+          return {
+            ...baseConfig,
+            point: true,
+            strokeWidth: 2,
+            interpolate: 'linear'
+          };
+        case 'area':
+          return {
+            ...baseConfig,
+            opacity: 0.6,
+            line: true
+          };
+        case 'text':
+          return {
+            ...baseConfig,
+            fontSize: 11,
+            fontWeight: 400
+          };
+        default:
+          return baseConfig;
+      }
+    };
+
     // Update the spec with new mark type and filtered encodings
     onChange({
       ...spec,
-      mark: newMarkType,
-      encoding: updatedEncodings
+      mark: getDefaultMarkConfig(newMarkType),
+      encoding: {
+        ...updatedEncodings,
+        // Ensure size encoding is handled properly
+        ...(spec.encoding?.size && {
+          size: {
+            ...spec.encoding.size,
+            scale: { type: 'linear', range: [50, 1000] }
+          }
+        })
+      },
+      config: {
+        ...spec.config,
+        mark: {
+          ...spec.config?.mark,
+          invalid: 'filter'
+        }
+      }
     });
   };
 
@@ -1191,36 +1343,11 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
         </AccordionHeader>
         <AccordionContent $isOpen={accordionStates.data}>
           <div>
-            <DatasetSection onDatasetLoad={handleDataUpload} />
             <DatasetSelector
-              currentDataset={currentDataset || ''}
+              chartId={currentMark}
+              currentDataset={currentDataset}
               onSelect={handleDatasetSelect}
-              customDatasets={customDatasets}
             />
-            {spec.data?.values && (
-              <>
-                <DatasetInfo>
-                  <div>Rows: {spec.data.values.length}</div>
-                  <div>
-                    Columns: {Object.keys(spec.data.values[0] || {}).length}
-                  </div>
-                </DatasetInfo>
-                <DataTransformerPanel
-                  dataset={{
-                    id: 'current',
-                    name: 'Current Dataset',
-                    description: '',
-                    values: spec.data.values
-                  }}
-                  onDatasetUpdate={(updatedDataset) => {
-                    onChange({
-                      ...spec,
-                      data: { values: updatedDataset.values }
-                    });
-                  }}
-                />
-              </>
-            )}
           </div>
         </AccordionContent>
       </Accordion>

@@ -181,9 +181,16 @@ export const Preview = ({ spec }: PreviewProps) => {
   }, [isDragging])
 
   const renderChart = useCallback(async () => {
+    if (!chartRef.current) return;
+    
     try {
       const parsedSpec = typeof spec === 'string' ? JSON.parse(spec) : spec;
       
+      // Ensure mark configuration is properly set
+      const markConfig = typeof parsedSpec.mark === 'string' 
+        ? { type: parsedSpec.mark } 
+        : parsedSpec.mark;
+
       const validSpec = {
         $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
         ...parsedSpec,
@@ -193,15 +200,46 @@ export const Preview = ({ spec }: PreviewProps) => {
           type: 'fit',
           contains: 'padding',
           resize: true
+        },
+        mark: {
+          ...markConfig,
+          // Ensure required properties are set based on mark type
+          ...(markConfig.type === 'point' && {
+            filled: true,
+            size: markConfig.size || 100,
+            opacity: markConfig.opacity || 0.7
+          }),
+          ...(markConfig.type === 'line' && {
+            point: markConfig.point || false,
+            strokeWidth: markConfig.strokeWidth || 2
+          }),
+          ...(markConfig.type === 'area' && {
+            opacity: markConfig.opacity || 0.6,
+            line: markConfig.line || false
+          })
+        },
+        config: {
+          ...parsedSpec.config,
+          view: {
+            stroke: null,
+            continuousWidth: 400,
+            continuousHeight: 300
+          },
+          legend: {
+            symbolLimit: 50,
+            labelLimit: 200,
+            columns: 2
+          },
+          mark: {
+            ...parsedSpec.config?.mark,
+            invalid: 'filter',
+            tooltip: true
+          }
         }
       };
 
-      setData(validSpec.data?.values || []);
-      
-      if (chartRef.current) {
-        await renderVegaLite(chartRef.current, validSpec);
-        setError(null);
-      }
+      await renderVegaLite(chartRef.current, validSpec);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to render chart');
     }
@@ -281,7 +319,11 @@ export const Preview = ({ spec }: PreviewProps) => {
         />
       )}
       <DataContainer>
-        <ChartFooter data={data} />
+        <ChartFooter 
+          data={typeof spec === 'string' ? 
+            JSON.parse(spec).data?.values || [] : 
+            spec.data?.values || []} 
+        />
       </DataContainer>
     </PreviewContainer>
   );

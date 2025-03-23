@@ -5,9 +5,11 @@
 
 import { useState } from 'react'
 import styled, { ThemeProvider } from 'styled-components'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Layout } from './components/common/Layout'
 import { GalleryGrid } from './components/Gallery/GalleryGrid'
 import { EditorLayout } from './components/Editor/EditorLayout'
+import { DataManagement } from './components/DataManagement/DataManagement'
 import { theme } from './types/theme'
 
 const AppContainer = styled.div`
@@ -20,18 +22,25 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <AppContainer>
-        <Layout>
-          {!selectedChart ? (
-            <GalleryGrid onChartSelect={setSelectedChart} />
-          ) : (
-            <EditorLayout 
-              chartId={selectedChart} 
-              onBack={() => setSelectedChart(null)} 
-            />
-          )}
-        </Layout>
-      </AppContainer>
+      <BrowserRouter>
+        <AppContainer>
+          <Layout>
+            <Routes>
+              <Route path="/" element={
+                !selectedChart ? (
+                  <GalleryGrid onChartSelect={setSelectedChart} />
+                ) : (
+                  <EditorLayout 
+                    chartId={selectedChart} 
+                    onBack={() => setSelectedChart(null)} 
+                  />
+                )
+              } />
+              <Route path="/data" element={<DataManagement />} />
+            </Routes>
+          </Layout>
+        </AppContainer>
+      </BrowserRouter>
     </ThemeProvider>
   )
 }
