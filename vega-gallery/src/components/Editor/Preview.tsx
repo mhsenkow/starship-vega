@@ -3,6 +3,7 @@ import styled from 'styled-components'
 import { renderVegaLite } from '../../utils/chartRenderer'
 import { ChartFooter } from './ChartFooter'
 import { TopLevelSpec } from 'vega-lite'
+import DownloadIcon from '@mui/icons-material/Download'
 
 const PreviewContainer = styled.div`
   display: flex;
@@ -127,6 +128,71 @@ const RatioButton = styled.button<{ $active: boolean }>`
   }
 `;
 
+const DownloadButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: 4px;
+  color: ${props => props.theme.text.primary};
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f8f9fa;
+    border-color: ${props => props.theme.colors.primary};
+  }
+
+  svg {
+    font-size: 18px;
+  }
+`;
+
+const ChartControls = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px;
+  gap: 8px;
+`;
+
+const DownloadMenu = styled.div`
+  position: relative;
+  display: inline-block;
+`;
+
+const DownloadOptions = styled.div<{ $show: boolean }>`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: white;
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  display: ${props => props.$show ? 'block' : 'none'};
+  z-index: 10;
+`;
+
+const DownloadOption = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    background: #f8f9fa;
+  }
+`;
+
 interface PreviewProps {
   spec: string | TopLevelSpec;
 }
@@ -140,6 +206,7 @@ export const Preview = ({ spec }: PreviewProps) => {
   const dragRef = useRef({ startY: 0, startHeight: 0 })
   const [selectedRatio, setSelectedRatio] = useState<AspectRatio>(ASPECT_RATIOS[0])
   const containerRef = useRef<HTMLDivElement>(null)
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false)
 
   // Sample the data
   const sampledSpec = useMemo(() => {
@@ -273,6 +340,76 @@ export const Preview = ({ spec }: PreviewProps) => {
     return () => window.removeEventListener('resize', handleResize);
   }, [selectedRatio, updateHeightForRatio]);
 
+  const handleDownloadSVG = useCallback(() => {
+    if (!chartRef.current) return;
+
+    // Find the SVG element
+    const svgElement = chartRef.current.querySelector('svg');
+    if (!svgElement) return;
+
+    // Clone the SVG to avoid modifying the displayed one
+    const clonedSvg = svgElement.cloneNode(true) as SVGElement;
+    
+    // Add any missing namespaces
+    clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clonedSvg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+
+    // Create a blob from the SVG
+    const svgData = new XMLSerializer().serializeToString(clonedSvg);
+    const blob = new Blob([svgData], { type: 'image/svg+xml' });
+    
+    // Create download link
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'chart.svg';
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    
+    // Cleanup
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, []);
+
+  const handleDownloadPNG = useCallback(async () => {
+    if (!chartRef.current) return;
+
+    const svgElement = chartRef.current.querySelector('svg');
+    if (!svgElement) return;
+
+    // Create a canvas with the same dimensions
+    const canvas = document.createElement('canvas');
+    const bbox = svgElement.getBoundingClientRect();
+    canvas.width = bbox.width;
+    canvas.height = bbox.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Convert SVG to data URL
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    // Create image and draw to canvas
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0);
+      const pngUrl = canvas.toDataURL('image/png');
+      
+      // Download PNG
+      const link = document.createElement('a');
+      link.href = pngUrl;
+      link.download = 'chart.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  }, []);
+
   return (
     <PreviewContainer ref={containerRef}>
       <AspectRatioControl>
@@ -288,6 +425,30 @@ export const Preview = ({ spec }: PreviewProps) => {
           </RatioButton>
         ))}
       </AspectRatioControl>
+      
+      <ChartControls>
+        <DownloadMenu>
+          <DownloadButton onClick={() => setShowDownloadMenu(!showDownloadMenu)}>
+            <DownloadIcon />
+            Download
+          </DownloadButton>
+          <DownloadOptions $show={showDownloadMenu}>
+            <DownloadOption onClick={() => {
+              handleDownloadSVG();
+              setShowDownloadMenu(false);
+            }}>
+              <DownloadIcon /> SVG Vector
+            </DownloadOption>
+            <DownloadOption onClick={() => {
+              handleDownloadPNG();
+              setShowDownloadMenu(false);
+            }}>
+              <DownloadIcon /> PNG Image
+            </DownloadOption>
+          </DownloadOptions>
+        </DownloadMenu>
+      </ChartControls>
+
       <ChartContainer ref={chartRef} $height={chartHeight}>
         <div style={{ width: '100%', height: '100%' }} />
       </ChartContainer>
