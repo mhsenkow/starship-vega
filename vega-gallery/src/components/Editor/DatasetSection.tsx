@@ -145,31 +145,31 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
         Papa.parse(file, {
           header: true,
           dynamicTyping: true,
+          preview: 1000,
           complete: resolve,
           error: reject
         });
       });
 
-      const values = results.data.filter(row => Object.keys(row).length > 0);
-      const columns = Object.keys(values[0] || {});
+      let values = results.data.filter(row => Object.keys(row).length > 0);
+      
+      const displaySample = values.slice(0, 100);
       
       const dataset = {
         id: `dataset-${Date.now()}`,
         name: file.name.split('.')[0],
-        description: `Uploaded on ${new Date().toLocaleDateString()}`,
-        values,
-        columns,
+        description: `Uploaded on ${new Date().toLocaleDateString()} (sampled preview)`,
+        values: displaySample,
+        fullPath: file.name,
+        columns: Object.keys(displaySample[0] || {}),
         rowCount: values.length,
-        columnCount: columns.length,
+        columnCount: Object.keys(displaySample[0] || {}).length,
         source: 'upload',
         uploadDate: new Date().toISOString(),
-        dataTypes: detectDataTypes(values)
+        dataTypes: detectDataTypes(displaySample)
       };
 
-      // Store in IndexedDB
       await storeDataset(dataset);
-      
-      // Notify parent
       onDatasetLoad(dataset);
       
     } catch (error) {

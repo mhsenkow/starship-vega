@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import styled from 'styled-components'
 import { renderVegaLite } from '../../utils/chartRenderer'
 import { ChartFooter } from './ChartFooter'
@@ -134,12 +134,37 @@ interface PreviewProps {
 export const Preview = ({ spec }: PreviewProps) => {
   const chartRef = useRef<HTMLDivElement>(null)
   const [error, setError] = useState<string | null>(null)
-  const [data, setData] = useState<any[]>([])
+  const [sampleSize, setSampleSize] = useState(10)
   const [chartHeight, setChartHeight] = useState(400)
   const [isDragging, setIsDragging] = useState(false)
   const dragRef = useRef({ startY: 0, startHeight: 0 })
   const [selectedRatio, setSelectedRatio] = useState<AspectRatio>(ASPECT_RATIOS[0])
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Sample the data
+  const sampledSpec = useMemo(() => {
+    if (typeof spec === 'string') {
+      try {
+        spec = JSON.parse(spec);
+      } catch (e) {
+        return spec;
+      }
+    }
+
+    const values = spec?.data?.values || [];
+    if (!values.length) return spec;
+
+    const sampleCount = Math.max(1, Math.floor(values.length * (sampleSize / 100)));
+    const sampledValues = values.slice(0, sampleCount);
+
+    return {
+      ...spec,
+      data: {
+        ...spec.data,
+        values: sampledValues
+      }
+    };
+  }, [spec, sampleSize]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true)
@@ -184,47 +209,29 @@ export const Preview = ({ spec }: PreviewProps) => {
     if (!chartRef.current) return;
     
     try {
-      // Parse the spec if it's a string
-      const parsedSpec = typeof spec === 'string' ? JSON.parse(spec) : spec;
+      // Force a clean render by removing previous chart
+      chartRef.current.innerHTML = '<div style="width: 100%; height: 100%;"></div>';
       
-      // Ensure we have valid data
-      if (!parsedSpec.data?.values || !Array.isArray(parsedSpec.data.values)) {
-        console.error('Invalid data structure:', parsedSpec);
-        setError('No valid data found');
-        return;
-      }
-
-      // Create the valid spec
-      const validSpec = {
-        $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-        ...parsedSpec,
+      await renderVegaLite(chartRef.current, {
+        ...sampledSpec,
         width: 'container',
         height: 'container',
         autosize: {
           type: 'fit',
           contains: 'padding'
-        },
-        config: {
-          ...parsedSpec.config,
-          view: {
-            stroke: null
-          }
         }
-      };
-
-      console.log('Rendering spec:', validSpec);
-      await renderVegaLite(chartRef.current, validSpec);
+      });
       setError(null);
     } catch (err) {
       console.error('Error rendering chart:', err);
       setError(err instanceof Error ? err.message : 'Failed to render chart');
     }
-  }, [spec]);
+  }, [sampledSpec]);
 
-  // Initial render
+  // Add an effect to trigger render when sample size changes
   useEffect(() => {
     renderChart();
-  }, [renderChart]);
+  }, [sampleSize, renderChart]);
 
   // Handle resize
   useEffect(() => {
@@ -296,9 +303,10 @@ export const Preview = ({ spec }: PreviewProps) => {
       )}
       <DataContainer>
         <ChartFooter 
-          data={typeof spec === 'string' ? 
-            JSON.parse(spec).data?.values || [] : 
-            spec.data?.values || []} 
+          data={sampledSpec.data.values}
+          spec={sampledSpec}
+          sampleSize={sampleSize}
+          onSampleSizeChange={setSampleSize}
         />
       </DataContainer>
     </PreviewContainer>
