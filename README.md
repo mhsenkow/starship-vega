@@ -1,3 +1,6 @@
+<img width="1106" alt="image" src="https://github.com/user-attachments/assets/fd9a8d8d-5c60-41f3-a01a-c3eeb7f4de76" />
+
+
 # Vega Gallery
 
 A React-based visualization gallery and editor built with Vega-Lite. Create, customize, and explore data visualizations with an intuitive interface.
