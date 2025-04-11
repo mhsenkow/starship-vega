@@ -232,8 +232,6 @@ Contributions are welcome! Please read our contributing guidelines for details.
 ## 📄 License
 
 <<<<<<< HEAD
-This project is licensed under the MIT License - see the LICENSE file for details. 
-=======
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 📚 Documentation
@@ -451,4 +449,6 @@ import { VegaChart } from 'vega-gallery';
    - Chart spec caching
    - Data memoization
    - Component memoization
->>>>>>> origin/test
+=======
+This project is licensed under the MIT License - see the LICENSE file for details. 
+>>>>>>> 6cc680a45f9cf7215bd8a8dc72b8a0f686f11407
