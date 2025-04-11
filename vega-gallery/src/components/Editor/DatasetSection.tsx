@@ -205,7 +205,6 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
 
   return (
     <Section>
-      <Title>Dataset</Title>
       {uploadedDatasets.length > 0 && (
         <Table>
           <thead>
