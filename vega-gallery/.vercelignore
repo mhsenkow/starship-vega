@@ -1,0 +1,15 @@
+node_modules
+dist-electron
+build
+temp-icons
+*.log
+.DS_Store
+*.local
+.vscode
+.idea
+temp_fix.js
+.coverage
+*.tgz
+*.tar.gz
+*.zip
+*.dmg
