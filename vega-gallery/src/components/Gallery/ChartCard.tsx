@@ -11,32 +11,47 @@ import {
   BadgeContainer,
   Badge
 } from './ChartCard.styles'
+import { useTheme } from '../../styles/ThemeProvider'
 
 interface ChartCardProps {
   chart: ChartConfig;
   onClick: (id: string) => void;
 }
 
-const CardContent = memo(({ title, description, category, complexity }: {
-  title: string;
-  description: string;
-  category: string;
-  complexity: string;
-}) => (
-  <Content>
-    <Title>{title}</Title>
-    <Description>{description}</Description>
-    <BadgeContainer>
-      <Badge>{category}</Badge>
-      <Badge>{complexity}</Badge>
-    </BadgeContainer>
-  </Content>
-));
+const CardContent = memo(
+  ({ title, description, category, complexity }: {
+    title: string;
+    description: string;
+    category: string;
+    complexity: string;
+  }) => (
+    <Content>
+      <Title>{title}</Title>
+      <Description>{description}</Description>
+      <BadgeContainer>
+        <Badge>{category}</Badge>
+        <Badge>{complexity}</Badge>
+      </BadgeContainer>
+    </Content>
+  ),
+  (prevProps, nextProps) => {
+    return (
+      prevProps.title === nextProps.title &&
+      prevProps.description === nextProps.description &&
+      prevProps.category === nextProps.category &&
+      prevProps.complexity === nextProps.complexity
+    );
+  }
+);
+
+CardContent.displayName = 'CardContent';
 
 export default memo(function ChartCard({ chart, onClick }: ChartCardProps) {
   const chartRef = useRef<HTMLDivElement>(null);
-  const renderTimeout = useRef<number>();
-  const observer = useRef<ResizeObserver>();
+  const renderTimeout = useRef<number | undefined>(undefined);
+  const observer = useRef<ResizeObserver | undefined>(undefined);
+  const { mode: currentTheme } = useTheme();
+  const previousThemeRef = useRef(currentTheme);
 
   useEffect(() => {
     // Set up resize observer for responsive charts
@@ -64,20 +79,77 @@ export default memo(function ChartCard({ chart, onClick }: ChartCardProps) {
   const renderChart = useCallback(async () => {
     if (!chartRef.current) return;
     
-    const spec = chartSpecs[chart.id];
-    if (!spec) return;
+    // Use explicit type checking to satisfy TypeScript
+    const chartId = chart.id as keyof typeof chartSpecs;
+    const spec = chartSpecs[chartId];
+    
+    if (!spec) {
+      console.error(`No specification found for chart ID: ${chartId}`);
+      
+      // Display a placeholder for failed chart
+      if (chartRef.current) {
+        chartRef.current.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#999;font-size:12px;">Chart unavailable</div>';
+      }
+      return;
+    }
 
     try {
-      await renderVegaLite(chartRef.current, {
-        ...spec,
-        width: 'container',
-        height: 'container',
-        autosize: { type: 'fit', contains: 'padding' }
-      }, { mode: 'gallery' });
+      // Check if this is a Vega spec rather than Vega-Lite
+      const isVegaSpec = !!(spec.$schema && spec.$schema.includes('vega.github.io/schema/vega'));
+      
+      // Apply container sizing only to Vega-Lite specs, as Vega specs have their own sizing
+      const specToRender = isVegaSpec ? 
+        spec : 
+        {
+          ...spec,
+          width: 'container',
+          height: 'container',
+          autosize: { type: 'fit', contains: 'padding' }
+        };
+      
+      // Use a type assertion to handle both Vega and Vega-Lite specs
+      await renderVegaLite(chartRef.current, specToRender as any, { mode: 'gallery' });
     } catch (error) {
       console.error(`Failed to render chart ${chart.id}:`, error);
+      
+      // Display an error message in place of the failed chart
+      if (chartRef.current) {
+        chartRef.current.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f44336;font-size:12px;">Failed to render chart</div>';
+      }
     }
   }, [chart.id]);
+
+  // Listen for theme changes and re-render chart (moved after renderChart definition)
+  useEffect(() => {
+    if (previousThemeRef.current !== currentTheme) {
+      console.log(`ChartCard: Theme changed from ${previousThemeRef.current} to ${currentTheme}, re-rendering chart`);
+      previousThemeRef.current = currentTheme;
+      
+      // Re-render chart with new theme
+      setTimeout(() => {
+        renderChart();
+      }, 100); // Small delay to ensure theme is fully applied
+    }
+  }, [currentTheme, renderChart]);
+
+  // Listen for color set changes and re-render chart
+  useEffect(() => {
+    const handleColorSetChange = (event: CustomEvent) => {
+      console.log(`ChartCard: Color set changed, re-rendering chart ${chart.id}`, event.detail);
+      
+      // Re-render chart with new color set
+      setTimeout(() => {
+        renderChart();
+      }, 150); // Slightly longer delay to ensure color set is fully applied
+    };
+
+    // Listen for color set changes
+    window.addEventListener('vega-color-set-changed', handleColorSetChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('vega-color-set-changed', handleColorSetChange as EventListener);
+    };
+  }, [renderChart, chart.id]);
 
   const handleClick = useCallback(() => onClick(chart.id), [chart.id, onClick]);
 

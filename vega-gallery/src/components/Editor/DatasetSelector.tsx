@@ -16,39 +16,64 @@ import { detectDataTypes, detectColumnType } from '../../utils/dataUtils'
 
 const Container = styled.div`
   margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 `
 
 const DatasetList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow-y: auto;
+  flex: 1;
 `
 
-const DatasetCard = styled.button<{ $active: boolean }>`
+const DatasetCard = styled.div<{ $active: boolean }>`
   width: 100%;
   padding: 12px;
-  background: white;
-  border: 2px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
+  background: var(--color-surface);
+  border: 2px solid ${props => props.$active ? 'var(--color-primary)' : 'var(--color-border)'};
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  &:hover {
+    border-color: var(--color-primary);
+    background: ${props => props.$active ? 'var(--color-surface)' : 'var(--color-surface-hover)'};
+  }
+`
+
+const DatasetCardButton = styled.button<{ $active: boolean }>`
+  width: 100%;
+  padding: 12px;
+  background: var(--color-surface);
+  border: 2px solid ${props => props.$active ? 'var(--color-primary)' : 'var(--color-border)'};
   border-radius: 8px;
   text-align: left;
   cursor: pointer;
   transition: all 0.2s ease;
   
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
-    background: ${props => props.$active ? 'white' : '#f8f9fa'};
+    border-color: var(--color-primary);
+    background: ${props => props.$active ? 'var(--color-surface)' : 'var(--color-surface-hover)'};
   }
 `
 
 const DatasetName = styled.div`
   font-weight: 500;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   margin-bottom: 4px;
 `
 
 const DatasetDescription = styled.div`
   font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
   margin-bottom: 8px;
 `
 
@@ -56,20 +81,25 @@ const DatasetMeta = styled.div`
   display: flex;
   gap: 16px;
   font-size: 0.85rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `
 
 const Badge = styled.span`
   padding: 2px 6px;
-  background: #e9ecef;
+  background: var(--color-border);
   border-radius: 4px;
   font-size: 0.8rem;
 `
 
 const TabPanel = styled.div<{ $active: boolean }>`
-  display: ${props => props.$active ? 'block' : 'none'};
+  display: ${props => props.$active ? 'flex' : 'none'};
+  flex-direction: column;
   padding: 16px 0;
-`;
+  height: 100%;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+`
 
 const DatasetControls = styled.div`
   display: flex;
@@ -79,15 +109,15 @@ const DatasetControls = styled.div`
 
 const ClearButton = styled.button`
   padding: 6px 12px;
-  background: #dc3545;
-  color: white;
+  background: var(--color-error);
+  color: var(--color-surface);
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.9rem;
 
   &:hover {
-    background: #c82333;
+    background: var(--color-error-dark, #c82333);
   }
 `;
 
@@ -95,7 +125,7 @@ const DeleteButton = styled.button`
   padding: 4px 8px;
   background: none;
   border: none;
-  color: #dc3545;
+  color: var(--color-error);
   cursor: pointer;
   opacity: 0.7;
 
@@ -119,20 +149,20 @@ const TrashIcon = () => (
 const EmptyState = styled.div`
   text-align: center;
   padding: 20px;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
-  background: #f8f9fa;
+  background: var(--color-background);
   border-radius: 8px;
-  border: 1px dashed ${props => props.theme.colors.border};
+  border: 1px dashed var(--color-border);
 `;
 
 interface DatasetSelectorProps {
   chartId: string;
   currentDataset: string;
-  onSelect: (datasetId: string) => void;
+  onSelect: (datasetId: any) => void;
   allowUpload?: boolean;
-  datasetCache: Record<string, DatasetMetadata>;
-  setDatasetCache: (cache: Record<string, DatasetMetadata>) => void;
+  datasetCache?: Record<string, DatasetMetadata>;
+  setDatasetCache?: (cache: Record<string, DatasetMetadata>) => void;
 }
 
 export const DatasetSelector = ({ 
@@ -180,20 +210,7 @@ export const DatasetSelector = ({
 
   const handleSelect = async (dataset: DatasetMetadata | string) => {
     try {
-      // If it's a sample dataset (string ID)
-      if (typeof dataset === 'string') {
-        const sampleDataset = sampleDatasets[dataset];
-        if (sampleDataset) {
-          onSelect({
-            id: dataset,
-            ...sampleDataset
-          });
-          return;
-        }
-      } else {
-        // It's an uploaded dataset
-        onSelect(dataset);
-      }
+      onSelect(dataset);
     } catch (error) {
       console.error('Error selecting dataset:', error);
     }
@@ -251,7 +268,7 @@ export const DatasetSelector = ({
       <TabPanel $active={activeTab === 0}>
         <DatasetList>
           {Object.entries(sampleDatasets).map(([id, dataset]) => (
-            <DatasetCard
+            <DatasetCardButton
               key={id}
               $active={currentDataset === id}
               onClick={() => handleSelect(id)}
@@ -261,7 +278,7 @@ export const DatasetSelector = ({
               <DatasetMeta>
                 <Badge>Sample</Badge>
               </DatasetMeta>
-            </DatasetCard>
+            </DatasetCardButton>
           ))}
         </DatasetList>
       </TabPanel>
@@ -287,16 +304,24 @@ export const DatasetSelector = ({
                   <DatasetContent onClick={() => handleSelect(dataset)}>
                     <DatasetName>{dataset.name}</DatasetName>
                     <DatasetDescription>
-                      {dataset.rowCount} rows, {dataset.columnCount} columns
+                      {dataset.columns?.length || 0} columns
                     </DatasetDescription>
                     <DatasetMeta>
                       <Badge>Upload</Badge>
+                      {dataset.transformed && (
+                        <Badge className="transformed-badge">Transformed</Badge>
+                      )}
                       {dataset.uploadDate && (
                         <span>{new Date(dataset.uploadDate).toLocaleDateString()}</span>
                       )}
                     </DatasetMeta>
                   </DatasetContent>
-                  <DeleteButton onClick={() => handleDelete(dataset.id)}>
+                  <DeleteButton onClick={(e) => {
+                    e.stopPropagation();
+                    if (dataset.id) {
+                      handleDelete(dataset.id);
+                    }
+                  }}>
                     <TrashIcon />
                   </DeleteButton>
                 </DatasetCard>

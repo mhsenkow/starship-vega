@@ -4,6 +4,8 @@ import Papa from 'papaparse';
 import { LoadingState } from '../common/LoadingState';
 import { detectDataTypes } from '../../utils/dataUtils';
 import { storeDataset } from '../../utils/indexedDB';
+import { DatabaseErrorModal } from '../DataManagement/DatabaseErrorModal';
+import { DatasetMetadata } from '../../types/dataset';
 
 const Section = styled.div`
   margin-bottom: 24px;
@@ -11,21 +13,21 @@ const Section = styled.div`
 
 const Title = styled.h2`
   font-size: 1.2rem;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   margin-bottom: 16px;
 `;
 
 const UploadArea = styled.div`
-  border: 2px dashed ${props => props.theme.colors.border};
+  border: 2px dashed var(--color-border);
   border-radius: 8px;
   padding: 20px;
   text-align: center;
-  background: #f8f9fa;
+  background: var(--color-background);
   transition: all 0.2s ease;
   
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
-    background: #f1f3f5;
+    border-color: var(--color-primary);
+    background: var(--color-surface-hover);
   }
 `;
 
@@ -39,8 +41,8 @@ const FileInput = styled.div`
 const UploadButton = styled.button<{ $disabled: boolean }>`
   width: 100%;
   padding: 10px;
-  background: ${props => props.$disabled ? '#e9ecef' : props.theme.colors.primary};
-  color: white;
+  background: ${props => props.$disabled ? 'var(--color-surface-hover)' : 'var(--color-primary)'};
+  color: var(--color-surface);
   border: none;
   border-radius: 4px;
   cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
@@ -59,35 +61,47 @@ const DatasetList = styled.div`
 
 const DatasetCard = styled.button<{ $active: boolean }>`
   padding: 12px;
-  background: white;
-  border: 2px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
+  background: var(--color-surface);
+  border: 2px solid ${props => props.$active ? 'var(--color-primary)' : 'var(--color-border)'};
   border-radius: 8px;
   text-align: left;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
-    background: ${props => props.$active ? 'white' : '#f8f9fa'};
+    border-color: var(--color-primary);
+    background: ${props => props.$active ? 'var(--color-surface)' : 'var(--color-surface-hover)'};
   }
 `;
 
 const DatasetName = styled.div`
   font-weight: 500;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const TransformedBadge = styled.span`
+  background-color: ${props => props.theme.mode === 'dark' ? '#2c3308' : '#f0f4c3'};
+  color: ${props => props.theme.mode === 'dark' ? '#c5e1a5' : '#33691e'};
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
 `;
 
 const DatasetInfo = styled.div`
   display: flex;
   gap: 16px;
   font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `;
 
 const EditableDatasetName = styled.input`
   font-weight: 500;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   border: 1px solid transparent;
   background: transparent;
   padding: 4px 8px;
@@ -95,27 +109,20 @@ const EditableDatasetName = styled.input`
   width: 100%;
 
   &:hover {
-    border-color: ${props => props.theme.colors.border};
+    border-color: var(--color-border);
   }
 
   &:focus {
-    border-color: ${props => props.theme.colors.primary};
+    border-color: var(--color-primary);
     outline: none;
-    background: white;
+    background: var(--color-surface);
   }
 `;
 
-interface Dataset {
-  id: string;
-  name: string;
-  rows: number;
-  columns: number;
-  uploadDate: Date;
-  data: any[];
-  fullData?: any[]; // Store full dataset if needed
-  sampleRate?: number;
-  totalRows?: number;
-  totalColumns?: number;
+// Create an extended dataset interface that includes our UI-specific properties
+interface ExtendedDatasetMetadata extends DatasetMetadata {
+  rowCount?: number;
+  columnCount?: number;
 }
 
 interface DatasetSectionProps {
@@ -126,7 +133,9 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadedDatasets, setUploadedDatasets] = useState<DatasetMetadata[]>([]);
+  const [uploadedDatasets, setUploadedDatasets] = useState<ExtendedDatasetMetadata[]>([]);
+  const [dbError, setDbError] = useState<Error | null>(null);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
 
   const handleDelete = (id: string) => {
     setUploadedDatasets(prev => prev.filter(dataset => dataset.id !== id));
@@ -140,8 +149,10 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
   };
 
   const handleUpload = async (file: File) => {
+    setIsLoading(true);
+    
     try {
-      const results = await new Promise((resolve, reject) => {
+      const results = await new Promise<Papa.ParseResult<any>>((resolve, reject) => {
         Papa.parse(file, {
           header: true,
           dynamicTyping: true,
@@ -151,7 +162,7 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
         });
       });
 
-      let values = results.data.filter(row => Object.keys(row).length > 0);
+      let values = results.data.filter((row: any) => Object.keys(row).length > 0);
       
       const displaySample = values.slice(0, 100);
       
@@ -166,15 +177,35 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
         columnCount: Object.keys(displaySample[0] || {}).length,
         source: 'upload',
         uploadDate: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
         dataTypes: detectDataTypes(displaySample)
       };
 
-      await storeDataset(dataset);
-      onDatasetLoad(dataset);
+      try {
+        await storeDataset(dataset);
+        onDatasetLoad(dataset);
+      } catch (dbError) {
+        console.error('Error storing dataset:', dbError);
+        setDbError(dbError instanceof Error ? dbError : new Error('Unknown database error'));
+        setIsErrorModalOpen(true);
+        throw dbError; // Rethrow to be caught by the outer catch
+      }
       
     } catch (error) {
       console.error('Error uploading dataset:', error);
+      // Only show error modal for DB errors, not for parsing errors
+      if (!isErrorModalOpen) {
+        alert(`Error uploading dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleDatabaseReset = () => {
+    // After successful reset, we can clear the error
+    setDbError(null);
+    // We might want to reload the app or component here
   };
 
   // Helper function to detect column type
@@ -205,6 +236,15 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
 
   return (
     <Section>
+      {isErrorModalOpen && (
+        <DatabaseErrorModal 
+          isOpen={isErrorModalOpen}
+          error={dbError}
+          onClose={() => setIsErrorModalOpen(false)}
+          onReset={handleDatabaseReset}
+        />
+      )}
+      
       {uploadedDatasets.length > 0 && (
         <Table>
           <thead>
@@ -219,12 +259,12 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
           <tbody>
             {uploadedDatasets.map(dataset => (
               <tr key={dataset.id}>
-                <td>{dataset.name}</td>
-                <td>{dataset.rowCount}</td>
-                <td>{dataset.columnCount}</td>
-                <td>{new Date(dataset.uploadDate).toLocaleDateString()}</td>
+                <td>{dataset.name || 'Unnamed'}</td>
+                <td>{dataset.rowCount || dataset.values?.length || 0}</td>
+                <td>{dataset.columnCount || dataset.columns?.length || 0}</td>
+                <td>{dataset.uploadDate ? new Date(dataset.uploadDate).toLocaleDateString() : 'Unknown'}</td>
                 <td>
-                  <DeleteButton onClick={() => handleDelete(dataset.id)}>
+                  <DeleteButton onClick={() => dataset.id && handleDelete(dataset.id)}>
                     Delete
                   </DeleteButton>
                 </td>
@@ -247,8 +287,8 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
             onClick={() => fileInputRef.current?.click()}
             style={{
               padding: '8px 16px',
-              background: '#212529',
-              color: 'white',
+              background: 'var(--color-text-primary)',
+              color: 'var(--color-surface)',
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer'
@@ -256,7 +296,7 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
           >
             Choose File
           </button>
-          <span style={{ color: '#495057' }}>
+          <span style={{ color: 'var(--color-text-primary)' }}>
             {selectedFile?.name || 'No file chosen'}
           </span>
         </FileInput>
@@ -285,25 +325,25 @@ const Table = styled.table`
   th, td {
     padding: 12px;
     text-align: left;
-    border-bottom: 1px solid ${props => props.theme.colors.border};
+    border-bottom: 1px solid var(--color-border);
   }
 
   th {
     font-weight: 500;
-    color: ${props => props.theme.text.secondary};
-    background: #f8f9fa;
+    color: var(--color-text-secondary);
+    background: var(--color-background);
   }
 `;
 
 const DeleteButton = styled.button`
   padding: 4px 8px;
-  background: #dc3545;
-  color: white;
+  background: var(--color-error);
+  color: var(--color-surface);
   border: none;
   border-radius: 4px;
   cursor: pointer;
 
   &:hover {
-    background: #c82333;
+    background: var(--color-error-dark, #c82333);
   }
 `; 

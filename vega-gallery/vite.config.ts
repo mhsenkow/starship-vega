@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Vega Gallery',
-        short_name: 'Vega Gallery',
+        name: 'Starship Vega',
+        short_name: 'Starship Vega',
         description: 'Interactive data visualization gallery and editor',
         theme_color: '#ffffff',
         icons: [
@@ -36,5 +36,24 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true
+  },
+  base: '/', // Default base path for web deployment
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    emptyOutDir: true,
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Separate vendor chunks for better caching
+          'react-vendor': ['react', 'react-dom'],
+          'vega-vendor': ['vega', 'vega-lite', 'vega-embed'],
+          'mui-vendor': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
+          'editor-vendor': ['@monaco-editor/react'],
+          'utils-vendor': ['papaparse', 'tesseract.js', 'uuid']
+        }
+      }
+    }
   }
 })

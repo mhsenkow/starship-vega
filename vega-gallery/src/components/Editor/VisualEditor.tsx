@@ -21,27 +21,33 @@ import AutoGraphIcon from '@mui/icons-material/AutoGraph'
 import RecommendIcon from '@mui/icons-material/Recommend'
 import { detectDataTypes } from '../../utils/dataUtils'
 import { initDB, getDataset } from '../../utils/indexedDB'
+import { ExtendedSpec as VegaExtendedSpec } from '../../types/vega'
+import { transformEncodings, createMarkConfig } from '../../utils/specUtils'
+import { useDrop } from 'react-dnd'
+import DataColumnToken, { ColumnMetadata, ColumnDragItem } from '../common/DataColumnToken'
 
 const Container = styled.div`
-  padding: 16px;
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  overflow-y: auto;
+  overflow: hidden;
 `
 
 const Section = styled.div`
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 24px;
+  padding: 4px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 `
 
 const SectionTitle = styled.h3`
   margin: 0 0 16px 0;
-  font-size: 1.1rem;
-  color: #2c3e50;
+  font-size: 1rem;
+  color: var(--color-text-primary);
   font-weight: 600;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 1px solid var(--color-border);
   padding-bottom: 8px;
 `
 
@@ -56,28 +62,46 @@ const Label = styled.label`
   display: block;
   margin-bottom: 8px;
   font-size: 0.9rem;
-  color: #495057;
+  color: var(--color-text-primary);
   font-weight: 500;
 `
 
 const Select = styled.select`
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 0.9rem;
-  background: white;
-  color: #495057;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
   transition: border-color 0.2s;
+  position: relative;
+  z-index: 10;
+  cursor: pointer;
 
   &:hover {
-    border-color: #adb5bd;
+    border-color: var(--color-text-tertiary);
   }
 
   &:focus {
-    border-color: #4dabf7;
+    border-color: var(--color-primary);
     outline: none;
     box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+    z-index: 20;
+  }
+
+  /* Ensure dropdown stays open */
+  &:focus-within {
+    z-index: 20;
+  }
+
+  /* Override any theme-specific pointer-events */
+  option {
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    padding: 8px 12px;
+    border: none;
+    cursor: pointer;
   }
 `
 
@@ -98,14 +122,14 @@ const TypeButtons = styled.div`
   gap: 4px;
   align-items: center;
   padding: 4px;
-  background: #f8f9fa;
+  background: var(--color-background);
   border-radius: 4px;
 `
 
 const TypeButton = styled(IconButton)<{ $active: boolean }>`
   && {
     background: ${props => props.$active ? props.theme.colors.primary + '20' : 'transparent'};
-    color: ${props => props.$active ? props.theme.colors.primary : props.theme.text.secondary};
+    color: ${props => props.$active ? props.theme.colors.primary : props.theme.colors.text.secondary};
     border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
     padding: 4px;
 
@@ -120,7 +144,7 @@ const EncodingTypeButton = styled(IconButton)<{ $active: boolean; $compatible?: 
     background: ${props => props.$active ? props.theme.colors.primary + '20' : 'transparent'};
     color: ${props => 
       props.$active ? props.theme.colors.primary : 
-      props.$compatible !== false ? props.theme.text.secondary :
+      props.$compatible !== false ? props.theme.colors.text.secondary :
       props.theme.colors.border};
     opacity: ${props => props.$compatible !== false ? 1 : 0.5};
     cursor: ${props => props.$compatible !== false ? 'pointer' : 'not-allowed'};
@@ -166,7 +190,7 @@ const DatasetCard = styled.button<{ $active: boolean; $disabled: boolean }>`
   padding: 12px;
   border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
   border-radius: 6px;
-  background: ${props => props.$active ? `${props.theme.colors.primary}10` : 'white'};
+  background: ${props => props.$active ? `var(--color-primary)10` : 'white'};
   text-align: left;
   cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
   opacity: ${props => props.$disabled ? 0.5 : 1};
@@ -183,33 +207,42 @@ const DatasetName = styled.div`
 
 const DatasetDescription = styled.div`
   font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `
 
 const RandomizeButton = styled.button`
   padding: 6px 12px;
-  background: #fff;
-  border: 1px solid #e9ecef;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
-  color: #495057;
+  color: var(--color-text-primary);
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 0.9rem;
 
   &:hover {
-    background: #f8f9fa;
+    background: var(--color-background);
   }
 `
+
+const TemplateButton = styled(RandomizeButton)`
+  background: #fff8e1;
+  border-color: #ffe082;
+  
+  &:hover {
+    background: #ffecb3;
+  }
+`;
 
 const EncodingHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 2px solid var(--color-border);
   padding-bottom: 8px;
 `
 
@@ -232,7 +265,7 @@ const MarkTypeCard = styled.button<{ $active: boolean }>`
   position: relative;
 
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
+    border-color: var(--color-primary);
     background: ${props => props.theme.colors.primary + '05'};
   }
 `
@@ -245,7 +278,7 @@ const MarkIcon = styled.div`
 const MarkName = styled.div`
   font-size: 0.9rem;
   font-weight: 500;
-  color: #2c3e50;
+  color: var(--color-text-primary);
 `
 
 const MarkTooltip = styled.div`
@@ -254,7 +287,7 @@ const MarkTooltip = styled.div`
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.8);
-  color: white;
+  color: var(--color-surface);
   padding: 8px 12px;
   border-radius: 4px;
   font-size: 0.8rem;
@@ -302,19 +335,19 @@ const MarkInfo = styled.div`
 
 const MarkDescription = styled.div`
   font-size: 0.8rem;
-  color: #6c757d;
+  color: var(--color-text-secondary);
   margin-top: 4px;
 `
 
 const DatasetInfo = styled.div`
   margin-top: 16px;
   padding: 12px;
-  background: #f8f9fa;
+  background: var(--color-background);
   border-radius: 4px;
   display: flex;
   gap: 16px;
   font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `
 
 const EncodingRow = styled.div`
@@ -326,7 +359,7 @@ const EncodingRow = styled.div`
 
 const EncodingLabel = styled.div`
   font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `;
 
 const EncodingTypeControls = styled.div`
@@ -336,22 +369,22 @@ const EncodingTypeControls = styled.div`
 
 const EncodingHint = styled.div`
   font-size: 0.8rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
   margin-top: 4px;
 `;
 
 const EncodingPreview = styled.div`
   padding: 8px;
-  background: #f8f9fa;
+  background: var(--color-background);
   border-radius: 4px;
   margin-top: 8px;
   font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `;
 
 const Accordion = styled.div`
   margin-bottom: 12px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
 
@@ -363,7 +396,7 @@ const Accordion = styled.div`
 const AccordionHeader = styled.button<{ $isOpen: boolean }>`
   width: 100%;
   padding: 16px;
-  background: #f8f9fa;
+  background: var(--color-background);
   border: none;
   display: flex;
   align-items: center;
@@ -371,11 +404,11 @@ const AccordionHeader = styled.button<{ $isOpen: boolean }>`
   cursor: pointer;
   font-size: 1.1rem;
   font-weight: 600;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   transition: background 0.2s;
 
   &:hover {
-    background: #f1f3f5;
+    background: var(--color-surfaceHover);
   }
 
   svg {
@@ -398,8 +431,8 @@ const AccordionContent = styled.div<{ $isOpen: boolean }>`
 
 const ActionButton = styled.button`
   padding: 8px 12px;
-  background: ${props => props.theme.colors.primary};
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-surface);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -433,8 +466,8 @@ const RecommendationCard = styled.button<{ $active: boolean }>`
   transition: all 0.2s;
 
   &:hover {
-    border-color: #4dabf7;
-    background: #f8f9fa;
+    border-color: var(--color-primary);
+    background: var(--color-background);
   }
 `;
 
@@ -445,7 +478,7 @@ const RecommendationTitle = styled.div`
 
 const RecommendationReason = styled.div`
   font-size: 0.9rem;
-  color: #6c757d;
+  color: var(--color-text-secondary);
   margin-bottom: 8px;
 `;
 
@@ -481,27 +514,19 @@ interface DataTransform {
   test?: (d: any) => boolean;
 }
 
-interface ExtendedSpec extends TopLevelSpec {
-  mark?: string | {
-    type: string;
-    [key: string]: any;
-  };
-  encoding?: {
-    [key: string]: {
-      field?: string;
-      type?: string;
-      [key: string]: any;
-    };
-  };
-  data?: {
-    values?: any[];
-    [key: string]: any;
-  };
+interface ChartTemplate {
+  name: string;
+  icon: string;
+  markType: MarkType;
+  description: string;
+  encodings: Record<string, any>;
+  config?: Record<string, any>;
 }
 
 interface VisualEditorProps {
-  spec: ExtendedSpec;
-  onChange: (updates: Partial<ExtendedSpec>) => void;
+  spec: VegaExtendedSpec;
+  onChange: (updates: Partial<VegaExtendedSpec>) => void;
+  onChartRender?: () => void;
 }
 
 // Add mark-specific encoding definitions
@@ -515,9 +540,10 @@ const MARK_ENCODINGS: Record<MarkType, {
     channels: ['theta', 'radius', 'color', 'opacity', 'tooltip', 'x', 'y'],
     description: 'Radial visualization - single pie or multiple pies in a grid',
     hints: {
-      theta: 'Use quantitative values for angle',
-      radius: 'Optional: Use for hierarchical data',
+      theta: 'Use quantitative values for angle (size of each slice)',
+      radius: 'Optional: Use for hierarchical data or donut charts',
       color: 'Categories work well for segments',
+      opacity: 'Optional: For emphasis or layering',
       x: 'Optional: Position multiple pie charts horizontally',
       y: 'Optional: Position multiple pie charts vertically'
     },
@@ -607,6 +633,18 @@ const MARK_ENCODINGS: Record<MarkType, {
       radius: 'Level in hierarchy'
     },
     icon: '🟡'
+  },
+  'parallel-coordinates': {
+    channels: ['dimensions', 'color', 'detail', 'opacity', 'tooltip', 'order'],
+    description: 'Show multidimensional data with lines across parallel axes',
+    hints: {
+      dimensions: 'Numeric fields to show as parallel axes',
+      color: 'Category to color lines by',
+      detail: 'Field to separate lines by (usually ID)',
+      order: 'Order of the dimensions',
+      opacity: 'Useful to manage overlapping lines'
+    },
+    icon: '📊'
   }
 };
 
@@ -657,7 +695,217 @@ const getMarkType = (spec: any): MarkType => {
   return 'point';
 };
 
-export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
+// Add the following styled components for tabs 
+const DataTabsContainer = styled.div`
+  display: flex;
+  gap: 2px;
+  margin-bottom: 16px;
+  background: var(--color-background);
+  border-radius: 6px;
+  padding: 4px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  border: 1px solid var(--color-border);
+`
+
+const DataTab = styled.button<{ $active: boolean }>`
+  padding: 8px 12px;
+  background: ${(props: any) => props.$active ? 'var(--color-surface)' : 'transparent'};
+  color: ${(props: any) => props.$active ? 'var(--color-primary)' : 'var(--color-text-secondary)'};
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: ${(props: any) => props.$active ? '600' : '500'};
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+
+  &:hover {
+    background: ${(props: any) => props.$active ? 'var(--color-surface)' : 'var(--color-surfaceHover)'};
+    color: ${(props: any) => props.$active ? 'var(--color-primary)' : 'var(--color-text-primary)'};
+  }
+`;
+
+const TabContent = styled.div`
+  background: var(--color-surface);
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+`;
+
+// Add this type for data subsection tabs
+type DataTabSection = 'dataset' | 'filter' | 'chartType' | 'encoding';
+
+// Add these new constants for encoding options
+const AGGREGATION_OPTIONS = [
+  { value: '', label: 'No Aggregation' },
+  { value: 'sum', label: 'Sum' },
+  { value: 'mean', label: 'Mean/Average' },
+  { value: 'median', label: 'Median' },
+  { value: 'min', label: 'Minimum' },
+  { value: 'max', label: 'Maximum' },
+  { value: 'count', label: 'Count' }
+];
+
+const TIME_UNIT_OPTIONS = [
+  { value: '', label: 'No Time Unit' },
+  { value: 'year', label: 'Year' },
+  { value: 'quarter', label: 'Quarter' },
+  { value: 'month', label: 'Month' },
+  { value: 'week', label: 'Week' },
+  { value: 'day', label: 'Day' },
+  { value: 'hour', label: 'Hour' },
+  { value: 'minute', label: 'Minute' }
+];
+
+const BINNING_OPTIONS = [
+  { value: '', label: 'No Binning' },
+  { value: 'bin', label: 'Auto Bin' },
+  { value: 'bin-5', label: '5 Bins' },
+  { value: 'bin-10', label: '10 Bins' },
+  { value: 'bin-20', label: '20 Bins' }
+];
+
+const EncodingOptionSelect = styled.select`
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  margin-top: 4px;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  position: relative;
+  z-index: 15;
+  cursor: pointer;
+
+  &:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+    z-index: 25;
+  }
+
+  &:focus-within {
+    z-index: 25;
+  }
+
+  option {
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    padding: 4px 8px;
+    border: none;
+    cursor: pointer;
+  }
+`;
+
+// Add droppable encoding control
+const DroppableEncodingControl = styled.div<{ $isOver?: boolean; $canDrop?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px dashed ${props => 
+    props.$isOver 
+      ? props.$canDrop 
+        ? 'var(--color-success, #4caf50)' 
+        : 'var(--color-error, #f44336)' 
+      : 'var(--color-border)'};
+  background: ${props => 
+    props.$isOver 
+      ? props.$canDrop 
+        ? 'rgba(76, 175, 80, 0.08)' 
+        : 'rgba(244, 67, 54, 0.08)' 
+      : 'var(--color-surface)'};
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: visible; /* Changed from hidden to visible */
+  
+  &:hover {
+    border-color: var(--color-primary);
+    background: ${props => !props.$isOver && 'rgba(33, 150, 243, 0.04)'};
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: ${props => 
+      props.$isOver && props.$canDrop 
+        ? 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(76, 175, 80, 0.05) 10px, rgba(76, 175, 80, 0.05) 20px)' 
+        : 'none'};
+    pointer-events: none;
+    opacity: ${props => props.$isOver ? 1 : 0};
+    transition: opacity 0.3s;
+    z-index: 0; /* Ensure this stays behind select elements */
+  }
+
+  /* Ensure select elements are always on top */
+  select {
+    position: relative;
+    z-index: 15 !important;
+  }
+`;
+
+const ColumnTokenContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+`;
+
+const DropHint = styled.div`
+  padding: 12px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+`;
+
+const DragIcon = styled.div`
+  opacity: 0.5;
+  font-size: 1.2rem;
+  margin-bottom: 4px;
+`;
+
+// Add these styled components at the top level with other styled definitions
+const ColumnTypeSection = styled.div`
+  margin-bottom: 16px;
+`;
+
+const ColumnTypeHeading = styled.h4`
+  margin: 0 0 8px 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+const AvailableColumnsContainer = styled.div`
+  padding: 16px;
+  background: var(--color-background);
+  border-radius: 8px;
+  margin-bottom: 24px;
+`;
+
+export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProps) => {
   // Add state for dataset cache
   const [datasetCache, setDatasetCache] = useState<Record<string, DatasetMetadata>>({});
   const [currentDataset, setCurrentDataset] = useState<string | null>(null);
@@ -915,45 +1163,34 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
   };
 
   const handleEncodingChange = (channel: string, update: EncodingUpdate) => {
-    // Check if the encoding is compatible with the current mark type
-    if (currentMark === 'line' && (channel === 'theta' || channel === 'radius')) {
-      console.warn(`${channel} encoding is not compatible with line mark`);
-      return;
-    }
+    const currentEncoding = encodings[channel] || {};
+    const newEncoding = {
+      ...currentEncoding,
+      ...update
+    };
 
-    const currentEncoding = spec.encoding?.[channel] || {};
-    
-    // Get compatible types for this field
-    const compatibleTypes = update.field ? 
-      getCompatibleTypes(update.field, spec.data?.values || []) : 
-      ['nominal'];
-    
-    // If type is being updated, ensure it's compatible
-    if (update.type && !compatibleTypes.includes(update.type)) {
-      update.type = compatibleTypes[0];
-    }
-    
-    // Set appropriate scale based on type
-    let scale = undefined;
-    if (update.type === 'quantitative') {
-      scale = { type: 'linear', zero: channel === 'y' };
-    } else if (update.type === 'temporal') {
-      scale = { type: 'time' };
-    } else {
-      scale = { type: 'point' };
-    }
-
-    onChange({
-      ...spec,
-      encoding: {
-        ...spec.encoding,
-        [channel]: {
-          ...currentEncoding,
-          ...update,
-          ...(scale && { scale })
-        }
+    // Remove properties with empty string values
+    Object.keys(newEncoding).forEach(key => {
+      if (newEncoding[key] === '') {
+        delete newEncoding[key];
       }
     });
+
+    // Handle bin specially since it can be boolean or object
+    if (update.bin === '') {
+      delete newEncoding.bin;
+    } else if (typeof update.bin === 'string' && update.bin.startsWith('bin-')) {
+      const binCount = parseInt(update.bin.split('-')[1]);
+      newEncoding.bin = { maxbins: binCount };
+    }
+
+    const updatedEncodings = {
+      ...encodings,
+      [channel]: newEncoding
+    };
+
+    setEncodings(updatedEncodings);
+    onChange({ ...spec, encoding: updatedEncodings });
   };
 
   const fields = useMemo(() => {
@@ -1029,10 +1266,28 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
         const randomField = compatibleFields[
           Math.floor(Math.random() * compatibleFields.length)
         ];
-        newEncodings[channel] = {
+        
+        const fieldType = fieldTypes[randomField];
+        const encoding = {
           field: randomField,
-          type: fieldTypes[randomField]
+          type: fieldType
         };
+        
+        // Add suggested encoding options
+        const suggestion = suggestEncodingOption(randomField, channel, fieldType);
+        if (suggestion) {
+          if (fieldType === 'quantitative') {
+            if (suggestion === 'bin') {
+              encoding.bin = true;
+            } else {
+              encoding.aggregate = suggestion;
+            }
+          } else if (fieldType === 'temporal') {
+            encoding.timeUnit = suggestion;
+          }
+        }
+        
+        newEncodings[channel] = encoding;
       }
     });
     
@@ -1215,31 +1470,74 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
   const handleRecommendEncodings = () => {
     if (!spec.data?.values?.length) return;
 
+    // Get clean data and correct data types for better recommendations
+    const dataValues = spec.data.values;
+    const dataTypes = inferDataTypes(dataValues);
+    
+    // Create a properly formatted dataset for recommendations
     const dataset = {
-      values: spec.data.values,
-      dataTypes: inferDataTypes(spec.data.values)
+      values: dataValues,
+      dataTypes: Object.entries(dataTypes).reduce((acc, [field, types]) => {
+        // Choose the most appropriate type from the inferred types
+        acc[field] = types[0]; // Take the first inferred type
+        return acc;
+      }, {})
     };
 
+    console.log('Getting recommendations for dataset:', dataset);
     const recs = getChartRecommendations(dataset);
+    console.log('Received recommendations:', recs);
     setRecommendations(recs);
   };
 
   const applyRecommendation = (recommendation) => {
+    // Add debug log
+    console.log('Applying recommendation:', recommendation);
+    
+    // Update the current mark type
+    setCurrentMark(recommendation.chartType);
+    
+    // Process the encodings using our utility function
+    const newEncodings = transformEncodings(recommendation.suggestedEncodings);
+    
+    // Update encodings state
+    setEncodings(newEncodings);
+    
+    // Create a new spec object with the new mark type and encodings
     const newSpec = {
       ...spec,
-      mark: recommendation.chartType,
-      encoding: Object.entries(recommendation.suggestedEncodings).reduce((acc, [channel, config]) => ({
-        ...acc,
-        [channel]: {
-          field: config.field,
-          type: config.type,
-          ...(config.aggregate && { aggregate: config.aggregate }),
-          ...(config.scale && { scale: config.scale })
-        }
-      }), {})
+      mark: createMarkConfig(recommendation.chartType),
+      encoding: newEncodings
     };
 
+    // Apply the changes
     onChange(newSpec);
+    
+    // Force a complete re-render immediately 
+    if (onChartRender) {
+      onChartRender();
+    }
+    
+    // Apply a second update after a short delay to ensure the chart refreshes properly
+    setTimeout(() => {
+      // Create a slightly modified copy of the spec to force a re-render
+      const refreshedSpec = {
+        ...newSpec,
+        width: newSpec.width || undefined, // Trigger width recalculation
+        height: newSpec.height || undefined, // Trigger height recalculation
+        // Add a renderKey to force Vega-Lite to create a new View
+        config: {
+          ...(newSpec.config || {}),
+          _renderKey: Date.now() // Add a unique render key
+        }
+      };
+      onChange(refreshedSpec);
+      
+      // Notify parent to update chart render key
+      if (onChartRender) {
+        onChartRender();
+      }
+    }, 50);
   };
 
   // Detect field types
@@ -1271,58 +1569,556 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
     return parsedSpec.mark?.type || 'point';
   }, [parsedSpec]);
 
+  const [templates, setTemplates] = useState<ChartTemplate[]>(CHART_TEMPLATES);
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  const handleApplyTemplate = (template: ChartTemplate) => {
+    // Update mark type
+    setCurrentMark(template.markType);
+    
+    // Find fields that match the required types for the template
+    const dataValues = spec.data?.values || [];
+    if (!dataValues.length) return;
+    
+    const dataTypes = inferDataTypes(dataValues);
+    const fieldsByType = Object.entries(dataTypes).reduce((acc, [field, types]) => {
+      types.forEach(type => {
+        if (!acc[type]) acc[type] = [];
+        acc[type].push(field);
+      });
+      return acc;
+    }, {} as Record<string, string[]>);
+    
+    // Map template encodings to actual fields
+    const newEncodings = Object.entries(template.encodings).reduce((acc, [channel, config]) => {
+      const requiredType = config.type;
+      const fields = fieldsByType[requiredType] || [];
+      
+      if (fields.length > 0) {
+        // Choose different fields for different channels if possible
+        const availableFields = fields.filter(field => 
+          !Object.values(acc).some(enc => enc.field === field)
+        );
+        
+        const fieldToUse = availableFields.length > 0 ? availableFields[0] : fields[0];
+        
+        acc[channel] = {
+          field: fieldToUse,
+          type: requiredType,
+          ...(config.bin && { bin: config.bin }),
+          ...(config.aggregate && { aggregate: config.aggregate }),
+          ...(config.timeUnit && { timeUnit: config.timeUnit })
+        };
+      }
+      
+      return acc;
+    }, {});
+    
+    // Create mark configuration
+    const markConfig = typeof template.config === 'object' ? 
+      { type: template.markType, ...template.config } : 
+      template.markType;
+    
+    // Update encodings state
+    setEncodings(newEncodings);
+    
+    // Update the spec
+    const newSpec = {
+      ...spec,
+      mark: markConfig,
+      encoding: newEncodings
+    };
+    
+    // Apply the changes
+    onChange(newSpec);
+    
+    // Force chart re-render
+    if (onChartRender) {
+      onChartRender();
+    }
+    
+    // Hide templates panel
+    setShowTemplates(false);
+  };
+
+  // Add this state for data tabs
+  const [activeDataTab, setActiveDataTab] = useState<DataTabSection>('dataset');
+
+  // Add helper to get appropriate encoding options based on field type
+  const getEncodingOptions = (channel: string, fieldType: string) => {
+    if (fieldType === 'quantitative') {
+      return AGGREGATION_OPTIONS.concat(BINNING_OPTIONS);
+    } else if (fieldType === 'temporal') {
+      return TIME_UNIT_OPTIONS;
+    }
+    return [];
+  };
+
+  // Add helper to detect if a field would benefit from aggregation
+  const suggestEncodingOption = (field: string, channel: string, fieldType: string) => {
+    if (!field || !spec.data?.values) return '';
+    
+    // Get data for field
+    const values = spec.data.values.map(d => d[field]).filter(v => v !== undefined && v !== null);
+    
+    if (fieldType === 'quantitative') {
+      const uniqueCount = new Set(values).size;
+      const totalCount = values.length;
+      
+      // If there are many unique values and channel is y, suggest sum or mean
+      if (uniqueCount > 20 && channel === 'y') {
+        return 'mean';
+      }
+      
+      // If there are many values but few uniques, suggest binning
+      if (uniqueCount < totalCount * 0.1 && uniqueCount > 10) {
+        return 'bin';
+      }
+    } else if (fieldType === 'temporal') {
+      // For date fields, suggest appropriate time unit
+      const dates = values.map(v => new Date(v));
+      const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+      const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+      
+      const daysDiff = (maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24);
+      
+      if (daysDiff > 365 * 2) return 'year';
+      if (daysDiff > 90) return 'month';
+      if (daysDiff > 30) return 'week';
+      if (daysDiff > 2) return 'day';
+      
+      return 'hour';
+    }
+    
+    return '';
+  };
+
+  const [columnMetadata, setColumnMetadata] = useState<Record<string, ColumnMetadata>>({});
+
+  // Internal implementation of the suggestEncodingChannel function
+  const suggestEncodingChannel = (column: ColumnMetadata): string | null => {
+    switch(column.type) {
+      case "quantitative":
+        return "y";
+      case "temporal":
+        return "x";
+      case "nominal":
+      case "ordinal":
+        return "color";
+      default:
+        return null;
+    }
+  };
+
+  // Update to calculate column metadata when data changes
+  useEffect(() => {
+    const values = getDataValues();
+    if (!values || values.length === 0) return;
+    
+    const dataTypes = detectDataTypes(values);
+    const metadata: Record<string, ColumnMetadata> = {};
+    
+    // Extract columns from the first row of data
+    Object.keys(values[0] || {}).forEach(column => {
+      // Get column values for statistics
+      const columnValues = values
+        .map(row => row[column])
+        .filter(val => val !== null && val !== undefined);
+        
+      const uniqueValues = new Set(columnValues).size;
+      const missingValues = values.length - columnValues.length;
+      
+      // Calculate basic statistics for numerical columns
+      let stats = undefined;
+      if (dataTypes[column] === 'quantitative') {
+        const numericValues = columnValues.map(v => Number(v)).filter(v => !isNaN(v));
+        if (numericValues.length > 0) {
+          const min = Math.min(...numericValues);
+          const max = Math.max(...numericValues);
+          const sum = numericValues.reduce((a, b) => a + b, 0);
+          const mean = sum / numericValues.length;
+          
+          stats = { min, max, mean };
+        }
+      }
+      
+      metadata[column] = {
+        name: column,
+        type: dataTypes[column] || 'nominal',
+        uniqueValues,
+        missingValues,
+        stats
+      };
+    });
+    
+    setColumnMetadata(metadata);
+  }, [spec.data]);
+
+  // Handler for field drop on encoding
+  const handleColumnDrop = (channel: string, column: ColumnMetadata) => {
+    const newEncodings = {
+      ...encodings,
+      [channel]: {
+        field: column.name,
+        type: column.type,
+      }
+    };
+    
+    setEncodings(newEncodings);
+    onChange({ ...spec, encoding: newEncodings } as VegaExtendedSpec);
+  };
+
+  // Create droppable encoding component
+  const EncodingDropTarget = ({ channel }: { channel: string }) => {
+    const [{ isOver, canDrop }, drop] = useDrop({
+      accept: 'column',
+      drop: (item: ColumnDragItem) => {
+        handleColumnDrop(channel, item.column);
+        return { channel };
+      },
+      canDrop: (item: ColumnDragItem) => {
+        // You can add logic here to determine if a column can be dropped on this encoding
+        return true;
+      },
+      collect: (monitor) => ({
+        isOver: monitor.isOver(),
+        canDrop: monitor.canDrop()
+      }),
+      // Prevent drag/drop from interfering with select elements
+      hover: (item, monitor) => {
+        // Don't trigger hover effects when over select elements
+        const targetElement = monitor.getDropResult()?.targetElement;
+        if (targetElement && (targetElement.tagName === 'SELECT' || targetElement.tagName === 'OPTION')) {
+          return;
+        }
+      }
+    });
+
+    // Handle dropdown open/close states to prevent theme interference
+    const handleSelectFocus = (e: React.FocusEvent<HTMLSelectElement>) => {
+      console.log('SELECT FOCUS - Adding dropdown-open class');
+      // Add class to body to disable theme effects
+      document.body.classList.add('dropdown-open');
+      
+      // Force the select to stay focused
+      const selectElement = e.target;
+      selectElement.style.zIndex = '999999';
+      selectElement.style.position = 'relative';
+      
+      // Prevent event bubbling
+      e.stopPropagation();
+      e.preventDefault();
+    };
+
+    const handleSelectBlur = (e: React.FocusEvent<HTMLSelectElement>) => {
+      console.log('SELECT BLUR - Removing dropdown-open class');
+      
+      // Delay removal to allow for option selection
+      setTimeout(() => {
+        document.body.classList.remove('dropdown-open');
+      }, 150);
+      
+      // Prevent event bubbling
+      e.stopPropagation();
+    };
+
+    const handleSelectMouseDown = (e: React.MouseEvent<HTMLSelectElement>) => {
+      console.log('SELECT MOUSEDOWN - Preventing interference');
+      // Prevent any interference from parent components
+      e.stopPropagation();
+      
+      // Force focus
+      const selectElement = e.target as HTMLSelectElement;
+      setTimeout(() => {
+        selectElement.focus();
+      }, 0);
+    };
+
+    const handleSelectClick = (e: React.MouseEvent<HTMLSelectElement>) => {
+      console.log('SELECT CLICK - Ensuring dropdown opens');
+      // Prevent event bubbling that might close the dropdown
+      e.stopPropagation();
+      
+      // Ensure the dropdown opens
+      const selectElement = e.target as HTMLSelectElement;
+      selectElement.style.zIndex = '999999';
+      
+      // Force open the dropdown
+      if (!selectElement.matches(':focus')) {
+        selectElement.focus();
+      }
+    };
+
+    return (
+      <DroppableEncodingControl ref={drop} $isOver={isOver} $canDrop={canDrop}>
+        {encodings[channel]?.field ? (
+          <ColumnTokenContainer>
+            {columnMetadata[encodings[channel].field] && (
+              <DataColumnToken 
+                column={columnMetadata[encodings[channel].field]}
+                showStats={false}
+                onClick={() => {/* Optional click handler */}}
+              />
+            )}
+          </ColumnTokenContainer>
+        ) : (
+          <DropHint>
+            <DragIcon>↓</DragIcon>
+            Drop column here or select below
+          </DropHint>
+        )}
+        
+        <select
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            border: '1px solid var(--color-border)',
+            borderRadius: '6px',
+            fontSize: '0.9rem',
+            background: 'var(--color-surface)',
+            color: 'var(--color-text-primary)',
+            position: 'relative',
+            zIndex: 999999,
+            cursor: 'pointer'
+          }}
+          value={encodings[channel]?.field || ''}
+          onChange={(e) => {
+            console.log('SELECT CHANGE - Field changed to:', e.target.value);
+            const newEncodings = {
+              ...encodings,
+              [channel]: e.target.value ? {
+                field: e.target.value,
+                type: fieldTypes[e.target.value]
+              } : undefined
+            };
+            setEncodings(newEncodings);
+            onChange({ ...spec, encoding: newEncodings });
+          }}
+          onFocus={handleSelectFocus}
+          onBlur={handleSelectBlur}
+          onClick={handleSelectClick}
+          onMouseDown={handleSelectMouseDown}
+        >
+          <option value="">Select field</option>
+          {fields.map(field => (
+            <option key={field} value={field}>
+              {field} ({fieldTypes[field]})
+            </option>
+          ))}
+        </select>
+        
+        {encodings[channel]?.field && (
+          <>
+            <TypeButtons>
+              {[
+                { type: 'quantitative', icon: <NumbersIcon />, label: 'Number' },
+                { type: 'temporal', icon: <TimelineIcon />, label: 'Time' },
+                { type: 'nominal', icon: <CategoryIcon />, label: 'Category' },
+                { type: 'ordinal', icon: <BarChartIcon />, label: 'Ordered' }
+              ].map(({ type, icon, label }) => {
+                const field = encodings[channel]?.field;
+                const compatibleTypes = field ? 
+                  getCompatibleTypes(field, spec.data?.values || []) : 
+                  [];
+                
+                const isCompatible = compatibleTypes.includes(type);
+                
+                return (
+                  <Tooltip key={type} title={label}>
+                    <span>
+                      <EncodingTypeButton 
+                        $active={encodings[channel]?.type === type}
+                        $compatible={isCompatible}
+                        onClick={() => isCompatible && handleEncodingChange(channel, { type })}
+                        size="small"
+                        disabled={!isCompatible}
+                      >
+                        {icon}
+                      </EncodingTypeButton>
+                    </span>
+                  </Tooltip>
+                );
+              })}
+            </TypeButtons>
+            
+            {encodings[channel]?.type && (
+              <EncodingOptionSelect
+                value={
+                  encodings[channel]?.aggregate || 
+                  encodings[channel]?.timeUnit || 
+                  (encodings[channel]?.bin ? 
+                    (typeof encodings[channel].bin === 'object' && 'maxbins' in encodings[channel].bin) ? 
+                      `bin-${encodings[channel].bin.maxbins}` : 'bin' 
+                    : '')
+                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const update: EncodingUpdate = {};
+                  
+                  // Clear all transformation properties first
+                  update.aggregate = '';
+                  update.timeUnit = '';
+                  update.bin = '';
+                  
+                  // Set the selected transformation
+                  if (AGGREGATION_OPTIONS.some(opt => opt.value === value)) {
+                    update.aggregate = value;
+                  } else if (TIME_UNIT_OPTIONS.some(opt => opt.value === value)) {
+                    update.timeUnit = value;
+                  } else if (value === 'bin') {
+                    update.bin = true;
+                  } else if (value.startsWith('bin-')) {
+                    update.bin = value;
+                  }
+                  
+                  handleEncodingChange(channel, update);
+                }}
+                onFocus={handleSelectFocus}
+                onBlur={handleSelectBlur}
+                onClick={handleSelectClick}
+                onMouseDown={handleSelectMouseDown}
+              >
+                <option value="">Select option</option>
+                {encodings[channel].type === 'quantitative' && (
+                  <>
+                    <optgroup label="Aggregation">
+                      {AGGREGATION_OPTIONS.filter(opt => opt.value).map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Binning">
+                      {BINNING_OPTIONS.filter(opt => opt.value).map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </optgroup>
+                  </>
+                )}
+                {encodings[channel].type === 'temporal' && (
+                  <optgroup label="Time Unit">
+                    {TIME_UNIT_OPTIONS.filter(opt => opt.value).map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </optgroup>
+                )}
+              </EncodingOptionSelect>
+            )}
+          </>
+        )}
+      </DroppableEncodingControl>
+    );
+  };
+
+  // Update the rendering of available encodings
+  const renderEncodingSection = () => {
+    return (
+      <div>
+        {getAvailableEncodings().map(channel => (
+          <Control key={channel}>
+            <EncodingGrid>
+              <Label>{channel.toUpperCase()}</Label>
+              <EncodingDropTarget channel={channel} />
+            </EncodingGrid>
+          </Control>
+        ))}
+      </div>
+    );
+  };
+
   if (!spec) {
     return <div>Invalid specification</div>
   }
 
   return (
     <Container>
-      <Accordion>
-        <AccordionHeader 
-          onClick={() => toggleAccordion('data')}
-          $isOpen={accordionStates.data}
+      <DataTabsContainer>
+        <DataTab 
+          $active={activeDataTab === 'dataset'} 
+          onClick={() => setActiveDataTab('dataset')}
         >
           Dataset
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </AccordionHeader>
-        <AccordionContent $isOpen={accordionStates.data}>
-          <div>
-            <DatasetSelector
-              chartId={currentMark}
-              currentDataset={currentDataset || ''}
-              onSelect={handleDatasetSelect}
-              datasetCache={datasetCache}
-              setDatasetCache={setDatasetCache}
-            />
-          </div>
-        </AccordionContent>
-      </Accordion>
-
-      <Accordion>
-        <AccordionHeader 
-          onClick={() => toggleAccordion('filter')}
-          $isOpen={accordionStates.filter}
+        </DataTab>
+        <DataTab 
+          $active={activeDataTab === 'filter'} 
+          onClick={() => setActiveDataTab('filter')}
         >
           Filter
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </AccordionHeader>
-        <AccordionContent $isOpen={accordionStates.filter}>
+        </DataTab>
+        <DataTab 
+          $active={activeDataTab === 'chartType'} 
+          onClick={() => setActiveDataTab('chartType')}
+        >
+          Chart Type
+        </DataTab>
+        <DataTab 
+          $active={activeDataTab === 'encoding'} 
+          onClick={() => setActiveDataTab('encoding')}
+        >
+          Encoding
+        </DataTab>
+      </DataTabsContainer>
+
+      {activeDataTab === 'dataset' && (
+        <TabContent>
+          <DatasetSelector
+            chartId={currentMark}
+            currentDataset={currentDataset || ''}
+            onSelect={handleDatasetSelect}
+            datasetCache={datasetCache}
+            setDatasetCache={setDatasetCache}
+          />
+        </TabContent>
+      )}
+
+      {activeDataTab === 'filter' && (
+        <TabContent>
           <div>
             <Control>
               <Label>Field</Label>
-              <Select
+              <select
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '6px',
+                  fontSize: '0.9rem',
+                  background: 'var(--color-surface)',
+                  color: 'var(--color-text-primary)',
+                  position: 'relative',
+                  zIndex: 999999,
+                  cursor: 'pointer'
+                }}
                 value={filterField || ''}
-                onChange={(e) => setFilterField(e.target.value)}
+                onChange={(e) => {
+                  console.log('FILTER FIELD CHANGE:', e.target.value);
+                  setFilterField(e.target.value);
+                }}
+                onFocus={(e) => {
+                  console.log('FILTER FIELD FOCUS - Adding dropdown-open class');
+                  document.body.classList.add('dropdown-open');
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+                onBlur={(e) => {
+                  console.log('FILTER FIELD BLUR - Removing dropdown-open class');
+                  setTimeout(() => {
+                    document.body.classList.remove('dropdown-open');
+                  }, 150);
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  console.log('FILTER FIELD CLICK');
+                  e.stopPropagation();
+                }}
+                onMouseDown={(e) => {
+                  console.log('FILTER FIELD MOUSEDOWN');
+                  e.stopPropagation();
+                }}
               >
                 <option value="">Select field to filter</option>
                 {fields.map(field => (
                   <option key={field} value={field}>{field}</option>
                 ))}
-              </Select>
+              </select>
             </Control>
             {filterField && (
               <>
@@ -1331,6 +2127,16 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
                   <Select
                     value={filterType || ''}
                     onChange={(e) => setFilterType(e.target.value)}
+                    onFocus={(e) => {
+                      document.body.classList.add('dropdown-open');
+                      e.stopPropagation();
+                    }}
+                    onBlur={(e) => {
+                      document.body.classList.remove('dropdown-open');
+                      e.stopPropagation();
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
                   >
                     <option value="equals">Equals</option>
                     <option value="contains">Contains</option>
@@ -1353,21 +2159,12 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
               </>
             )}
           </div>
-        </AccordionContent>
-      </Accordion>
+        </TabContent>
+      )}
 
-      <Accordion>
-        <AccordionHeader 
-          onClick={() => toggleAccordion('chartType')}
-          $isOpen={accordionStates.chartType}
-        >
-          Chart Type
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </AccordionHeader>
-        <AccordionContent $isOpen={accordionStates.chartType}>
-          <p style={{ color: '#6c757d', marginBottom: '16px' }}>
+      {activeDataTab === 'chartType' && (
+        <TabContent>
+          <p style={{ color: 'var(--color-text-secondary)', marginBottom: '16px' }}>
             Choose the best visual mark for your data. Different marks work better for different types of data and comparisons.
           </p>
           <MarkTypeGrid>
@@ -1392,20 +2189,11 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
               </MarkTypeCard>
             ))}
           </MarkTypeGrid>
-        </AccordionContent>
-      </Accordion>
+        </TabContent>
+      )}
 
-      <Accordion>
-        <AccordionHeader 
-          onClick={() => toggleAccordion('encoding')}
-          $isOpen={accordionStates.encoding}
-        >
-          Encoding
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </AccordionHeader>
-        <AccordionContent $isOpen={accordionStates.encoding}>
+      {activeDataTab === 'encoding' && (
+        <TabContent>
           <div>
             <div style={{ 
               display: 'flex', 
@@ -1415,10 +2203,39 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
               <RandomizeButton onClick={handleRandomizeEncodings}>
                 🎲 Random
               </RandomizeButton>
+              <TemplateButton onClick={() => setShowTemplates(!showTemplates)}>
+                📋 Templates
+              </TemplateButton>
               <RecommendButton onClick={handleRecommendEncodings}>
                 🤖 Smart
               </RecommendButton>
             </div>
+
+            {showTemplates && (
+              <div style={{ marginBottom: '16px' }}>
+                <Label>Chart Templates</Label>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                  gap: '8px',
+                  marginBottom: '16px'
+                }}>
+                  {templates.map((template, index) => (
+                    <RecommendationCard
+                      key={index}
+                      $active={false}
+                      onClick={() => handleApplyTemplate(template)}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '1.5rem' }}>{template.icon}</span>
+                        <RecommendationTitle>{template.name}</RecommendationTitle>
+                      </div>
+                      <RecommendationReason>{template.description}</RecommendationReason>
+                    </RecommendationCard>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {recommendations.length > 0 && (
               <div style={{ marginBottom: '16px' }}>
@@ -1440,7 +2257,14 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
                     </RecommendationReason>
                     <div style={{ fontSize: '0.9rem' }}>
                       Suggested encodings: {Object.entries(rec.suggestedEncodings)
-                        .map(([channel, field]) => `${channel}=${field}`)
+                        .map(([channel, enc]) => {
+                          if (Array.isArray(enc)) {
+                            return `${channel}: [Array of ${enc.length} fields]`;
+                          } else if (enc && typeof enc === 'object' && 'field' in enc && 'type' in enc) {
+                            return `${channel}: ${enc.field} (${enc.type})`;
+                          }
+                          return `${channel}: [${typeof enc}]`;
+                        })
                         .join(', ')}
                     </div>
                   </RecommendationCard>
@@ -1448,81 +2272,72 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
               </div>
             )}
 
-            {getAvailableEncodings().map(channel => (
-              <Control key={channel}>
-                <EncodingGrid>
-                  <Label>{channel.toUpperCase()}</Label>
-                  <EncodingControl>
-                    <Select
-                      value={encodings[channel]?.field || ''}
-                      onChange={(e) => {
-                        const newEncodings = {
-                          ...encodings,
-                          [channel]: e.target.value ? {
-                            field: e.target.value,
-                            type: fieldTypes[e.target.value]
-                          } : undefined
-                        };
-                        setEncodings(newEncodings);
-                        onChange({ ...spec, encoding: newEncodings });
-                      }}
-                    >
-                      <option value="">Select field</option>
-                      {fields.map(field => (
-                        <option key={field} value={field}>
-                          {field} ({fieldTypes[field]})
-                        </option>
-                      ))}
-                    </Select>
-                    
-                    {encodings[channel]?.field && (
-                      <>
-                        <TypeButtons>
-                          {[
-                            { type: 'quantitative', icon: <NumbersIcon />, label: 'Number' },
-                            { type: 'temporal', icon: <TimelineIcon />, label: 'Time' },
-                            { type: 'nominal', icon: <CategoryIcon />, label: 'Category' },
-                            { type: 'ordinal', icon: <BarChartIcon />, label: 'Ordered' }
-                          ].map(({ type, icon, label }) => {
-                            const field = encodings[channel]?.field;
-                            const compatibleTypes = field ? 
-                              getCompatibleTypes(field, spec.data?.values || []) : 
-                              [];
-                            const isCompatible = compatibleTypes.includes(type);
-                            
-                            return (
-                              <Tooltip key={type} title={label}>
-                                <span>
-                                  <EncodingTypeButton
-                                    $active={encodings[channel]?.type === type}
-                                    $compatible={isCompatible}
-                                    onClick={() => isCompatible && handleEncodingChange(channel, { type })}
-                                    size="small"
-                                    disabled={!isCompatible}
-                                  >
-                                    {icon}
-                                  </EncodingTypeButton>
-                                </span>
-                              </Tooltip>
-                            );
-                          })}
-                        </TypeButtons>
+            <div style={{ marginTop: '20px' }}>
+              <SectionTitle>Available Columns</SectionTitle>
+              <AvailableColumnsContainer>
+                {/* Group by data type */}
+                {(() => {
+                  // Organize columns by type
+                  const columnsByType = {
+                    quantitative: [] as ColumnMetadata[],
+                    temporal: [] as ColumnMetadata[],
+                    nominal: [] as ColumnMetadata[],
+                    ordinal: [] as ColumnMetadata[]
+                  };
+                  
+                  Object.values(columnMetadata).forEach(column => {
+                    if (column.type in columnsByType) {
+                      columnsByType[column.type as keyof typeof columnsByType].push(column);
+                    } else {
+                      columnsByType.nominal.push(column);
+                    }
+                  });
+                  
+                  return (
+                    <>
+                      {Object.entries(columnsByType).map(([type, columns]) => {
+                        if (columns.length === 0) return null;
                         
-                        <EncodingHint>
-                          {channel === 'x' && 'Usually numbers or dates for x-axis'}
-                          {channel === 'y' && 'Usually numbers for y-axis'}
-                          {channel === 'color' && 'Categories work well for color'}
-                          {channel === 'size' && 'Numbers work best for size'}
-                        </EncodingHint>
-                      </>
-                    )}
-                  </EncodingControl>
-                </EncodingGrid>
-              </Control>
-            ))}
+                        return (
+                          <ColumnTypeSection key={type}>
+                            <ColumnTypeHeading>
+                              {type === 'quantitative' && <NumbersIcon fontSize="small" />}
+                              {type === 'temporal' && <TimelineIcon fontSize="small" />}
+                              {type === 'nominal' && <CategoryIcon fontSize="small" />}
+                              {type === 'ordinal' && <BarChartIcon fontSize="small" />}
+                              {type.charAt(0).toUpperCase() + type.slice(1)} ({columns.length})
+                            </ColumnTypeHeading>
+                            <ColumnTokenContainer>
+                              {columns.map(column => (
+                                <DataColumnToken 
+                                  key={column.name}
+                                  column={column}
+                                  showStats={true}
+                                  onClick={(col) => {
+                                    const bestChannel = suggestEncodingChannel(col);
+                                    if (bestChannel) {
+                                      handleColumnDrop(bestChannel, col);
+                                    }
+                                  }}
+                                />
+                              ))}
+                            </ColumnTokenContainer>
+                          </ColumnTypeSection>
+                        );
+                      })}
+                    </>
+                  );
+                })()}
+              </AvailableColumnsContainer>
+            </div>
+
+            <div style={{ marginTop: '20px' }}>
+              <SectionTitle>Encodings</SectionTitle>
+              {renderEncodingSection()}
+            </div>
           </div>
-        </AccordionContent>
-      </Accordion>
+        </TabContent>
+      )}
     </Container>
   )
 }
@@ -1595,4 +2410,101 @@ const isCompatibleEncoding = (channel: string, markType: MarkType): boolean => {
   };
 
   return compatibleChannels[markType]?.includes(channel) ?? false;
-}; 
+};
+
+// Add more detailed templates with encoding options
+const CHART_TEMPLATES: ChartTemplate[] = [
+  {
+    name: 'Time Series',
+    icon: '📈',
+    markType: 'line',
+    description: 'Visualize trends over time',
+    encodings: {
+      x: { type: 'temporal', timeUnit: 'yearmonth' },
+      y: { type: 'quantitative' },
+      color: { type: 'nominal' }
+    },
+    config: {
+      interpolate: 'monotone',
+      point: true
+    }
+  },
+  {
+    name: 'Bar Comparison',
+    icon: '📊',
+    markType: 'bar',
+    description: 'Compare values across categories',
+    encodings: {
+      x: { type: 'nominal' },
+      y: { type: 'quantitative', aggregate: 'sum' },
+      color: { type: 'nominal' }
+    }
+  },
+  {
+    name: 'Scatter Plot',
+    icon: '🔵',
+    markType: 'point',
+    description: 'Visualize relationships between two variables',
+    encodings: {
+      x: { type: 'quantitative' },
+      y: { type: 'quantitative' },
+      size: { type: 'quantitative' },
+      color: { type: 'nominal' }
+    }
+  },
+  {
+    name: 'Binned Heatmap',
+    icon: '🟦',
+    markType: 'rect',
+    description: 'Show density of points with binning',
+    encodings: {
+      x: { type: 'quantitative', bin: true },
+      y: { type: 'quantitative', bin: true },
+      color: { type: 'quantitative', aggregate: 'count' }
+    }
+  },
+  {
+    name: 'Pie Chart',
+    icon: '🥧',
+    markType: 'arc',
+    description: 'Show composition of a whole',
+    encodings: {
+      theta: { type: 'quantitative', aggregate: 'sum' },
+      color: { type: 'nominal' }
+    }
+  },
+  {
+    name: 'Box Plot',
+    icon: '📦',
+    markType: 'boxplot',
+    description: 'Show distribution statistics',
+    encodings: {
+      x: { type: 'nominal' },
+      y: { type: 'quantitative' },
+      color: { type: 'nominal' }
+    }
+  },
+  {
+    name: 'Monthly Trends',
+    icon: '📅',
+    markType: 'line',
+    description: 'Visualize monthly patterns',
+    encodings: {
+      x: { type: 'temporal', timeUnit: 'month' },
+      y: { type: 'quantitative', aggregate: 'mean' },
+      color: { type: 'nominal' }
+    }
+  },
+  {
+    name: 'Histogram',
+    icon: '📊',
+    markType: 'bar',
+    description: 'Show distribution of values',
+    encodings: {
+      x: { type: 'quantitative', bin: { maxbins: 20 } },
+      y: { type: 'quantitative', aggregate: 'count' }
+    }
+  }
+];
+
+ 

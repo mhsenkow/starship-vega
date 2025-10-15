@@ -1,6 +1,6 @@
 {
-  "name": "Vega Gallery",
-  "short_name": "Vega Gallery",
+  "name": "Starship Vega",
+  "short_name": "Starship Vega",
   "description": "Interactive data visualization gallery and editor",
   "start_url": "/",
   "display": "standalone",
