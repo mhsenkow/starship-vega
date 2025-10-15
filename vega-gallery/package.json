@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:vercel": "npm ci && vite build",
     "preview": "vite preview",
     "electron": "electron .",
     "electron:dev": "concurrently \"cross-env BROWSER=none npm run dev\" \"wait-on tcp:5173..55190 && cross-env NODE_ENV=development electron .\"",
