@@ -1,12 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [
-    react(),
-    VitePWA({
+// Conditionally import VitePWA to handle missing dependency gracefully
+function getPlugins() {
+  const plugins: any[] = [react()];
+  
+  try {
+    const { VitePWA } = require('vite-plugin-pwa');
+    plugins.push(VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
@@ -27,8 +28,17 @@ export default defineConfig({
           }
         ]
       }
-    })
-  ],
+    }));
+  } catch (error) {
+    console.warn('vite-plugin-pwa not available, PWA features disabled');
+  }
+  
+  return plugins;
+}
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: getPlugins(),
   preview: {
     port: 4173,
     host: true
