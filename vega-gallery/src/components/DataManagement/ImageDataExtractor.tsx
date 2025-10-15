@@ -7,7 +7,7 @@ import CloudIcon from '@mui/icons-material/Cloud';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { DatasetMetadata } from '../../types/dataset';
 
-// Import pdf-parse for PDF processing when in Electron environment
+// PDF processing interface for Electron environment
 declare global {
   interface Window {
     electron?: {
@@ -197,7 +197,7 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
     setExtractionMethod(newValue);
   };
 
-  // Process PDF content locally using pdf-parse via Electron's Node.js integration
+  // Process PDF content locally via Electron's Node.js integration
   const processPdfLocally = async () => {
     if (!image || !isPdf) return;
     
@@ -218,21 +218,12 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
         // Create a temporary file path
         const filePath = URL.createObjectURL(image);
         
-        // Use the Electron bridge to process the PDF with pdf-parse
+        // Use the Electron bridge to process the PDF
         pdfText = await window.electron.processPdf(filePath);
       } else {
-        // If we're in the browser, we need to use a Web Worker
-        setStatusMessage('Processing PDF in browser...');
-        
-        // Use dynamic import to load pdf-parse in browser context
-        const pdfParse = await import('pdf-parse');
-        
-        // Read the file as ArrayBuffer
-        const arrayBuffer = await image.arrayBuffer();
-        
-        // Parse the PDF content
-        const data = await pdfParse.default(new Uint8Array(arrayBuffer));
-        pdfText = data.text;
+        // PDF parsing is not available in web environment
+        setStatusMessage('PDF parsing not available in web environment...');
+        throw new Error('PDF processing is only available in the desktop app. Please use the desktop version or convert your PDF to an image first.');
       }
       
       setProgress(80);
@@ -463,7 +454,7 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
     const newDataset: DatasetMetadata = {
       id: `ocr-${Date.now()}`,
       name: image ? `${isPdf ? 'PDF' : 'OCR'} from ${image.name}` : 'Extracted Data',
-      description: `Data extracted from ${isPdf ? 'PDF document' : 'image'} using ${extractionMethod === 0 ? (isPdf ? 'pdf-parse' : 'Tesseract OCR') : 'Cloud Vision API'}`,
+      description: `Data extracted from ${isPdf ? 'PDF document' : 'image'} using ${extractionMethod === 0 ? (isPdf ? 'Electron PDF processing' : 'Tesseract OCR') : 'Cloud Vision API'}`,
       values: data,
       dataTypes,
       source: isPdf ? 'PDF Document' : (extractionMethod === 0 ? 'Tesseract OCR' : 'Cloud Vision API'),
