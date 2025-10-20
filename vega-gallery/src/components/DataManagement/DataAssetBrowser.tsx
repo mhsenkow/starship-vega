@@ -16,11 +16,13 @@ interface DataAssetBrowserProps {
   onSelectDataset?: (dataset: DatasetMetadata) => void;
   onUpdateDataset?: (dataset: DatasetMetadata) => void;
   selectable?: boolean;
+  narrow?: boolean;
 }
 
 export const DataAssetBrowser: React.FC<DataAssetBrowserProps> = ({ 
   onSelectDataset, 
-  onUpdateDataset
+  onUpdateDataset,
+  narrow = false
 }) => {
   const [datasets, setDatasets] = useState<DatasetMetadata[]>([]);
   const [filteredDatasets, setFilteredDatasets] = useState<DatasetMetadata[]>([]);
@@ -251,7 +253,7 @@ export const DataAssetBrowser: React.FC<DataAssetBrowserProps> = ({
         {filteredDatasets.length} datasets found
       </div>
 
-      <div className={styles.datasetGrid}>
+      <div className={`${styles.datasetGrid} ${narrow ? styles.narrow : ''}`}>
         {filteredDatasets.map(dataset => (
           <div
             key={dataset.id}
