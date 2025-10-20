@@ -23,7 +23,7 @@
   flex: 1;
   padding: var(--spacing-2) var(--spacing-3);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   background-color: var(--color-surface);
   color: var(--color-text-primary);
   font-size: var(--typography-fontSize-sm);
@@ -45,7 +45,7 @@
   margin-bottom: var(--spacing-4);
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-card-default);
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-2);
@@ -81,7 +81,7 @@
   padding: var(--spacing-4);
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-card-default);
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -152,7 +152,7 @@
 
 .dialogContent {
   background: var(--color-surface);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-card-default);
   padding: var(--spacing-6);
   max-width: 600px;
   width: 100%;
@@ -210,7 +210,7 @@
   max-height: 300px;
   overflow-y: auto;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   margin-top: var(--spacing-2);
 }
 
@@ -227,7 +227,7 @@
   font-size: var(--typography-fontSize-xs);
   background-color: var(--color-surface-secondary);
   padding: var(--spacing-1) var(--spacing-1);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   font-family: var(--font-family-mono);
 }
 
@@ -240,7 +240,7 @@
 .chip {
   padding: var(--spacing-1) var(--spacing-2);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   background-color: var(--color-surface);
   color: var(--color-text-primary);
   font-size: var(--typography-fontSize-xs);

@@ -6,7 +6,7 @@
   flex-wrap: wrap;
   padding: var(--spacing-4);
   background: var(--color-surface);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-section-container);
   border: 1px solid var(--color-border);
   margin-bottom: var(--spacing-6);
 }
@@ -26,7 +26,7 @@
 .select {
   padding: var(--spacing-2) var(--spacing-3);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-select);
   background: var(--color-surface);
   font-size: var(--typography-fontSize-sm);
   color: var(--color-text-primary);
@@ -47,7 +47,7 @@
 .searchInput {
   padding: var(--spacing-2) var(--spacing-3);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-select);
   background: var(--color-surface);
   font-size: var(--typography-fontSize-sm);
   color: var(--color-text-primary);

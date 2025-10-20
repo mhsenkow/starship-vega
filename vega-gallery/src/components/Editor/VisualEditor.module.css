@@ -14,7 +14,7 @@
 .section {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-section-panel);
   padding: var(--spacing-4);
   box-shadow: var(--elevation-sm);
 }
@@ -48,7 +48,7 @@
   width: 100%;
   padding: var(--spacing-sm) var(--spacing-md);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   background: var(--color-background);
   color: var(--color-text-primary);
   font-size: var(--typography-fontSize-sm);
@@ -93,7 +93,7 @@
 .typeButton {
   padding: var(--spacing-xs) var(--spacing-sm);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   background: var(--color-surface);
   color: var(--color-text-primary);
   cursor: pointer;
@@ -128,7 +128,7 @@
 .datasetCard {
   padding: var(--spacing-md);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-section-panel);
   background: var(--color-surface);
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -172,7 +172,7 @@
   padding: var(--spacing-sm) var(--spacing-md);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   color: var(--color-text-primary);
   cursor: pointer;
   font-size: var(--typography-fontSize-sm);
@@ -212,7 +212,7 @@
   align-items: center;
   padding: var(--spacing-md);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   background: var(--color-surface);
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -252,7 +252,7 @@
   background: var(--color-surface);
   color: var(--color-text-primary);
   padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   font-size: var(--typography-fontSize-xs);
   white-space: nowrap;
   opacity: 0;
@@ -283,7 +283,7 @@
   margin-top: 16px;
   padding: 12px;
   background: var(--color-background);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   border: 1px solid var(--color-border);
   font-size: var(--typography-fontSize-sm);
   color: var(--color-text-secondary);
@@ -317,7 +317,7 @@
 .encodingPreview {
   padding: var(--spacing-sm);
   background: var(--color-background);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   border: 1px solid var(--color-border);
   font-family: var(--typography-fontFamily-mono);
   font-size: var(--typography-fontSize-xs);
@@ -328,7 +328,7 @@
 .accordion {
   margin-bottom: var(--spacing-sm);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-section-panel);
   overflow: hidden;
 }
 
@@ -377,7 +377,7 @@
   background: var(--color-primary);
   color: white;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   cursor: pointer;
   font-weight: var(--typography-fontWeight-medium);
   transition: all var(--transition-fast);
@@ -404,7 +404,7 @@
   width: 100%;
   padding: var(--spacing-md);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-section-panel);
   background: var(--color-surface);
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -460,7 +460,7 @@
 .dataTabsContainer {
   display: flex;
   background: var(--color-surface-secondary);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-section-panel);
   border: 1px solid var(--color-border);
   padding: var(--spacing-1);
   margin-bottom: var(--spacing-4);
@@ -492,7 +492,7 @@
   width: 100%;
   padding: 4px 8px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   background: var(--color-background);
   color: var(--color-text-primary);
   font-size: var(--typography-fontSize-sm);
@@ -502,7 +502,7 @@
 .droppableEncodingControl {
   padding: var(--spacing-3);
   border: 2px dashed var(--color-border);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-section-panel);
   background: var(--color-surface);
   transition: all var(--transition-duration-normal) var(--transition-easing-standard);
   min-height: 80px;
@@ -570,13 +570,13 @@
   padding: var(--spacing-4);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-section-panel);
 }
 
 .columnTypeSection {
   background: var(--color-background-primary);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-section-panel);
   padding: var(--spacing-3);
 }
 
@@ -636,7 +636,7 @@
   align-items: center;
   padding: var(--spacing-md);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-section-panel);
   background: var(--color-surface);
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -694,7 +694,7 @@
 .recommendButton {
   padding: var(--spacing-sm) var(--spacing-md);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   background: var(--color-surface);
   color: var(--color-text-primary);
   font-size: var(--typography-fontSize-sm);
@@ -727,7 +727,7 @@
   background: var(--color-primary);
   color: var(--color-primary-contrast);
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   font-size: var(--typography-fontSize-sm);
   font-weight: var(--typography-fontWeight-medium);
   cursor: pointer;
@@ -751,7 +751,7 @@
 .recommendationCard {
   padding: var(--spacing-md);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-section-panel);
   background: var(--color-surface);
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -784,7 +784,7 @@
 
 .confidenceBadge {
   padding: 2px 6px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   font-size: var(--typography-fontSize-xs);
   font-weight: var(--typography-fontWeight-medium);
   background: var(--color-success-light);
@@ -820,7 +820,7 @@
 .columnTypeSection {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-section-panel);
   padding: var(--spacing-md);
 }
 
@@ -847,7 +847,7 @@
 .droppableEncodingControl {
   padding: var(--spacing-3);
   border: 2px dashed var(--color-border);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-section-panel);
   background: var(--color-surface);
   transition: all var(--transition-fast);
   min-height: 60px;
@@ -890,7 +890,7 @@
   min-width: 200px;
   padding: var(--spacing-2) var(--spacing-3);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   background: var(--color-surface);
   color: var(--color-text-primary);
   font-size: var(--typography-fontSize-sm);
@@ -922,7 +922,7 @@
 .encodingTypeButton {
   padding: var(--spacing-2);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   background: var(--color-surface);
   color: var(--color-text-primary);
   font-size: var(--typography-fontSize-sm);
@@ -977,7 +977,7 @@
   gap: var(--spacing-3);
   padding: var(--spacing-3);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   background: var(--color-surface);
   margin-bottom: var(--spacing-2);
   min-height: 50px;
@@ -1071,7 +1071,7 @@
   width: 100%;
   padding: var(--spacing-2) var(--spacing-3);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   font-size: var(--typography-fontSize-sm);
   background: var(--color-surface);
   color: var(--color-text-primary);

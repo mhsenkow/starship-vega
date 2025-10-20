@@ -40,7 +40,7 @@ interface CardActionsProps {
 const BaseCard = styled.div<CardProps>`
   display: flex;
   flex-direction: column;
-  border-radius: var(--component-card-borderRadius);
+  border-radius: var(--radius-intent-card-default);
   overflow: hidden;
   transition: all var(--transition-duration-normal) var(--transition-easing-standard);
   

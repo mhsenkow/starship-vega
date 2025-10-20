@@ -5,7 +5,7 @@
   justify-content: center;
   gap: var(--spacing-xs);
   border: 1px solid transparent;
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-button-primary);
   font-family: var(--typography-fontFamily-base);
   font-weight: var(--typography-fontWeight-medium);
   text-decoration: none;
@@ -157,7 +157,7 @@
 /* Toggle Button Group */
 .toggleButtonGroup {
   display: flex;
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-button-primary);
   overflow: hidden;
   border: 1px solid var(--color-border);
 }

@@ -6,7 +6,7 @@
   min-height: 300px;
   position: relative;
   background-color: var(--color-surface-primary);
-  border-radius: var(--radius-base);
+  border-radius: var(--radius-intent-chart-container);
   box-shadow: var(--shadow-elevation1);
   border: 1px solid var(--color-border-light);
 }
@@ -39,7 +39,7 @@
   color: var(--color-text-secondary);
   cursor: pointer;
   padding: var(--spacing-xs);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   transition: all var(--transition-duration-fast) var(--transition-easing-standard);
   display: flex;
   align-items: center;
@@ -86,7 +86,7 @@
   color: var(--color-text-tertiary);
   cursor: pointer;
   padding: var(--spacing-xs);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-input-default);
   transition: all var(--transition-duration-fast) var(--transition-easing-standard);
   display: flex;
   align-items: center;

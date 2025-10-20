@@ -39,7 +39,7 @@ interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>
 // Base input styles
 const baseInputStyles = css<BaseInputProps>`
   font-family: var(--font-family-primary);
-  border-radius: var(--component-input-borderRadius);
+  border-radius: var(--radius-intent-input-default);
   border: var(--component-input-borderWidth) solid var(--color-border-light);
   background-color: var(--color-surface-primary);
   color: var(--color-text-primary);

@@ -27,7 +27,7 @@
   padding: var(--spacing-xs) var(--spacing-sm);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-intent-badge-default);
   font-size: var(--typography-fontSize-sm);
   cursor: grab;
   transition: all var(--transition-fast);
