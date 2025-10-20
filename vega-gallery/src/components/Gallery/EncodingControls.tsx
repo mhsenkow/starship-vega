@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { Button, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import ShuffleIcon from '@mui/icons-material/Shuffle';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import { Button, ButtonGroup } from '../../design-system/components/ButtonSystem';
+import { ShuffleIcon, SmartToyIcon } from '../common/Icons';
 import { generateRandomEncoding } from '../../utils/chartAdapters';
 import { detectDataTypes } from '../../utils/dataUtils';
-
-// Import types correctly to avoid type mismatches
-import { TopLevelSpec } from 'vega-lite';
 
 // Define the correct encoding type structure
 interface EncodingDef {
@@ -70,16 +65,7 @@ const EncodingTitle = styled.div`
 
 const ButtonContainer = styled.div`
   display: flex;
-  gap: 8px;
-`;
-
-const StyledButton = styled(Button)`
-  && {
-    height: 32px;
-    font-size: 13px;
-    text-transform: none;
-    padding: 4px 12px;
-  }
+  gap: var(--spacing-2);
 `;
 
 const EncodingOptionContainer = styled.div`
@@ -93,6 +79,64 @@ const EncodingOptionSelect = styled.select`
   border: 1px solid var(--color-border);
   border-radius: 4px;
   margin-top: 4px;
+`;
+
+// Dialog components
+const Dialog = styled.div<{ open: boolean }>`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: ${props => props.open ? 'flex' : 'none'};
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const DialogContent = styled.div`
+  background: var(--color-surface);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+`;
+
+const DialogTitle = styled.h2`
+  margin: 0 0 16px 0;
+  font-size: 1.25rem;
+  color: var(--color-text-primary);
+`;
+
+const DialogActions = styled.div`
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+`;
+
+const Tooltip = styled.div<{ title: string }>`
+  position: relative;
+  display: inline-block;
+  
+  &:hover::after {
+    content: "${props => props.title}";
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
 `;
 
 // Options for encoding transformations
@@ -698,44 +742,40 @@ export const EncodingControls: React.FC<EncodingControlsProps> = ({
       <EncodingTitle>
         Encoding
         <ButtonContainer>
-          <Tooltip title="Apply intelligent encoding based on data characteristics">
-            <StyledButton
-              startIcon={<SmartToyIcon />}
-              onClick={handleSmartEncodings}
-              variant="outlined"
-              size="small"
-              disabled={availableFields.length === 0}
-              color="primary"
-            >
-              Smart
-            </StyledButton>
-          </Tooltip>
-          <Tooltip title="Explore random encoding variations">
-            <StyledButton
-              startIcon={<ShuffleIcon />}
-              onClick={handleRandomizeEncodings}
-              variant="outlined"
-              size="small"
-              disabled={availableFields.length === 0}
-            >
-              Random
-            </StyledButton>
-          </Tooltip>
+          <ButtonGroup buttonStyle="floating">
+            <Tooltip title="Apply intelligent encoding based on data characteristics">
+              <Button
+                onClick={handleSmartEncodings}
+                variant="secondary"
+                size="small"
+                disabled={availableFields.length === 0}
+              >
+                <SmartToyIcon size={16} />
+                Smart
+              </Button>
+            </Tooltip>
+            <Tooltip title="Explore random encoding variations">
+              <Button
+                onClick={handleRandomizeEncodings}
+                variant="tertiary"
+                size="small"
+                disabled={availableFields.length === 0}
+              >
+                <ShuffleIcon size={16} />
+                Random
+              </Button>
+            </Tooltip>
+          </ButtonGroup>
         </ButtonContainer>
       </EncodingTitle>
       {children}
       
       {/* Encoding Suggestions Dialog */}
-      <Dialog 
-        open={showSuggestions} 
-        onClose={() => setShowSuggestions(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          {suggestionSource === 'smart' ? 'Smart Encoding Suggestions' : 'Random Encoding Variations'}
-        </DialogTitle>
-        <DialogContent>
+      <Dialog open={showSuggestions} onClick={() => setShowSuggestions(false)}>
+        <DialogContent onClick={(e) => e.stopPropagation()}>
+          <DialogTitle>
+            {suggestionSource === 'smart' ? 'Smart Encoding Suggestions' : 'Random Encoding Variations'}
+          </DialogTitle>
           <p>Select one of the suggested encodings below:</p>
           <EncodingSuggestionGrid>
             {suggestedEncodings.map((suggestion, index) => (
@@ -798,10 +838,10 @@ export const EncodingControls: React.FC<EncodingControlsProps> = ({
               </EncodingSuggestionCard>
             ))}
           </EncodingSuggestionGrid>
+          <DialogActions>
+            <Button onClick={() => setShowSuggestions(false)}>Cancel</Button>
+          </DialogActions>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowSuggestions(false)}>Cancel</Button>
-        </DialogActions>
       </Dialog>
     </EncodingSection>
   );

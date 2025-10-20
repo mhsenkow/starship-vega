@@ -39,6 +39,15 @@ function getPlugins() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: getPlugins(),
+  esbuild: {
+    // Force esbuild version compatibility
+    target: 'esnext',
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: 'esnext',
+    },
+  },
   preview: {
     port: 4173,
     host: true

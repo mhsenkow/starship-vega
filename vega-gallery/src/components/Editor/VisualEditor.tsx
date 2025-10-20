@@ -1,519 +1,32 @@
-import styled from 'styled-components'
+import styles from './VisualEditor.module.css';
 import { TopLevelSpec } from 'vega-lite'
 import { useMemo, useState, useRef, useEffect } from 'react'
 import { EncodingChannel, MarkType, EncodingUpdate } from '../../types/vega'
 import { sampleDatasets } from '../../utils/sampleData'
 import { DatasetSelector } from './DatasetSelector'
 import { generateRandomEncoding } from '../../utils/chartAdapters'
-import { IconButton, Tooltip } from '@mui/material'
-import TimelineIcon from '@mui/icons-material/Timeline'
-import BarChartIcon from '@mui/icons-material/BarChart'
-import CategoryIcon from '@mui/icons-material/Category'
-import NumbersIcon from '@mui/icons-material/Numbers'
+import { Tooltip } from '../../design-system';
+import { Button, ButtonGroup } from '../../design-system/components/ButtonSystem';
+import { 
+  TimelineIcon, 
+  BarChartIcon, 
+  CategoryIcon, 
+  NumbersIcon 
+} from '../common/Icons'
 import { DatasetMetadata } from '../../types/dataset'
-import Papa from 'papaparse'
 import { DatasetSection } from './DatasetSection'
 import { DataTransformerPanel } from './DataTransformerPanel'
 import { markTypes } from '../../constants/markTypes'
 import { inferDataTypes } from '../../utils/dataUtils'
 import { getChartRecommendations } from '../../services/aiRecommendations'
-import AutoGraphIcon from '@mui/icons-material/AutoGraph'
-import RecommendIcon from '@mui/icons-material/Recommend'
+import { AutoGraphIcon, RecommendIcon } from '../common/Icons'
 import { detectDataTypes } from '../../utils/dataUtils'
 import { initDB, getDataset } from '../../utils/indexedDB'
 import { ExtendedSpec as VegaExtendedSpec } from '../../types/vega'
 import { transformEncodings, createMarkConfig } from '../../utils/specUtils'
-import { useDrop } from 'react-dnd'
-import DataColumnToken, { ColumnMetadata, ColumnDragItem } from '../common/DataColumnToken'
+import DataColumnToken, { ColumnMetadata, ColumnDragItem } from '../common/DataColumnToken.module'
 
-const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-`
-
-const Section = styled.div`
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 4px;
-  margin-bottom: 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-`
-
-const SectionTitle = styled.h3`
-  margin: 0 0 16px 0;
-  font-size: 1rem;
-  color: var(--color-text-primary);
-  font-weight: 600;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 8px;
-`
-
-const Control = styled.div`
-  margin-bottom: 16px;
-  &:last-child {
-    margin-bottom: 0;
-  }
-`
-
-const Label = styled.label`
-  display: block;
-  margin-bottom: 8px;
-  font-size: 0.9rem;
-  color: var(--color-text-primary);
-  font-weight: 500;
-`
-
-const Select = styled.select`
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 0.9rem;
-  background: var(--color-surface);
-  color: var(--color-text-primary);
-  transition: border-color 0.2s;
-  position: relative;
-  z-index: 10;
-  cursor: pointer;
-
-  &:hover {
-    border-color: var(--color-text-tertiary);
-  }
-
-  &:focus {
-    border-color: var(--color-primary);
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
-    z-index: 20;
-  }
-
-  /* Ensure dropdown stays open */
-  &:focus-within {
-    z-index: 20;
-  }
-
-  /* Override any theme-specific pointer-events */
-  option {
-    background: var(--color-surface);
-    color: var(--color-text-primary);
-    padding: 8px 12px;
-    border: none;
-    cursor: pointer;
-  }
-`
-
-const EncodingGrid = styled.div`
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 12px;
-`
-
-const EncodingControl = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`
-
-const TypeButtons = styled.div`
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  padding: 4px;
-  background: var(--color-background);
-  border-radius: 4px;
-`
-
-const TypeButton = styled(IconButton)<{ $active: boolean }>`
-  && {
-    background: ${props => props.$active ? props.theme.colors.primary + '20' : 'transparent'};
-    color: ${props => props.$active ? props.theme.colors.primary : props.theme.colors.text.secondary};
-    border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
-    padding: 4px;
-
-    &:hover {
-      background: ${props => props.$active ? props.theme.colors.primary + '30' : props.theme.colors.border + '40'};
-    }
-  }
-`
-
-const EncodingTypeButton = styled(IconButton)<{ $active: boolean; $compatible?: boolean }>`
-  && {
-    background: ${props => props.$active ? props.theme.colors.primary + '20' : 'transparent'};
-    color: ${props => 
-      props.$active ? props.theme.colors.primary : 
-      props.$compatible !== false ? props.theme.colors.text.secondary :
-      props.theme.colors.border};
-    opacity: ${props => props.$compatible !== false ? 1 : 0.5};
-    cursor: ${props => props.$compatible !== false ? 'pointer' : 'not-allowed'};
-    padding: 4px;
-    border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
-    
-    &:hover {
-      background: ${props => props.$compatible !== false ? props.theme.colors.primary + '10' : 'transparent'};
-    }
-  }
-`;
-
-const DatasetGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
-  margin-top: 12px;
-  max-height: 200px;
-  overflow-y: auto;
-  padding-right: 8px;
-
-  /* Scrollbar styling */
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 4px;
-    
-    &:hover {
-      background: #bbb;
-    }
-  }
-`
-
-const DatasetCard = styled.button<{ $active: boolean; $disabled: boolean }>`
-  padding: 12px;
-  border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
-  border-radius: 6px;
-  background: ${props => props.$active ? `var(--color-primary)10` : 'white'};
-  text-align: left;
-  cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
-  opacity: ${props => props.$disabled ? 0.5 : 1};
-  
-  &:hover {
-    border-color: ${props => !props.$disabled && props.theme.colors.primary};
-  }
-`
-
-const DatasetName = styled.div`
-  font-weight: 500;
-  margin-bottom: 4px;
-`
-
-const DatasetDescription = styled.div`
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
-`
-
-const RandomizeButton = styled.button`
-  padding: 6px 12px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  color: var(--color-text-primary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-
-  &:hover {
-    background: var(--color-background);
-  }
-`
-
-const TemplateButton = styled(RandomizeButton)`
-  background: #fff8e1;
-  border-color: #ffe082;
-  
-  &:hover {
-    background: #ffecb3;
-  }
-`;
-
-const EncodingHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  border-bottom: 2px solid var(--color-border);
-  padding-bottom: 8px;
-`
-
-const MarkTypeGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 12px;
-`
-
-const MarkTypeCard = styled.button<{ $active: boolean }>`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 12px 8px;
-  background: ${props => props.$active ? props.theme.colors.primary + '10' : '#fff'};
-  border: 2px solid ${props => props.$active ? props.theme.colors.primary : '#e9ecef'};
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-
-  &:hover {
-    border-color: var(--color-primary);
-    background: ${props => props.theme.colors.primary + '05'};
-  }
-`
-
-const MarkIcon = styled.div`
-  font-size: 24px;
-  margin-bottom: 8px;
-`
-
-const MarkName = styled.div`
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--color-text-primary);
-`
-
-const MarkTooltip = styled.div`
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: var(--color-surface);
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  width: max-content;
-  max-width: 200px;
-  visibility: hidden;
-  opacity: 0;
-  transition: all 0.2s;
-  z-index: 1000;
-
-  ul {
-    margin: 4px 0 0 0;
-    padding: 0 0 0 16px;
-    list-style-type: none;
-    
-    li {
-      margin: 2px 0;
-      &:before {
-        content: "•";
-        margin-right: 4px;
-      }
-    }
-  }
-
-  ${MarkTypeCard}:hover & {
-    visibility: visible;
-    opacity: 1;
-    bottom: calc(100% + 8px);
-  }
-
-  &:after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 6px solid transparent;
-    border-top-color: rgba(0, 0, 0, 0.8);
-  }
-`
-
-const MarkInfo = styled.div`
-  text-align: center;
-`
-
-const MarkDescription = styled.div`
-  font-size: 0.8rem;
-  color: var(--color-text-secondary);
-  margin-top: 4px;
-`
-
-const DatasetInfo = styled.div`
-  margin-top: 16px;
-  padding: 12px;
-  background: var(--color-background);
-  border-radius: 4px;
-  display: flex;
-  gap: 16px;
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
-`
-
-const EncodingRow = styled.div`
-  display: grid;
-  grid-template-columns: 120px 1fr auto;
-  gap: 12px;
-  align-items: center;
-`;
-
-const EncodingLabel = styled.div`
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
-`;
-
-const EncodingTypeControls = styled.div`
-  display: flex;
-  gap: 4px;
-`;
-
-const EncodingHint = styled.div`
-  font-size: 0.8rem;
-  color: var(--color-text-secondary);
-  margin-top: 4px;
-`;
-
-const EncodingPreview = styled.div`
-  padding: 8px;
-  background: var(--color-background);
-  border-radius: 4px;
-  margin-top: 8px;
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
-`;
-
-const Accordion = styled.div`
-  margin-bottom: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  overflow: hidden;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const AccordionHeader = styled.button<{ $isOpen: boolean }>`
-  width: 100%;
-  padding: 16px;
-  background: var(--color-background);
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  transition: background 0.2s;
-
-  &:hover {
-    background: var(--color-surfaceHover);
-  }
-
-  svg {
-    transform: rotate(${props => props.$isOpen ? '180deg' : '0deg'});
-    transition: transform 0.3s ease;
-  }
-`;
-
-const AccordionContent = styled.div<{ $isOpen: boolean }>`
-  padding: 0;
-  height: ${props => props.$isOpen ? 'auto' : '0'};
-  opacity: ${props => props.$isOpen ? '1' : '0'};
-  overflow: hidden;
-  transition: all 0.3s ease;
-  
-  > div {
-    padding: 16px;
-  }
-`;
-
-const ActionButton = styled.button`
-  padding: 8px 12px;
-  background: var(--color-primary);
-  color: var(--color-surface);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  
-  &:hover {
-    opacity: 0.9;
-  }
-`;
-
-const RecommendButton = styled(ActionButton)`
-  background: #6366f1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  
-  svg {
-    font-size: 18px;
-  }
-`;
-
-const RecommendationCard = styled.button<{ $active: boolean }>`
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 8px;
-  text-align: left;
-  background: ${props => props.$active ? '#f0f7ff' : 'white'};
-  border: 1px solid ${props => props.$active ? '#4dabf7' : '#e9ecef'};
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    border-color: var(--color-primary);
-    background: var(--color-background);
-  }
-`;
-
-const RecommendationTitle = styled.div`
-  font-weight: 500;
-  margin-bottom: 4px;
-`;
-
-const RecommendationReason = styled.div`
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
-  margin-bottom: 8px;
-`;
-
-const ConfidenceBadge = styled.span<{ $confidence: number }>`
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  background: ${props => {
-    if (props.$confidence > 0.8) return '#d3f9d8';
-    if (props.$confidence > 0.6) return '#fff3bf';
-    return '#ffe3e3';
-  }};
-  color: ${props => {
-    if (props.$confidence > 0.8) return '#2b8a3e';
-    if (props.$confidence > 0.6) return '#e67700';
-    return '#c92a2a';
-  }};
-`;
-
-interface AccordionStates {
-  data: boolean;
-  filter: boolean;
-  chartType: boolean;
-  encoding: boolean;
-}
-
-interface DataTransform {
-  type: 'filter' | 'calculate' | 'aggregate' | 'bin' | 'timeUnit';
-  field?: string;
-  as?: string;
-  operation?: string;
-  value?: any;
-  test?: (d: any) => boolean;
-}
-
+// Chart template interface
 interface ChartTemplate {
   name: string;
   icon: string;
@@ -524,386 +37,175 @@ interface ChartTemplate {
 }
 
 interface VisualEditorProps {
-  spec: VegaExtendedSpec;
-  onChange: (updates: Partial<VegaExtendedSpec>) => void;
+  spec: TopLevelSpec;
+  onChange: (spec: TopLevelSpec) => void;
   onChartRender?: () => void;
 }
 
-// Add mark-specific encoding definitions
-const MARK_ENCODINGS: Record<MarkType, {
-  channels: EncodingChannel[];
-  description: string;
-  hints: Record<string, string>;
-  icon: string;
-}> = {
-  arc: {
-    channels: ['theta', 'radius', 'color', 'opacity', 'tooltip', 'x', 'y'],
-    description: 'Radial visualization - single pie or multiple pies in a grid',
-    hints: {
-      theta: 'Use quantitative values for angle (size of each slice)',
-      radius: 'Optional: Use for hierarchical data or donut charts',
-      color: 'Categories work well for segments',
-      opacity: 'Optional: For emphasis or layering',
-      x: 'Optional: Position multiple pie charts horizontally',
-      y: 'Optional: Position multiple pie charts vertically'
-    },
-    icon: '🥧'
-  },
+// Define MARK_ENCODINGS constant
+const MARK_ENCODINGS = {
   bar: {
-    channels: ['x', 'y', 'color', 'size', 'tooltip', 'opacity'],
-    description: 'Rectangular marks for comparisons',
+    name: 'Bar',
+    icon: '📊',
+    description: 'Compare quantities across categories',
+    channels: ['x', 'y', 'color', 'size', 'opacity', 'row', 'column'],
     hints: {
-      x: 'Categories or time for x-axis',
-      y: 'Numbers work best for height',
-      color: 'Optional: Use for grouping'
-    },
-    icon: '📊'
+      x: 'Categorical field for bars',
+      y: 'Quantitative field for bar height',
+      color: 'Different colors for categories'
+    }
   },
   line: {
-    channels: ['x', 'y', 'color', 'strokeWidth', 'opacity', 'order', 'tooltip'],
-    description: 'Connected points showing trends over time',
+    name: 'Line',
+    icon: '📈',
+    description: 'Show trends over time',
+    channels: ['x', 'y', 'color', 'size', 'opacity', 'row', 'column'],
     hints: {
-      x: 'Time or ordered values',
-      y: 'Numeric measurements',
-      color: 'Use for multiple series'
-    },
-    icon: '📈'
+      x: 'Temporal or quantitative field',
+      y: 'Quantitative field for line position',
+      color: 'Different lines for categories'
+    }
   },
   point: {
-    channels: ['x', 'y', 'color', 'size', 'shape', 'opacity', 'tooltip'],
-    description: 'Individual marks for each data point',
+    name: 'Point',
+    icon: '⚪',
+    description: 'Show relationships between variables',
+    channels: ['x', 'y', 'color', 'size', 'opacity', 'row', 'column'],
     hints: {
-      x: 'Any type of value',
-      y: 'Any type of value',
-      size: 'Optional: Use numbers for size'
-    },
-    icon: '🔵'
+      x: 'Quantitative field for x-axis',
+      y: 'Quantitative field for y-axis',
+      color: 'Different colors for categories'
+    }
   },
   area: {
-    channels: ['x', 'y', 'color', 'opacity', 'order', 'tooltip'],
-    description: 'Filled areas between lines',
+    name: 'Area',
+    icon: '📉',
+    description: 'Show cumulative values',
+    channels: ['x', 'y', 'color', 'opacity', 'row', 'column'],
     hints: {
-      x: 'Usually time or ordered values',
-      y: 'Numeric values to fill to'
-    },
-    icon: '🟢'
+      x: 'Temporal or quantitative field',
+      y: 'Quantitative field for area height',
+      color: 'Different areas for categories'
+    }
+  },
+  circle: {
+    name: 'Circle',
+    icon: '⭕',
+    description: 'Show relationships with size',
+    channels: ['x', 'y', 'color', 'size', 'opacity', 'row', 'column'],
+    hints: {
+      x: 'Quantitative field for x-axis',
+      y: 'Quantitative field for y-axis',
+      size: 'Circle size based on value',
+      color: 'Different colors for categories'
+    }
   },
   boxplot: {
-    channels: ['x', 'y', 'color', 'size', 'tooltip'],
-    description: 'Statistical distribution with quartiles',
+    name: 'Box Plot',
+    icon: '📦',
+    description: 'Show statistical distributions',
+    channels: ['x', 'y', 'color', 'opacity', 'row', 'column'],
     hints: {
-      x: 'Categories to group by',
-      y: 'Numbers to show distribution'
-    },
-    icon: '📊'
-  },
-  errorbar: {
-    channels: ['x', 'y', 'color', 'extent', 'tooltip'],
-    description: 'Show uncertainty ranges',
-    hints: {
-      x: 'Categories or time',
-      y: 'Numeric value with error margins'
-    },
-    icon: '🔴'
+      x: 'Categorical field for grouping',
+      y: 'Quantitative field for distribution',
+      color: 'Different colors for categories'
+    }
   },
   text: {
-    channels: ['x', 'y', 'text', 'color', 'size', 'angle', 'tooltip'],
-    description: 'Text labels on the chart',
+    name: 'Text',
+    icon: '📝',
+    description: 'Display values directly as text',
+    channels: ['x', 'y', 'text', 'color', 'size', 'opacity', 'row', 'column'],
     hints: {
-      text: 'The text to display',
-      angle: 'Optional: Rotate labels'
-    },
-    icon: '🔤'
+      x: 'Position for text',
+      y: 'Position for text',
+      text: 'Text field to display',
+      color: 'Text color'
+    }
   },
-  // Add all other mark types...
-  treemap: {
-    channels: ['size', 'color', 'tooltip', 'label'],
-    description: 'Hierarchical data as nested rectangles',
+  rect: {
+    name: 'Rectangle',
+    icon: '⬛',
+    description: 'Create heatmaps and treemaps',
+    channels: ['x', 'y', 'color', 'size', 'opacity', 'row', 'column'],
     hints: {
-      size: 'Numeric value for rectangle size',
-      color: 'Categories or numbers for color'
-    },
-    icon: '🟠'
+      x: 'Categorical field for x-axis',
+      y: 'Categorical field for y-axis',
+      color: 'Value for color intensity'
+    }
   },
-  sunburst: {
-    channels: ['theta', 'radius', 'color', 'tooltip'],
-    description: 'Hierarchical data in radial layout',
+  arc: {
+    name: 'Arc',
+    icon: '🥧',
+    description: 'Create pie charts and radial visualizations',
+    channels: ['theta', 'color', 'opacity', 'row', 'column'],
     hints: {
-      theta: 'Angle for segment size',
-      radius: 'Level in hierarchy'
-    },
-    icon: '🟡'
-  },
-  'parallel-coordinates': {
-    channels: ['dimensions', 'color', 'detail', 'opacity', 'tooltip', 'order'],
-    description: 'Show multidimensional data with lines across parallel axes',
-    hints: {
-      dimensions: 'Numeric fields to show as parallel axes',
-      color: 'Category to color lines by',
-      detail: 'Field to separate lines by (usually ID)',
-      order: 'Order of the dimensions',
-      opacity: 'Useful to manage overlapping lines'
-    },
-    icon: '📊'
+      theta: 'Quantitative field for arc size',
+      color: 'Different colors for categories'
+    }
   }
 };
 
-// Helper functions should be at the top, before the component
-const getCompatibleTypes = (field: string, values: any[]): string[] => {
-  if (!values.length || !values[0]?.[field]) return ['nominal'];
-  
-  const sampleValue = values[0][field];
-  const allValues = values.map(v => v[field]).filter(v => v != null);
-  
-  const types = [];
-  
-  // Check for quantitative
-  if (allValues.every(v => typeof v === 'number' && isFinite(v))) {
-    types.push('quantitative');
-  }
-  
-  // Check for temporal
-  if (allValues.every(v => !isNaN(Date.parse(String(v))))) {
-    types.push('temporal');
-  }
-  
-  // Check for ordinal
-  const uniqueValues = new Set(allValues);
-  if (uniqueValues.size <= 20) {
-    types.push('ordinal');
-  }
-  
-  // Always allow nominal
-  types.push('nominal');
-  
-  return types;
-};
-
-const getDefaultEncoding = (channel: string, field: string, type: string = 'quantitative') => {
-  return {
-    field,
-    type,
-    ...(type === 'quantitative' ? { scale: { zero: true } } : {})
-  };
-};
-
-// Add safe type checking for mark type
-const getMarkType = (spec: any): MarkType => {
-  if (!spec) return 'point';
-  if (typeof spec.mark === 'string') return spec.mark as MarkType;
-  if (typeof spec.mark?.type === 'string') return spec.mark.type as MarkType;
-  return 'point';
-};
-
-// Add the following styled components for tabs 
-const DataTabsContainer = styled.div`
-  display: flex;
-  gap: 2px;
-  margin-bottom: 16px;
-  background: var(--color-background);
-  border-radius: 6px;
-  padding: 4px;
-  overflow-x: auto;
-  flex-shrink: 0;
-  border: 1px solid var(--color-border);
-`
-
-const DataTab = styled.button<{ $active: boolean }>`
-  padding: 8px 12px;
-  background: ${(props: any) => props.$active ? 'var(--color-surface)' : 'transparent'};
-  color: ${(props: any) => props.$active ? 'var(--color-primary)' : 'var(--color-text-secondary)'};
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: ${(props: any) => props.$active ? '600' : '500'};
-  font-size: 0.9rem;
-  transition: all 0.2s;
-  white-space: nowrap;
-
-  &:hover {
-    background: ${(props: any) => props.$active ? 'var(--color-surface)' : 'var(--color-surfaceHover)'};
-    color: ${(props: any) => props.$active ? 'var(--color-primary)' : 'var(--color-text-primary)'};
-  }
-`;
-
-const TabContent = styled.div`
-  background: var(--color-surface);
-  border-radius: 8px;
-  padding: 16px;
-  border: 1px solid var(--color-border);
-  overflow-y: auto;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-`;
-
-// Add this type for data subsection tabs
-type DataTabSection = 'dataset' | 'filter' | 'chartType' | 'encoding';
-
-// Add these new constants for encoding options
+// Define encoding options constants
 const AGGREGATION_OPTIONS = [
-  { value: '', label: 'No Aggregation' },
+  { value: '', label: 'None' },
   { value: 'sum', label: 'Sum' },
-  { value: 'mean', label: 'Mean/Average' },
+  { value: 'mean', label: 'Mean' },
   { value: 'median', label: 'Median' },
-  { value: 'min', label: 'Minimum' },
-  { value: 'max', label: 'Maximum' },
-  { value: 'count', label: 'Count' }
+  { value: 'min', label: 'Min' },
+  { value: 'max', label: 'Max' },
+  { value: 'count', label: 'Count' },
+  { value: 'distinct', label: 'Distinct Count' }
 ];
 
 const TIME_UNIT_OPTIONS = [
-  { value: '', label: 'No Time Unit' },
+  { value: '', label: 'None' },
   { value: 'year', label: 'Year' },
-  { value: 'quarter', label: 'Quarter' },
   { value: 'month', label: 'Month' },
-  { value: 'week', label: 'Week' },
   { value: 'day', label: 'Day' },
   { value: 'hour', label: 'Hour' },
-  { value: 'minute', label: 'Minute' }
+  { value: 'minute', label: 'Minute' },
+  { value: 'second', label: 'Second' }
 ];
 
 const BINNING_OPTIONS = [
-  { value: '', label: 'No Binning' },
-  { value: 'bin', label: 'Auto Bin' },
-  { value: 'bin-5', label: '5 Bins' },
-  { value: 'bin-10', label: '10 Bins' },
-  { value: 'bin-20', label: '20 Bins' }
+  { value: '', label: 'None' },
+  { value: 'bin', label: 'Bin (Auto)' },
+  { value: 'bin-10', label: 'Bin (10 bins)' },
+  { value: 'bin-20', label: 'Bin (20 bins)' },
+  { value: 'bin-50', label: 'Bin (50 bins)' }
 ];
 
-const EncodingOptionSelect = styled.select`
-  width: 100%;
-  padding: 4px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  font-size: 0.8rem;
-  margin-top: 4px;
-  background: var(--color-surface);
-  color: var(--color-text-primary);
-  position: relative;
-  z-index: 15;
-  cursor: pointer;
-
-  &:focus {
-    border-color: var(--color-primary);
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
-    z-index: 25;
-  }
-
-  &:focus-within {
-    z-index: 25;
-  }
-
-  option {
-    background: var(--color-surface);
-    color: var(--color-text-primary);
-    padding: 4px 8px;
-    border: none;
-    cursor: pointer;
-  }
-`;
-
-// Add droppable encoding control
-const DroppableEncodingControl = styled.div<{ $isOver?: boolean; $canDrop?: boolean }>`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 8px;
-  border: 2px dashed ${props => 
-    props.$isOver 
-      ? props.$canDrop 
-        ? 'var(--color-success, #4caf50)' 
-        : 'var(--color-error, #f44336)' 
-      : 'var(--color-border)'};
-  background: ${props => 
-    props.$isOver 
-      ? props.$canDrop 
-        ? 'rgba(76, 175, 80, 0.08)' 
-        : 'rgba(244, 67, 54, 0.08)' 
-      : 'var(--color-surface)'};
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: visible; /* Changed from hidden to visible */
+// Helper function to get compatible types for a field
+const getCompatibleTypes = (field: string, data: any[]): string[] => {
+  if (!data || data.length === 0) return ['nominal'];
   
-  &:hover {
-    border-color: var(--color-primary);
-    background: ${props => !props.$isOver && 'rgba(33, 150, 243, 0.04)'};
+  const sampleValue = data[0]?.[field];
+  if (sampleValue === undefined || sampleValue === null) return ['nominal'];
+  
+  // Check if it's a number
+  if (typeof sampleValue === 'number') {
+    return ['quantitative', 'nominal', 'ordinal'];
   }
   
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: ${props => 
-      props.$isOver && props.$canDrop 
-        ? 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(76, 175, 80, 0.05) 10px, rgba(76, 175, 80, 0.05) 20px)' 
-        : 'none'};
-    pointer-events: none;
-    opacity: ${props => props.$isOver ? 1 : 0};
-    transition: opacity 0.3s;
-    z-index: 0; /* Ensure this stays behind select elements */
+  // Check if it's a date
+  if (sampleValue instanceof Date || (typeof sampleValue === 'string' && !isNaN(Date.parse(sampleValue)))) {
+    return ['temporal', 'nominal', 'ordinal'];
   }
-
-  /* Ensure select elements are always on top */
-  select {
-    position: relative;
-    z-index: 15 !important;
+  
+  // Check if it's a string that could be ordinal
+  if (typeof sampleValue === 'string') {
+    // Check if all values are strings and could be ordered
+    const uniqueValues = [...new Set(data.map(d => d[field]).filter(v => v != null))];
+    if (uniqueValues.length <= 10 && uniqueValues.every(v => typeof v === 'string')) {
+      return ['nominal', 'ordinal'];
+    }
+    return ['nominal'];
   }
-`;
-
-const ColumnTokenContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
-  position: relative;
-  z-index: 1;
-`;
-
-const DropHint = styled.div`
-  padding: 12px;
-  color: var(--color-text-secondary);
-  text-align: center;
-  font-size: 0.9rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-  z-index: 1;
-`;
-
-const DragIcon = styled.div`
-  opacity: 0.5;
-  font-size: 1.2rem;
-  margin-bottom: 4px;
-`;
-
-// Add these styled components at the top level with other styled definitions
-const ColumnTypeSection = styled.div`
-  margin-bottom: 16px;
-`;
-
-const ColumnTypeHeading = styled.h4`
-  margin: 0 0 8px 0;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-`;
-
-const AvailableColumnsContainer = styled.div`
-  padding: 16px;
-  background: var(--color-background);
-  border-radius: 8px;
-  margin-bottom: 24px;
-`;
+  
+  // Default to nominal
+  return ['nominal'];
+};
 
 export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProps) => {
   // Add state for dataset cache
@@ -954,6 +256,33 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
   useEffect(() => {
     localStorage.setItem('visualEditorAccordionStates', JSON.stringify(accordionStates));
   }, [accordionStates]);
+
+  // Update mark type and encodings when spec changes (e.g., when new chart is loaded)
+  useEffect(() => {
+    try {
+      let parsedSpec;
+      if (typeof spec === 'string') {
+        parsedSpec = JSON.parse(spec);
+      } else {
+        parsedSpec = spec;
+      }
+      
+      if (parsedSpec) {
+        // Update mark type if it changed
+        const newMarkType = typeof parsedSpec.mark === 'string' ? parsedSpec.mark : parsedSpec.mark?.type;
+        if (newMarkType && newMarkType !== currentMark) {
+          setCurrentMark(newMarkType);
+        }
+        
+        // Update encodings if they changed
+        if (parsedSpec.encoding && JSON.stringify(parsedSpec.encoding) !== JSON.stringify(encodings)) {
+          setEncodings(parsedSpec.encoding);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to parse spec for updates:', e);
+    }
+  }, [spec, currentMark, encodings]);
 
   const toggleAccordion = (section: keyof AccordionStates) => {
     setAccordionStates((prev: AccordionStates) => ({
@@ -1070,6 +399,18 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
           }
         }
       };
+
+      // Add color encoding if there's a categorical field available
+      const categoricalField = dataset.columns?.find(col => 
+        dataset.dataTypes?.[col] === 'nominal' || dataset.dataTypes?.[col] === 'ordinal'
+      );
+      
+      if (categoricalField && categoricalField !== newSpec.encoding.x.field) {
+        newSpec.encoding.color = {
+          field: categoricalField,
+          type: dataset.dataTypes?.[categoricalField] || 'nominal'
+        };
+      }
 
       onChange(newSpec);
 
@@ -1540,13 +881,51 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
     }, 50);
   };
 
-  // Detect field types
-  const fieldTypes = fields.reduce((acc, field) => {
-    const value = spec.data?.values?.[0]?.[field];
-    acc[field] = typeof value === 'number' ? 'quantitative' : 
-                 value instanceof Date ? 'temporal' : 'nominal';
-    return acc;
-  }, {} as Record<string, string>);
+  // Detect field types with better logic
+  const fieldTypes = useMemo(() => {
+    const data = spec.data?.values || [];
+    if (!data.length) return {};
+    
+    return fields.reduce((acc, field) => {
+      const values = data.map(row => row[field]).filter(val => val !== null && val !== undefined);
+      if (!values.length) {
+        acc[field] = 'nominal';
+        return acc;
+      }
+      
+      // Check if all values are numbers
+      const allNumbers = values.every(val => typeof val === 'number' && !isNaN(val));
+      if (allNumbers) {
+        acc[field] = 'quantitative';
+        return acc;
+      }
+      
+      // Check if all values are dates or date strings
+      const allDates = values.every(val => {
+        if (val instanceof Date) return true;
+        if (typeof val === 'string') {
+          const parsed = new Date(val);
+          return !isNaN(parsed.getTime());
+        }
+        return false;
+      });
+      if (allDates) {
+        acc[field] = 'temporal';
+        return acc;
+      }
+      
+      // Check if values look like categories (limited unique values)
+      const uniqueValues = new Set(values.map(val => String(val)));
+      if (uniqueValues.size <= Math.min(20, values.length * 0.5)) {
+        acc[field] = 'nominal';
+        return acc;
+      }
+      
+      // Default to nominal
+      acc[field] = 'nominal';
+      return acc;
+    }, {} as Record<string, string>);
+  }, [fields, spec.data?.values]);
 
   // Safe spec parsing
   const parsedSpec = useMemo(() => {
@@ -1768,31 +1147,10 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
     onChange({ ...spec, encoding: newEncodings } as VegaExtendedSpec);
   };
 
-  // Create droppable encoding component
+  // Create encoding component (simplified without drag-and-drop)
   const EncodingDropTarget = ({ channel }: { channel: string }) => {
-    const [{ isOver, canDrop }, drop] = useDrop({
-      accept: 'column',
-      drop: (item: ColumnDragItem) => {
-        handleColumnDrop(channel, item.column);
-        return { channel };
-      },
-      canDrop: (item: ColumnDragItem) => {
-        // You can add logic here to determine if a column can be dropped on this encoding
-        return true;
-      },
-      collect: (monitor) => ({
-        isOver: monitor.isOver(),
-        canDrop: monitor.canDrop()
-      }),
-      // Prevent drag/drop from interfering with select elements
-      hover: (item, monitor) => {
-        // Don't trigger hover effects when over select elements
-        const targetElement = monitor.getDropResult()?.targetElement;
-        if (targetElement && (targetElement.tagName === 'SELECT' || targetElement.tagName === 'OPTION')) {
-          return;
-        }
-      }
-    });
+    // Simple state for hover effects (no drag-and-drop)
+    const [isHovered, setIsHovered] = useState(false);
 
     // Handle dropdown open/close states to prevent theme interference
     const handleSelectFocus = (e: React.FocusEvent<HTMLSelectElement>) => {
@@ -1850,9 +1208,13 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
     };
 
     return (
-      <DroppableEncodingControl ref={drop} $isOver={isOver} $canDrop={canDrop}>
+      <div 
+        className={`${styles.droppableEncodingControl} ${isHovered ? styles.isOver : ''}`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         {encodings[channel]?.field ? (
-          <ColumnTokenContainer>
+          <div className={styles.columnTokenContainer}>
             {columnMetadata[encodings[channel].field] && (
               <DataColumnToken 
                 column={columnMetadata[encodings[channel].field]}
@@ -1860,12 +1222,12 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
                 onClick={() => {/* Optional click handler */}}
               />
             )}
-          </ColumnTokenContainer>
+          </div>
         ) : (
-          <DropHint>
-            <DragIcon>↓</DragIcon>
-            Drop column here or select below
-          </DropHint>
+          <div className={styles.dropHint}>
+            <div className={styles.dragIcon}>📊</div>
+            Select a column below
+          </div>
         )}
         
         <select
@@ -1909,7 +1271,7 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
         
         {encodings[channel]?.field && (
           <>
-            <TypeButtons>
+            <div className={styles.typeButtons}>
               {[
                 { type: 'quantitative', icon: <NumbersIcon />, label: 'Number' },
                 { type: 'temporal', icon: <TimelineIcon />, label: 'Time' },
@@ -1926,23 +1288,22 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
                 return (
                   <Tooltip key={type} title={label}>
                     <span>
-                      <EncodingTypeButton 
-                        $active={encodings[channel]?.type === type}
-                        $compatible={isCompatible}
+                      <button 
+                        className={`${styles.encodingTypeButton} ${encodings[channel]?.type === type ? styles.active : ''} ${isCompatible ? styles.compatible : styles.incompatible}`}
                         onClick={() => isCompatible && handleEncodingChange(channel, { type })}
-                        size="small"
                         disabled={!isCompatible}
                       >
                         {icon}
-                      </EncodingTypeButton>
+                      </button>
                     </span>
                   </Tooltip>
                 );
               })}
-            </TypeButtons>
+            </div>
             
             {encodings[channel]?.type && (
-              <EncodingOptionSelect
+              <select
+                className={styles.encodingOptionSelect}
                 value={
                   encodings[channel]?.aggregate || 
                   encodings[channel]?.timeUnit || 
@@ -2000,11 +1361,11 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
                     ))}
                   </optgroup>
                 )}
-              </EncodingOptionSelect>
+              </select>
             )}
           </>
         )}
-      </DroppableEncodingControl>
+      </div>
     );
   };
 
@@ -2013,12 +1374,12 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
     return (
       <div>
         {getAvailableEncodings().map(channel => (
-          <Control key={channel}>
-            <EncodingGrid>
-              <Label>{channel.toUpperCase()}</Label>
+            <div className={styles.control} key={channel}>
+              <div className={styles.encodingGrid}>
+              <label className={styles.label}>{channel.toUpperCase()}</label>
               <EncodingDropTarget channel={channel} />
-            </EncodingGrid>
-          </Control>
+            </div>
+          </div>
         ))}
       </div>
     );
@@ -2029,36 +1390,46 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
   }
 
   return (
-    <Container>
-      <DataTabsContainer>
-        <DataTab 
-          $active={activeDataTab === 'dataset'} 
-          onClick={() => setActiveDataTab('dataset')}
-        >
-          Dataset
-        </DataTab>
-        <DataTab 
-          $active={activeDataTab === 'filter'} 
-          onClick={() => setActiveDataTab('filter')}
-        >
-          Filter
-        </DataTab>
-        <DataTab 
-          $active={activeDataTab === 'chartType'} 
-          onClick={() => setActiveDataTab('chartType')}
-        >
-          Chart Type
-        </DataTab>
-        <DataTab 
-          $active={activeDataTab === 'encoding'} 
-          onClick={() => setActiveDataTab('encoding')}
-        >
-          Encoding
-        </DataTab>
-      </DataTabsContainer>
+    <div className={styles.container}>
+      <div className={styles.dataTabsContainer}>
+        <ButtonGroup buttonStyle="embedded">
+          <Button
+            variant={activeDataTab === 'dataset' ? 'primary' : 'ghost'}
+            size="small"
+            buttonStyle="embedded"
+            onClick={() => setActiveDataTab('dataset')}
+          >
+            Data
+          </Button>
+          <Button
+            variant={activeDataTab === 'filter' ? 'primary' : 'ghost'}
+            size="small"
+            buttonStyle="embedded"
+            onClick={() => setActiveDataTab('filter')}
+          >
+            Filter
+          </Button>
+          <Button
+            variant={activeDataTab === 'chartType' ? 'primary' : 'ghost'}
+            size="small"
+            buttonStyle="embedded"
+            onClick={() => setActiveDataTab('chartType')}
+          >
+            Type
+          </Button>
+          <Button
+            variant={activeDataTab === 'encoding' ? 'primary' : 'ghost'}
+            size="small"
+            buttonStyle="embedded"
+            onClick={() => setActiveDataTab('encoding')}
+          >
+            Encode
+          </Button>
+        </ButtonGroup>
+      </div>
 
       {activeDataTab === 'dataset' && (
-        <TabContent>
+        <div className={styles.tabContent}>
           <DatasetSelector
             chartId={currentMark}
             currentDataset={currentDataset || ''}
@@ -2066,27 +1437,16 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
             datasetCache={datasetCache}
             setDatasetCache={setDatasetCache}
           />
-        </TabContent>
+        </div>
       )}
 
       {activeDataTab === 'filter' && (
-        <TabContent>
+        <div className={styles.tabContent}>
           <div>
-            <Control>
-              <Label>Field</Label>
+            <div className={styles.control}>
+              <label className={styles.label}>Field</label>
               <select
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '6px',
-                  fontSize: '0.9rem',
-                  background: 'var(--color-surface)',
-                  color: 'var(--color-text-primary)',
-                  position: 'relative',
-                  zIndex: 999999,
-                  cursor: 'pointer'
-                }}
+                className={styles.filterSelect}
                 value={filterField || ''}
                 onChange={(e) => {
                   console.log('FILTER FIELD CHANGE:', e.target.value);
@@ -2119,11 +1479,11 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
                   <option key={field} value={field}>{field}</option>
                 ))}
               </select>
-            </Control>
+            </div>
             {filterField && (
               <>
-                <Control>
-                  <Label>Filter Type</Label>
+                <div className={styles.control}>
+                  <label className={styles.label}>Filter Type</label>
                   <Select
                     value={filterType || ''}
                     onChange={(e) => setFilterType(e.target.value)}
@@ -2143,40 +1503,40 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
                     <option value="greater">Greater than</option>
                     <option value="less">Less than</option>
                   </Select>
-                </Control>
-                <Control>
-                  <Label>Value</Label>
+                </div>
+                <div className={styles.control}>
+                  <label className={styles.label}>Value</label>
                   <input
                     type="text"
                     value={filterValue}
                     onChange={(e) => setFilterValue(e.target.value)}
                     placeholder="Enter filter value"
                   />
-                </Control>
-                <ActionButton onClick={applyFilter}>
+                </div>
+                <button className={styles.actionButton} onClick={applyFilter}>
                   Apply Filter
-                </ActionButton>
+                </button>
               </>
             )}
           </div>
-        </TabContent>
+        </div>
       )}
 
       {activeDataTab === 'chartType' && (
-        <TabContent>
-          <p style={{ color: 'var(--color-text-secondary)', marginBottom: '16px' }}>
+        <div className={styles.tabContent}>
+          <p className={styles.description}>
             Choose the best visual mark for your data. Different marks work better for different types of data and comparisons.
           </p>
-          <MarkTypeGrid>
+          <div className={styles.markTypeGrid}>
             {Object.entries(MARK_ENCODINGS).map(([type, config]) => (
-              <MarkTypeCard
+              <div
                 key={type}
-                $active={currentMark === type}
+                className={`${styles.markTypeCard} ${currentMark === type ? styles.active : ''}`}
                 onClick={() => handleMarkTypeChange(type as MarkType)}
               >
-                <MarkIcon>{config.icon}</MarkIcon>
-                <MarkName>{type}</MarkName>
-                <MarkTooltip>
+                <div className={styles.markIcon}>{config.icon}</div>
+                <div className={styles.markName}>{type}</div>
+                <div className={styles.markTooltip}>
                   <div>{config.description}</div>
                   {config.hints && (
                     <ul>
@@ -2185,77 +1545,83 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
                       ))}
                     </ul>
                   )}
-                </MarkTooltip>
-              </MarkTypeCard>
+                </div>
+              </div>
             ))}
-          </MarkTypeGrid>
-        </TabContent>
+          </div>
+        </div>
       )}
 
       {activeDataTab === 'encoding' && (
-        <TabContent>
+        <div className={styles.tabContent}>
           <div>
-            <div style={{ 
-              display: 'flex', 
-              gap: '8px',
-              marginBottom: '16px' 
-            }}>
-              <RandomizeButton onClick={handleRandomizeEncodings}>
+            <div className={styles.buttonGroup}>
+              <Button
+                variant="secondary"
+                size="small"
+                buttonStyle="floating"
+                onClick={handleRandomizeEncodings}
+              >
                 🎲 Random
-              </RandomizeButton>
-              <TemplateButton onClick={() => setShowTemplates(!showTemplates)}>
+              </Button>
+              <Button
+                variant="secondary"
+                size="small"
+                buttonStyle="floating"
+                onClick={() => setShowTemplates(!showTemplates)}
+              >
                 📋 Templates
-              </TemplateButton>
-              <RecommendButton onClick={handleRecommendEncodings}>
+              </Button>
+              <Button
+                variant="secondary"
+                size="small"
+                buttonStyle="floating"
+                onClick={handleRecommendEncodings}
+              >
                 🤖 Smart
-              </RecommendButton>
+              </Button>
             </div>
 
             {showTemplates && (
-              <div style={{ marginBottom: '16px' }}>
-                <Label>Chart Templates</Label>
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                  gap: '8px',
-                  marginBottom: '16px'
-                }}>
+              <div className={styles.templateSection}>
+                <label className={styles.label}>Chart Templates</label>
+                <div className={styles.templateGrid}>
                   {templates.map((template, index) => (
-                    <RecommendationCard
+                    <div
                       key={index}
-                      $active={false}
+                      className={styles.recommendationCard}
                       onClick={() => handleApplyTemplate(template)}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '1.5rem' }}>{template.icon}</span>
-                        <RecommendationTitle>{template.name}</RecommendationTitle>
+                      <div className={styles.templateHeader}>
+                        <span className={styles.templateIcon}>{template.icon}</span>
+                        <div className={styles.recommendationTitle}>{template.name}</div>
                       </div>
-                      <RecommendationReason>{template.description}</RecommendationReason>
-                    </RecommendationCard>
+                      <div className={styles.recommendationReason}>{template.description}</div>
+                    </div>
                   ))}
                 </div>
               </div>
             )}
 
             {recommendations.length > 0 && (
-              <div style={{ marginBottom: '16px' }}>
-                <Label>AI Recommendations</Label>
+              <div className={styles.recommendationSection}>
+                <label className={styles.label}>AI Recommendations</label>
                 {recommendations.map((rec, i) => (
-                  <RecommendationCard
+                  <div
                     key={i}
-                    $active={false}
+                    className={styles.recommendationCard}
                     onClick={() => applyRecommendation(rec)}
                   >
-                    <RecommendationTitle>
+                    <div className={styles.recommendationTitle}>
                       {rec.chartType} Chart
-                      <ConfidenceBadge $confidence={rec.confidence}>
+                      <div className={`${styles.confidenceBadge} ${styles[`confidence-${Math.round(rec.confidence * 10) * 10}`]}`}>
                         {Math.round(rec.confidence * 100)}% confident
-                      </ConfidenceBadge>
-                    </RecommendationTitle>
-                    <RecommendationReason>
+                      </div>
+                    </div>
+                    <div className={styles.recommendationReason}>
                       {rec.reason}
-                    </RecommendationReason>
-                    <div style={{ fontSize: '0.9rem' }}>
+                    </div>
+                    <div className={styles.suggestionText}>
                       Suggested encodings: {Object.entries(rec.suggestedEncodings)
                         .map(([channel, enc]) => {
                           if (Array.isArray(enc)) {
@@ -2267,14 +1633,14 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
                         })
                         .join(', ')}
                     </div>
-                  </RecommendationCard>
+                  </div>
                 ))}
               </div>
             )}
 
-            <div style={{ marginTop: '20px' }}>
-              <SectionTitle>Available Columns</SectionTitle>
-              <AvailableColumnsContainer>
+            <div className={styles.columnsSection}>
+              <h3 className={styles.sectionTitle}>Available Columns</h3>
+              <div className={styles.availableColumnsContainer}>
                 {/* Group by data type */}
                 {(() => {
                   // Organize columns by type
@@ -2299,15 +1665,15 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
                         if (columns.length === 0) return null;
                         
                         return (
-                          <ColumnTypeSection key={type}>
-                            <ColumnTypeHeading>
+                          <div key={type} className={styles.columnTypeSection}>
+                            <div className={styles.columnTypeHeading}>
                               {type === 'quantitative' && <NumbersIcon fontSize="small" />}
                               {type === 'temporal' && <TimelineIcon fontSize="small" />}
                               {type === 'nominal' && <CategoryIcon fontSize="small" />}
                               {type === 'ordinal' && <BarChartIcon fontSize="small" />}
                               {type.charAt(0).toUpperCase() + type.slice(1)} ({columns.length})
-                            </ColumnTypeHeading>
-                            <ColumnTokenContainer>
+                            </div>
+                            <div className={styles.columnTokenContainer}>
                               {columns.map(column => (
                                 <DataColumnToken 
                                   key={column.name}
@@ -2321,24 +1687,23 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
                                   }}
                                 />
                               ))}
-                            </ColumnTokenContainer>
-                          </ColumnTypeSection>
+                            </div>
+                          </div>
                         );
                       })}
                     </>
                   );
                 })()}
-              </AvailableColumnsContainer>
+              </div>
             </div>
 
-            <div style={{ marginTop: '20px' }}>
-              <SectionTitle>Encodings</SectionTitle>
+            <div className={styles.encodingsSection}>
               {renderEncodingSection()}
             </div>
           </div>
-        </TabContent>
+        </div>
       )}
-    </Container>
+    </div>
   )
 }
 
@@ -2357,8 +1722,8 @@ export const EncodingField: React.FC<{
   ]
   
   return (
-    <EncodingRow>
-      <EncodingLabel>{label}</EncodingLabel>
+    <div className={styles.encodingRow}>
+      <div className={styles.encodingLabel}>{label}</div>
       <select 
         value={field} 
         onChange={(e) => onChange(e.target.value, type)}
@@ -2368,20 +1733,19 @@ export const EncodingField: React.FC<{
           <option key={f} value={f}>{f}</option>
         ))}
       </select>
-      <EncodingTypeControls>
+      <div className={styles.encodingTypeControls}>
         {types.map(t => (
           <Tooltip key={t.value} title={t.label}>
-            <EncodingTypeButton
-              $active={type === t.value}
+            <button
+              className={`${styles.encodingTypeButton} ${type === t.value ? styles.active : ''}`}
               onClick={() => onChange(field, t.value)}
-              size="small"
             >
               {t.icon}
-            </EncodingTypeButton>
+            </button>
           </Tooltip>
         ))}
-      </EncodingTypeControls>
-    </EncodingRow>
+      </div>
+    </div>
   );
 };
 
@@ -2389,24 +1753,26 @@ export const EncodingField: React.FC<{
 const isCompatibleEncoding = (channel: string, markType: MarkType): boolean => {
   const commonChannels = ['x', 'y', 'color', 'tooltip'];
   const compatibleChannels: Record<MarkType, string[]> = {
-    bar: [...commonChannels, 'size'],
-    line: [...commonChannels, 'strokeWidth', 'order'],
-    point: [...commonChannels, 'size', 'shape'],
-    circle: [...commonChannels, 'size'],
-    area: [...commonChannels, 'order'],
+    bar: [...commonChannels, 'size', 'text'],
+    line: [...commonChannels, 'strokeWidth', 'order', 'text'],
+    point: [...commonChannels, 'size', 'shape', 'text'],
+    circle: [...commonChannels, 'size', 'text'],
+    area: [...commonChannels, 'order', 'text'],
     text: [...commonChannels, 'text', 'size', 'angle'],
-    boxplot: commonChannels,
-    arc: ['theta', 'radius', 'color', 'tooltip'],
-    rect: [...commonChannels, 'size', 'fill', 'stroke'],
-    rule: [...commonChannels, 'size', 'strokeWidth'],
-    square: [...commonChannels, 'size', 'fill'],
-    tick: [...commonChannels, 'size', 'thickness'],
-    trail: [...commonChannels, 'size', 'strokeWidth', 'order'],
+    boxplot: [...commonChannels, 'size', 'text'],
+    arc: ['theta', 'radius', 'color', 'tooltip', 'text'],
+    rect: [...commonChannels, 'size', 'fill', 'stroke', 'text'],
+    rule: [...commonChannels, 'size', 'strokeWidth', 'text'],
+    square: [...commonChannels, 'size', 'fill', 'text'],
+    tick: [...commonChannels, 'size', 'thickness', 'text'],
+    trail: [...commonChannels, 'size', 'strokeWidth', 'order', 'text'],
     image: [...commonChannels, 'url', 'aspect'],
     geoshape: [...commonChannels, 'shape', 'stroke', 'fill'],
     errorband: [...commonChannels, 'extent', 'band'],
     errorbar: [...commonChannels, 'extent'],
-    violin: [...commonChannels, 'size', 'fill', 'density']
+    violin: [...commonChannels, 'size', 'fill', 'density', 'text'],
+    sunburst: ['theta', 'radius', 'color', 'tooltip', 'text'],
+    treemap: ['size', 'color', 'tooltip', 'text']
   };
 
   return compatibleChannels[markType]?.includes(channel) ?? false;

@@ -1,0 +1,126 @@
+/* Typography Component Styles */
+.typography {
+  margin: 0;
+  font-family: var(--typography-fontFamily);
+  line-height: 1.5;
+}
+
+/* Variants */
+.h1 {
+  font-size: var(--typography-fontSize-xxl);
+  font-weight: var(--typography-fontWeight-bold);
+  line-height: 1.2;
+}
+
+.h2 {
+  font-size: var(--typography-fontSize-xl);
+  font-weight: var(--typography-fontWeight-bold);
+  line-height: 1.3;
+}
+
+.h3 {
+  font-size: var(--typography-fontSize-lg);
+  font-weight: var(--typography-fontWeight-semibold);
+  line-height: 1.4;
+}
+
+.h4 {
+  font-size: var(--typography-fontSize-md);
+  font-weight: var(--typography-fontWeight-semibold);
+  line-height: 1.4;
+}
+
+.h5 {
+  font-size: var(--typography-fontSize-sm);
+  font-weight: var(--typography-fontWeight-medium);
+  line-height: 1.5;
+}
+
+.h6 {
+  font-size: var(--typography-fontSize-sm);
+  font-weight: var(--typography-fontWeight-medium);
+  line-height: 1.5;
+}
+
+.subtitle1 {
+  font-size: var(--typography-fontSize-md);
+  font-weight: var(--typography-fontWeight-medium);
+  line-height: 1.5;
+}
+
+.subtitle2 {
+  font-size: var(--typography-fontSize-sm);
+  font-weight: var(--typography-fontWeight-medium);
+  line-height: 1.5;
+}
+
+.body1 {
+  font-size: var(--typography-fontSize-base);
+  font-weight: var(--typography-fontWeight-normal);
+  line-height: 1.5;
+}
+
+.body2 {
+  font-size: var(--typography-fontSize-sm);
+  font-weight: var(--typography-fontWeight-normal);
+  line-height: 1.5;
+}
+
+.caption {
+  font-size: var(--typography-fontSize-xs);
+  font-weight: var(--typography-fontWeight-normal);
+  line-height: 1.4;
+}
+
+/* Colors */
+.color-primary {
+  color: var(--color-primary);
+}
+
+.color-secondary {
+  color: var(--color-secondary);
+}
+
+.color-textPrimary {
+  color: var(--color-text-primary);
+}
+
+.color-textSecondary {
+  color: var(--color-text-secondary);
+}
+
+.color-error {
+  color: var(--color-error);
+}
+
+.color-inherit {
+  color: inherit;
+}
+
+/* Alignment */
+.align-left {
+  text-align: left;
+}
+
+.align-center {
+  text-align: center;
+}
+
+.align-right {
+  text-align: right;
+}
+
+.align-justify {
+  text-align: justify;
+}
+
+/* Spacing */
+.gutterBottom {
+  margin-bottom: var(--spacing-sm);
+}
+
+.noWrap {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,6 +1,7 @@
 // src/charts/index.ts
 import {
   chartSpecs,
+  sampleCharts,
   statistical,
   timeSeries,
   comparison,
@@ -16,6 +17,7 @@ import { ChartDefinition } from '../types/chart';
 
 export {
   chartSpecs,
+  sampleCharts,
   statistical,
   timeSeries,
   comparison,

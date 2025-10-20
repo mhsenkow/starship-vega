@@ -1,20 +1,16 @@
-import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { ChartStyle } from '../../types/chart';
 import { renderVegaLite } from '../../utils/chartRenderer';
 import { determineChartEncodings, generateRandomEncoding } from '../../utils/chartAdapters';
-import { TopLevelSpec } from 'vega-lite';
-import {
-  ChartContainer,
-  ChartControls,
-  ChartWrapper
-} from './ChartDisplay.styles';
 import { MarkType, ExtendedSpec, ChartEncoding } from '../../types/vega';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { enhanceChartSpec } from '../../utils/chartEnhancements';
 import { exportChartWithMetadata } from '../../utils/exportImport';
 import { DatasetMetadata } from '../../types/dataset';
 import { detectDataTypes } from '../../utils/dataUtils';
-import { useTheme } from '../../styles/ThemeProvider';
+import { useThemeContext } from '../../styles/ThemeProvider.module';
+import { Button, ButtonGroup } from '../../design-system/components/ButtonSystem';
+import styles from './ChartDisplay.module.css';
 
 interface ChartDisplayProps {
   chartType: MarkType;
@@ -58,7 +54,7 @@ export const ChartDisplay = ({ chartType, dataset, encoding, style }: ChartDispl
   const renderTimeout = useRef<number | undefined>(undefined);
 
   // Get current theme to detect theme changes
-  const { mode: currentTheme } = useTheme();
+  const { mode: currentTheme } = useThemeContext();
   const previousThemeRef = useRef(currentTheme);
 
   // Memoize the base spec to prevent unnecessary recalculations
@@ -158,9 +154,8 @@ export const ChartDisplay = ({ chartType, dataset, encoding, style }: ChartDispl
     // Prepare data in the format expected by generateRandomEncoding
     const fieldsWithTypes = prepareDataForRandomEncoding(dataset);
     
-    // Call with the correct parameters: fields as [string, string][] and chartType as MarkType
-    // Use type assertion to handle different implementations in codebase
-    const newEncodings = generateRandomEncoding(fieldsWithTypes, chartType) as unknown as ChartEncoding;
+    // Call with the correct parameters: chartType, fields, and dataTypes
+    const newEncodings = generateRandomEncoding(chartType, fieldsWithTypes.map(([field]) => field), dataTypes) as unknown as ChartEncoding;
     setEncodings(newEncodings);
   };
 
@@ -230,23 +225,29 @@ export const ChartDisplay = ({ chartType, dataset, encoding, style }: ChartDispl
 
   return (
     <ErrorBoundary fallback={<div>Failed to render chart</div>}>
-      <ChartContainer ref={containerRef} className={isFullscreen ? 'fullscreen' : ''}>
-        <ChartControls>
+      <div ref={containerRef} className={`${styles.chartContainer} ${isFullscreen ? styles.fullscreen : ''}`}>
+        <div className={styles.chartControls}>
           <div className="control-group">
-            <button 
-              onClick={handleRandomize}
-              title="Try different data combinations"
-            >
-              <span role="img" aria-label="dice">🎲</span>
-              Explore Data
-            </button>
-            <button 
-              onClick={() => setEncodings(null)}
-              title="Reset to default view"
-            >
-              <span role="img" aria-label="reset">↺</span>
-              Reset
-            </button>
+            <ButtonGroup buttonStyle="floating">
+              <Button 
+                variant="secondary"
+                size="small"
+                onClick={handleRandomize}
+                title="Try different data combinations"
+              >
+                <span role="img" aria-label="dice">🎲</span>
+                Explore Data
+              </Button>
+              <Button 
+                variant="tertiary"
+                size="small"
+                onClick={() => setEncodings(null)}
+                title="Reset to default view"
+              >
+                <span role="img" aria-label="reset">↺</span>
+                Reset
+              </Button>
+            </ButtonGroup>
           </div>
           
           <div className="control-group">
@@ -255,28 +256,47 @@ export const ChartDisplay = ({ chartType, dataset, encoding, style }: ChartDispl
                 <span role="img" aria-label="sampled">📊</span> Sampled Data
               </span>
             )}
-            <button 
-              onClick={toggleFullscreen}
-              title={isFullscreen ? "Exit fullscreen" : "View fullscreen"}
-            >
-              <span role="img" aria-label="fullscreen">{isFullscreen ? '⊠' : '⤢'}</span>
-            </button>
-            
-            <div className="dropdown">
-              <button className="dropdown-toggle" title="Download options">
+            <ButtonGroup buttonStyle="floating">
+              <Button 
+                variant="icon"
+                size="small"
+                iconOnly
+                onClick={toggleFullscreen}
+                title={isFullscreen ? "Exit fullscreen" : "View fullscreen"}
+              >
+                <span role="img" aria-label="fullscreen">{isFullscreen ? '⊠' : '⤢'}</span>
+              </Button>
+              
+              <Button 
+                variant="tertiary"
+                size="small"
+                onClick={() => downloadChart('png')}
+                title="Download as PNG"
+              >
                 <span role="img" aria-label="download">⬇️</span>
-                Export
-              </button>
-              <div className="dropdown-menu">
-                <button onClick={() => downloadChart('png')}>PNG Image</button>
-                <button onClick={() => downloadChart('svg')}>SVG Vector</button>
-                <button onClick={() => downloadChart('json')}>JSON Spec</button>
-              </div>
-            </div>
+                PNG
+              </Button>
+              <Button 
+                variant="tertiary"
+                size="small"
+                onClick={() => downloadChart('svg')}
+                title="Download as SVG"
+              >
+                SVG
+              </Button>
+              <Button 
+                variant="tertiary"
+                size="small"
+                onClick={() => downloadChart('json')}
+                title="Download as JSON"
+              >
+                JSON
+              </Button>
+            </ButtonGroup>
           </div>
-        </ChartControls>
-        <ChartWrapper ref={chartRef} />
-      </ChartContainer>
+        </div>
+        <div ref={chartRef} className={styles.chartWrapper} />
+      </div>
     </ErrorBoundary>
   );
 }; 

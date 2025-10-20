@@ -1,17 +1,10 @@
 import { useEffect, useRef, memo, useCallback } from 'react'
 import { ChartConfig } from '../../types/chart'
 import { renderVegaLite } from '../../utils/chartRenderer'
-import { chartSpecs } from '../../charts'
-import {
-  Card,
-  ChartPreview,
-  Content,
-  Title,
-  Description,
-  BadgeContainer,
-  Badge
-} from './ChartCard.styles'
-import { useTheme } from '../../styles/ThemeProvider'
+import { useThemeContext } from '../../styles/ThemeProvider.module'
+import { Badge, BadgeGroup } from '../../design-system/components/BadgeSystem'
+import { InfoIcon } from '../common/Icons'
+import styles from './ChartCard.module.css'
 
 interface ChartCardProps {
   chart: ChartConfig;
@@ -25,14 +18,25 @@ const CardContent = memo(
     category: string;
     complexity: string;
   }) => (
-    <Content>
-      <Title>{title}</Title>
-      <Description>{description}</Description>
-      <BadgeContainer>
-        <Badge>{category}</Badge>
-        <Badge>{complexity}</Badge>
-      </BadgeContainer>
-    </Content>
+    <div className={styles.content}>
+      <h3 className={styles.title}>{title}</h3>
+      <p className={styles.description}>{description}</p>
+      <BadgeGroup spacing="compact">
+        <Badge 
+          variant="primary" 
+          size="small"
+          icon={<InfoIcon size={12} />}
+        >
+          {category}
+        </Badge>
+        <Badge 
+          variant="secondary" 
+          size="small"
+        >
+          {complexity}
+        </Badge>
+      </BadgeGroup>
+    </div>
   ),
   (prevProps, nextProps) => {
     return (
@@ -50,7 +54,7 @@ export default memo(function ChartCard({ chart, onClick }: ChartCardProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const renderTimeout = useRef<number | undefined>(undefined);
   const observer = useRef<ResizeObserver | undefined>(undefined);
-  const { mode: currentTheme } = useTheme();
+  const { mode: currentTheme } = useThemeContext();
   const previousThemeRef = useRef(currentTheme);
 
   useEffect(() => {
@@ -79,12 +83,11 @@ export default memo(function ChartCard({ chart, onClick }: ChartCardProps) {
   const renderChart = useCallback(async () => {
     if (!chartRef.current) return;
     
-    // Use explicit type checking to satisfy TypeScript
-    const chartId = chart.id as keyof typeof chartSpecs;
-    const spec = chartSpecs[chartId];
+    // Use the spec directly from the chart object instead of looking it up
+    const spec = chart.spec;
     
     if (!spec) {
-      console.error(`No specification found for chart ID: ${chartId}`);
+      console.error(`No specification found for chart ID: ${chart.id}`);
       
       // Display a placeholder for failed chart
       if (chartRef.current) {
@@ -104,7 +107,7 @@ export default memo(function ChartCard({ chart, onClick }: ChartCardProps) {
           ...spec,
           width: 'container',
           height: 'container',
-          autosize: { type: 'fit', contains: 'padding' }
+          autosize: { type: 'fit', contains: 'padding', resize: true }
         };
       
       // Use a type assertion to handle both Vega and Vega-Lite specs
@@ -117,7 +120,7 @@ export default memo(function ChartCard({ chart, onClick }: ChartCardProps) {
         chartRef.current.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f44336;font-size:12px;">Failed to render chart</div>';
       }
     }
-  }, [chart.id]);
+  }, [chart.spec]);
 
   // Listen for theme changes and re-render chart (moved after renderChart definition)
   useEffect(() => {
@@ -154,20 +157,21 @@ export default memo(function ChartCard({ chart, onClick }: ChartCardProps) {
   const handleClick = useCallback(() => onClick(chart.id), [chart.id, onClick]);
 
   return (
-    <Card 
+    <button 
+      className={`${styles.card} ${styles[currentTheme] || ''}`}
       onClick={handleClick}
       aria-label={`${chart.title} - ${chart.description}`}
       role="button"
       tabIndex={0}
     >
-      <ChartPreview ref={chartRef} />
+      <div className={styles.chartPreview} ref={chartRef} />
       <CardContent 
         title={chart.title}
         description={chart.description}
         category={chart.category}
         complexity={chart.complexity}
       />
-    </Card>
+    </button>
   );
 }, (prevProps, nextProps) => {
   return prevProps.chart.id === nextProps.chart.id;

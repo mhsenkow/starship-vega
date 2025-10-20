@@ -1,0 +1,354 @@
+/* Comprehensive Button System */
+/* Based on visual hierarchy: Primary, Secondary, Tertiary, Ghost (outline), Ghost (no outline), Icon */
+
+/* Base Button Styles */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  font-family: var(--font-family-primary);
+  font-weight: var(--typography-fontWeight-medium);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--transition-duration-normal) var(--transition-easing-standard);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  outline: none;
+  border: none;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Button Sizes */
+.button.small {
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--typography-fontSize-sm);
+  min-height: 32px;
+  border-radius: var(--radius-sm);
+}
+
+.button.medium {
+  padding: var(--spacing-3) var(--spacing-4);
+  font-size: var(--typography-fontSize-base);
+  min-height: 40px;
+  border-radius: var(--radius-base);
+}
+
+.button.large {
+  padding: var(--spacing-4) var(--spacing-6);
+  font-size: var(--typography-fontSize-lg);
+  min-height: 48px;
+  border-radius: var(--radius-lg);
+}
+
+/* Icon-only buttons */
+.button.iconOnly {
+  padding: var(--spacing-2);
+  min-width: 32px;
+  width: 32px;
+  height: 32px;
+}
+
+.button.iconOnly.medium {
+  min-width: 40px;
+  width: 40px;
+  height: 40px;
+}
+
+.button.iconOnly.large {
+  min-width: 48px;
+  width: 48px;
+  height: 48px;
+}
+
+/* Button Variants - Floating Style (rounded, standalone) */
+.button.floating {
+  box-shadow: var(--shadow-sm);
+}
+
+.button.floating:hover:not(:disabled) {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.button.floating:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Button Variants - Embedded Style (in bars, panels) */
+.button.embedded {
+  box-shadow: none;
+  border-radius: var(--radius-sm);
+}
+
+.button.embedded:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Primary Button - Highest visual hierarchy */
+.button.primary {
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.button.primary:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.button.primary:active:not(:disabled) {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.button.primary:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+/* Secondary Button - Medium visual hierarchy */
+.button.secondary {
+  background: var(--color-secondary);
+  color: var(--color-text-on-secondary);
+  border: 1px solid var(--color-secondary);
+}
+
+.button.secondary:hover:not(:disabled) {
+  background: var(--color-secondary-dark);
+  border-color: var(--color-secondary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.button.secondary:active:not(:disabled) {
+  background: var(--color-secondary-dark);
+  border-color: var(--color-secondary-dark);
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.button.secondary:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-secondary-light);
+}
+
+/* Tertiary Button - Lower visual hierarchy */
+.button.tertiary {
+  background: var(--color-tertiary-light);
+  color: var(--color-tertiary-dark);
+  border: 1px solid var(--color-tertiary);
+}
+
+.button.tertiary:hover:not(:disabled) {
+  background: var(--color-tertiary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-tertiary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.button.tertiary:active:not(:disabled) {
+  background: var(--color-tertiary-dark);
+  color: var(--color-text-inverse);
+  border-color: var(--color-tertiary-dark);
+  transform: translateY(0);
+}
+
+.button.tertiary:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-tertiary-light);
+}
+
+/* Ghost Button with Outline */
+.button.ghostOutline {
+  background: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+
+.button.ghostOutline:hover:not(:disabled) {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.button.ghostOutline:active:not(:disabled) {
+  background: var(--color-primary-light);
+  transform: translateY(0);
+}
+
+.button.ghostOutline:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+/* Ghost Button without Outline */
+.button.ghost {
+  background: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid transparent;
+}
+
+.button.ghost:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.button.ghost:active:not(:disabled) {
+  background: var(--color-surface-active);
+  transform: translateY(0);
+}
+
+.button.ghost:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-border-light);
+}
+
+/* Icon Button - Minimal visual footprint */
+.button.icon {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid transparent;
+  padding: var(--spacing-2);
+}
+
+.button.icon:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  transform: scale(1.05);
+}
+
+.button.icon:active:not(:disabled) {
+  background: var(--color-surface-active);
+}
+
+.button.icon:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-border-light);
+}
+
+/* Danger Button */
+.button.danger {
+  background: var(--color-error);
+  color: var(--color-text-inverse);
+  border: 1px solid var(--color-error);
+}
+
+.button.danger:hover:not(:disabled) {
+  background: var(--color-error-dark);
+  border-color: var(--color-error-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.button.danger:active:not(:disabled) {
+  background: var(--color-error-dark);
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.button.danger:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-error-light);
+}
+
+/* Success Button */
+.button.success {
+  background: var(--color-success);
+  color: var(--color-text-inverse);
+  border: 1px solid var(--color-success);
+}
+
+.button.success:hover:not(:disabled) {
+  background: var(--color-success-dark);
+  border-color: var(--color-success-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.button.success:active:not(:disabled) {
+  background: var(--color-success-dark);
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.button.success:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-success-light);
+}
+
+/* Special States */
+.button.loading {
+  position: relative;
+  color: transparent;
+}
+
+.button.loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: button-spin 1s linear infinite;
+}
+
+@keyframes button-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Full Width */
+.button.fullWidth {
+  width: 100%;
+}
+
+/* Button Groups */
+.buttonGroup {
+  display: flex;
+  gap: var(--spacing-1);
+}
+
+.buttonGroup.embedded {
+  background: var(--color-surface-secondary);
+  padding: var(--spacing-1);
+  border-radius: var(--radius-base);
+  border: 1px solid var(--color-border-light);
+}
+
+.buttonGroup.embedded .button {
+  border-radius: var(--radius-sm);
+}
+
+.buttonGroup.floating {
+  gap: var(--spacing-2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .button.medium {
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--typography-fontSize-sm);
+    min-height: 36px;
+  }
+  
+  .button.large {
+    padding: var(--spacing-3) var(--spacing-4);
+    font-size: var(--typography-fontSize-base);
+    min-height: 44px;
+  }
+}

@@ -1,129 +1,8 @@
 import { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import styles from './SnapshotPanel.module.css';
 import { storeSnapshot, getAllSnapshots, deleteSnapshot, Snapshot } from '../../utils/indexedDB';
 import { createSnapshot } from '../../utils/chartRenderer';
 import { DatasetMetadata } from '../../types/dataset';
-
-const PanelContainer = styled.div`
-  padding: 16px;
-  background: var(--color-surface);
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-`;
-
-const Title = styled.h3`
-  margin-top: 0;
-  margin-bottom: 16px;
-  color: var(--color-text-primary);
-  font-size: 1.1rem;
-`;
-
-const SnapshotGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 12px;
-  margin-top: 16px;
-`;
-
-const SnapshotCard = styled.div`
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const SnapshotThumbnail = styled.div`
-  height: 120px;
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-  cursor: pointer;
-`;
-
-const SnapshotInfo = styled.div`
-  padding: 8px;
-  font-size: 0.9rem;
-`;
-
-const SnapshotName = styled.div`
-  font-weight: 500;
-  color: var(--color-text-primary);
-  margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
-const SnapshotDate = styled.div`
-  font-size: 0.8rem;
-  color: var(--color-text-secondary);
-`;
-
-const ActionButtons = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-top: 8px;
-`;
-
-const Button = styled.button<{ $primary?: boolean; $disabled?: boolean }>`
-  padding: 6px 12px;
-  background: ${props => props.$disabled ? '#e9ecef' : props.$primary ? props.theme.colors.primary : '#f1f3f5'};
-  color: ${props => props.$disabled ? '#adb5bd' : props.$primary ? 'white' : props.theme.colors.text.primary};
-  border: none;
-  border-radius: 4px;
-  cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
-  font-size: 0.85rem;
-  
-  &:hover {
-    background: ${props => props.$disabled ? '#e9ecef' : props.$primary ? '#1976d2' : '#e9ecef'};
-  }
-`;
-
-const DeleteButton = styled.button`
-  padding: 4px 8px;
-  background: transparent;
-  color: var(--color-error);
-  border: none;
-  font-size: 0.8rem;
-  cursor: pointer;
-  border-radius: 4px;
-  
-  &:hover {
-    background: #ffebee;
-  }
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 20px;
-  color: var(--color-text-secondary);
-  background: var(--color-background);
-  border-radius: 8px;
-  border: 1px dashed var(--color-border);
-`;
-
-const StatusMessage = styled.div<{ $error?: boolean }>`
-  padding: 10px;
-  margin: 10px 0;
-  background-color: ${props => props.$error ? '#fff5f5' : '#ebfbee'};
-  color: ${props => props.$error ? '#e03131' : '#2b8a3e'};
-  border-radius: 4px;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  
-  &::before {
-    content: ${props => props.$error ? '"⚠️"' : '"ℹ️"'};
-    margin-right: 8px;
-  }
-`;
 
 interface SnapshotPanelProps {
   chartId: string;
@@ -149,176 +28,195 @@ export const SnapshotPanel = ({
   useEffect(() => {
     loadSnapshots();
   }, [chartId]);
-  
-  // Clear error when vegaView changes
-  useEffect(() => {
-    if (vegaView) {
-      setError(null);
-      setMessage('Chart is ready for snapshots');
-      
-      // Clear message after 3 seconds
-      const timeoutId = setTimeout(() => setMessage(null), 3000);
-      return () => clearTimeout(timeoutId);
-    } else {
-      setError('Chart view is not ready. Try clicking on the chart area first.');
-    }
-  }, [vegaView]);
 
   const loadSnapshots = async () => {
     try {
-      setIsLoading(true);
       const allSnapshots = await getAllSnapshots();
-      const filteredSnapshots = allSnapshots.filter(s => s.chartId === chartId);
-      setSnapshots(filteredSnapshots);
-    } catch (error) {
-      console.error('Failed to load snapshots:', error);
-      setError('Failed to load snapshots. Please try refreshing the page.');
-    } finally {
-      setIsLoading(false);
+      const chartSnapshots = allSnapshots.filter(s => s.chartId === chartId);
+      setSnapshots(chartSnapshots);
+    } catch (err) {
+      console.error('Error loading snapshots:', err);
+      setError('Failed to load snapshots');
     }
   };
 
   const handleTakeSnapshot = async () => {
-    // Clear any previous messages/errors
-    setError(null);
-    setMessage(null);
-    
-    if (!vegaView) {
-      setError('Cannot take snapshot: Vega view is not available. Try clicking on the chart area first.');
-      console.error('Vega view is not available');
+    if (!currentSpec || !vegaView) {
+      setError('No chart data available');
       return;
     }
-    
+
+    setIsLoading(true);
+    setError(null);
+
     try {
-      setIsLoading(true);
-      
-      console.log('Taking snapshot with vegaView:', vegaView);
-      
-      // Create a thumbnail from the current view
       const thumbnail = await createSnapshot(vegaView);
       
-      // Create a name if not provided
-      const name = snapshotName || `Snapshot ${new Date().toLocaleString()}`;
-      
-      // Create snapshot object
-      const snapshot: Snapshot = {
-        id: `snap-${Date.now()}`,
-        name,
+      const snapshotData: Snapshot = {
+        id: Date.now().toString(),
         chartId,
+        name: snapshotName || `Snapshot ${new Date().toLocaleString()}`,
         spec: currentSpec,
         createdAt: new Date().toISOString(),
-        thumbnail
-      };
-      
-      // Add dataset information if available
-      if (currentDataset) {
-        snapshot.datasetId = currentDataset.id;
-        snapshot.datasetFingerprint = currentDataset.fingerprint;
-        
-        // Store essential dataset metadata for historical context
-        snapshot.datasetMetadata = {
-          id: currentDataset.id,
+        thumbnail: thumbnail, // Add the thumbnail data URL
+        datasetId: currentDataset?.id,
+        datasetMetadata: currentDataset ? {
           name: currentDataset.name,
           description: currentDataset.description,
-          source: currentDataset.source,
-          origin: currentDataset.origin,
-          tags: currentDataset.tags,
-          createdAt: currentDataset.createdAt,
-          rowCount: currentDataset.rowCount,
-          columnCount: currentDataset.columnCount
-        };
-      }
-      
-      // Store in database
-      await storeSnapshot(snapshot);
-      
-      // Reset name and reload
+          columns: currentDataset.columns,
+          rowCount: currentDataset.rowCount
+        } : undefined
+      };
+
+      await storeSnapshot(snapshotData);
+      setSnapshots(prev => [...prev, snapshotData]);
       setSnapshotName('');
       setMessage('Snapshot saved successfully!');
-      await loadSnapshots();
-    } catch (error) {
-      console.error('Failed to take snapshot:', error);
-      setError(`Failed to take snapshot: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err) {
+      console.error('Error taking snapshot:', err);
+      setError('Failed to take snapshot');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeleteSnapshot = async (id: string) => {
+  const handleLoadSnapshot = (snapshot: Snapshot) => {
     try {
-      await deleteSnapshot(id);
-      await loadSnapshots();
-    } catch (error) {
-      console.error('Failed to delete snapshot:', error);
+      onLoadSnapshot(snapshot.spec);
+      setMessage(`Loaded snapshot: ${snapshot.name}`);
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err) {
+      console.error('Error loading snapshot:', err);
+      setError('Failed to load snapshot');
     }
   };
 
-  const handleLoadSnapshot = (snapshot: Snapshot) => {
-    onLoadSnapshot(snapshot.spec);
+  const handleDeleteSnapshot = async (snapshotId: string) => {
+    try {
+      await deleteSnapshot(snapshotId);
+      setSnapshots(prev => prev.filter(s => s.id !== snapshotId));
+      setMessage('Snapshot deleted');
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err) {
+      console.error('Error deleting snapshot:', err);
+      setError('Failed to delete snapshot');
+    }
   };
 
   return (
-    <PanelContainer>
-      <Title>Snapshots</Title>
+    <div className={styles.panelContainer}>
+      <h3 className={styles.title}>Snapshots</h3>
       
-      <div>
+      {error && (
+        <div style={{ color: 'red', marginBottom: '16px' }}>
+          {error}
+        </div>
+      )}
+      
+      {message && (
+        <div style={{ color: 'green', marginBottom: '16px' }}>
+          {message}
+        </div>
+      )}
+
+      <div style={{ marginBottom: '16px' }}>
         <input
           type="text"
           placeholder="Snapshot name (optional)"
           value={snapshotName}
           onChange={(e) => setSnapshotName(e.target.value)}
-          style={{ 
-            padding: '8px', 
-            borderRadius: '4px', 
-            border: '1px solid #ced4da', 
-            width: '70%' 
+          style={{
+            width: '100%',
+            padding: '8px',
+            border: '1px solid var(--color-border)',
+            borderRadius: '4px',
+            marginBottom: '8px',
+            backgroundColor: 'var(--color-surface-primary)',
+            color: 'var(--color-text-primary)'
           }}
         />
-        <Button 
-          $primary 
-          $disabled={isLoading || !vegaView}
+        <button
           onClick={handleTakeSnapshot}
-          disabled={isLoading || !vegaView}
-          style={{ marginLeft: '8px' }}
-          title={!vegaView ? "Chart needs to be fully loaded before taking a snapshot" : ""}
+          disabled={isLoading || !currentSpec}
+          style={{
+            width: '100%',
+            padding: '8px 16px',
+            background: 'var(--color-primary)',
+            color: 'var(--color-surface)',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: isLoading ? 'not-allowed' : 'pointer'
+          }}
         >
-          {isLoading ? 'Saving...' : 'Take Snapshot'}
-        </Button>
+          {isLoading ? 'Taking Snapshot...' : 'Take Snapshot'}
+        </button>
       </div>
-      
-      {error && <StatusMessage $error>{error}</StatusMessage>}
-      {message && <StatusMessage>{message}</StatusMessage>}
-      
+
       {snapshots.length === 0 ? (
-        <EmptyState>
+        <p style={{ color: 'var(--color-text-secondary)', textAlign: 'center', marginTop: '32px' }}>
           No snapshots yet. Take a snapshot to save the current chart state.
-        </EmptyState>
+        </p>
       ) : (
-        <SnapshotGrid>
-          {snapshots.map(snapshot => (
-            <SnapshotCard key={snapshot.id}>
-              <SnapshotThumbnail 
-                style={{ backgroundImage: `url(${snapshot.thumbnail})` }}
+        <div className={styles.snapshotGrid}>
+          {snapshots.map((snapshot) => (
+            <div key={snapshot.id} className={styles.snapshotCard}>
+              <div
+                style={{
+                  height: '120px',
+                  backgroundImage: `url(${snapshot.thumbnail})`,
+                  backgroundSize: 'contain',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                  cursor: 'pointer',
+                  marginBottom: '8px'
+                }}
                 onClick={() => handleLoadSnapshot(snapshot)}
               />
-              <SnapshotInfo>
-                <SnapshotName>{snapshot.name}</SnapshotName>
-                <SnapshotDate>
-                  {new Date(snapshot.createdAt).toLocaleString()}
-                </SnapshotDate>
-                <ActionButtons>
-                  <Button onClick={() => handleLoadSnapshot(snapshot)}>
+              <div style={{ padding: '8px' }}>
+                <div style={{ fontWeight: '500', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {snapshot.name}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: '8px' }}>
+                  {new Date(snapshot.createdAt).toLocaleDateString()}
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => handleLoadSnapshot(snapshot)}
+                    style={{
+                      flex: 1,
+                      padding: '4px 8px',
+                      background: 'var(--color-primary)',
+                      color: 'var(--color-surface)',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem'
+                    }}
+                  >
                     Load
-                  </Button>
-                  <DeleteButton onClick={() => handleDeleteSnapshot(snapshot.id)}>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteSnapshot(snapshot.id)}
+                    style={{
+                      flex: 1,
+                      padding: '4px 8px',
+                      background: 'var(--color-error)',
+                      color: 'var(--color-surface)',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem'
+                    }}
+                  >
                     Delete
-                  </DeleteButton>
-                </ActionButtons>
-              </SnapshotInfo>
-            </SnapshotCard>
+                  </button>
+                </div>
+              </div>
+            </div>
           ))}
-        </SnapshotGrid>
+        </div>
       )}
-    </PanelContainer>
+    </div>
   );
-}; 
+};

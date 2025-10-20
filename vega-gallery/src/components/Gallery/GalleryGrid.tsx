@@ -1,30 +1,9 @@
-import styled from 'styled-components'
 import { useState, useMemo, lazy, Suspense } from 'react'
 import { FilterBar } from './FilterBar'
 import { ChartConfig, ChartCategory, Complexity } from '../../types/chart'
 import { sampleCharts } from '../../charts/sampleCharts'
 import { ChartFilter } from './ChartFilter'
-
-const Container = styled.div`
-  padding: 24px;
-`
-
-const Grid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 32px;
-  margin-top: 24px;
-  
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 24px;
-  }
-  
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-`
+import styles from './GalleryGrid.module.css'
 
 interface GalleryGridProps {
   onChartSelect: (chartId: string) => void;
@@ -75,7 +54,7 @@ export const GalleryGrid = ({ onChartSelect }: GalleryGridProps) => {
   }, [filteredCharts, sortBy])
 
   return (
-    <Container>
+    <div className={styles.container}>
       <FilterBar
         category={category}
         complexity={complexity}
@@ -87,7 +66,7 @@ export const GalleryGrid = ({ onChartSelect }: GalleryGridProps) => {
         onSearchChange={setSearchTerm}
         onSortChange={setSortBy}
       />
-      <Grid>
+      <div className={styles.grid}>
         <Suspense fallback={<div>Loading...</div>}>
           {sortedCharts.map(chart => (
             <LazyChartCard 
@@ -97,7 +76,7 @@ export const GalleryGrid = ({ onChartSelect }: GalleryGridProps) => {
             />
           ))}
         </Suspense>
-      </Grid>
-    </Container>
+      </div>
+    </div>
   )
 }

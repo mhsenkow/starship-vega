@@ -1,0 +1,1092 @@
+/* VisualEditor Component Styles */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  padding: var(--spacing-4);
+  box-shadow: var(--elevation-sm);
+}
+
+.sectionTitle {
+  font-size: var(--typography-fontSize-lg);
+  font-weight: var(--typography-fontWeight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-3) 0;
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.control {
+  margin-bottom: var(--spacing-3);
+}
+
+.control:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-weight: var(--typography-fontWeight-medium);
+  color: var(--color-text-primary);
+  font-size: var(--typography-fontSize-sm);
+}
+
+.select {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-size: var(--typography-fontSize-sm);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
+}
+
+.select:hover {
+  border-color: var(--color-primary);
+}
+
+.select option {
+  background: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+.encodingGrid {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: var(--spacing-md);
+  align-items: start;
+}
+
+.encodingControl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.typeButtons {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.typeButton {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: var(--typography-fontSize-xs);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.typeButton.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.typeButton:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
+}
+
+.typeButton.active:hover {
+  background: var(--color-primary);
+  color: white;
+}
+
+.datasetGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.datasetCard {
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.datasetCard.active {
+  border-color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb), 0.1);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
+}
+
+.datasetCard:hover:not(.disabled) {
+  border-color: var(--color-primary);
+  background: var(--color-surface-hover);
+  box-shadow: var(--elevation-md);
+}
+
+.datasetCard.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.datasetName {
+  font-weight: var(--typography-fontWeight-medium);
+  margin-bottom: var(--spacing-xs);
+  color: var(--color-text-primary);
+  font-size: var(--typography-fontSize-sm);
+}
+
+.datasetDescription {
+  font-size: var(--typography-fontSize-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--typography-lineHeight-relaxed);
+}
+
+.randomizeButton {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: var(--typography-fontSize-sm);
+  transition: all var(--transition-fast);
+  margin-top: var(--spacing-md);
+}
+
+.randomizeButton:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.randomizeButton:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
+}
+
+.encodingHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.markTypeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
+.markTypeCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.markTypeCard.active {
+  border-color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb), 0.1);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
+}
+
+.markTypeCard:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface-hover);
+  box-shadow: var(--elevation-md);
+}
+
+.markIcon {
+  font-size: 24px;
+  margin-bottom: 8px;
+  color: var(--color-text-primary);
+}
+
+.markName {
+  font-size: var(--typography-fontSize-sm);
+  font-weight: var(--typography-fontWeight-medium);
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+.markTooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--typography-fontSize-xs);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+  z-index: 1000;
+  margin-bottom: var(--spacing-xs);
+  box-shadow: var(--elevation-md);
+  border: 1px solid var(--color-border);
+}
+
+.markTypeCard:hover .markTooltip {
+  opacity: 1;
+}
+
+.markInfo {
+  text-align: center;
+}
+
+.markDescription {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-xs);
+  line-height: var(--typography-lineHeight-relaxed);
+}
+
+.datasetInfo {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--color-background);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  font-size: var(--typography-fontSize-sm);
+  color: var(--color-text-secondary);
+}
+
+.encodingRow {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  gap: var(--spacing-md);
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.encodingLabel {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  font-weight: var(--typography-fontWeight-medium);
+}
+
+.encodingTypeControls {
+  display: flex;
+  gap: 4px;
+}
+
+.encodingHint {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  grid-column: 2;
+}
+
+.encodingPreview {
+  padding: var(--spacing-sm);
+  background: var(--color-background);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  font-family: var(--typography-fontFamily-mono);
+  font-size: var(--typography-fontSize-xs);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-sm);
+}
+
+.accordion {
+  margin-bottom: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  overflow: hidden;
+}
+
+.accordionHeader {
+  width: 100%;
+  padding: var(--spacing-md);
+  background: var(--color-surface);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color var(--transition-fast);
+  color: var(--color-text-primary);
+  font-weight: var(--typography-fontWeight-medium);
+}
+
+.accordionHeader:hover {
+  background: var(--color-surface-hover);
+}
+
+.accordionHeader::after {
+  content: '▼';
+  transition: transform var(--transition-fast);
+  font-size: var(--typography-fontSize-sm);
+}
+
+.accordionHeader.closed::after {
+  transform: rotate(-90deg);
+}
+
+.accordionContent {
+  padding: 0;
+  height: 0;
+  overflow: hidden;
+  transition: height var(--transition-normal);
+}
+
+.accordionContent.open {
+  height: auto;
+  padding: var(--spacing-md);
+}
+
+.actionButton {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: var(--typography-fontWeight-medium);
+  transition: all var(--transition-fast);
+  margin-top: var(--spacing-md);
+}
+
+.actionButton:hover {
+  background: var(--color-primary-dark);
+  box-shadow: var(--elevation-md);
+}
+
+.actionButton:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.3);
+}
+
+.actionButton:disabled {
+  background: var(--color-text-disabled);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.recommendationCard {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+  margin-bottom: var(--spacing-sm);
+}
+
+.recommendationCard.active {
+  border-color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb), 0.1);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
+}
+
+.recommendationCard:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface-hover);
+  box-shadow: var(--elevation-md);
+}
+
+.recommendationTitle {
+  font-weight: var(--typography-fontWeight-medium);
+  margin-bottom: var(--spacing-xs);
+  color: var(--color-text-primary);
+}
+
+.recommendationReason {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.confidenceBadge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: var(--typography-fontSize-xs);
+  font-weight: var(--typography-fontWeight-medium);
+  background: var(--color-success);
+  color: white;
+}
+
+.confidenceBadge.low {
+  background: var(--color-warning);
+}
+
+.confidenceBadge.medium {
+  background: var(--color-info);
+}
+
+.confidenceBadge.high {
+  background: var(--color-success);
+}
+
+.dataTabsContainer {
+  display: flex;
+  background: var(--color-surface-secondary);
+  border-radius: var(--radius-base);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-1);
+  margin-bottom: var(--spacing-4);
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+}
+
+.dataTabsContainer > * {
+  flex: 1;
+  display: flex;
+}
+
+.dataTabsContainer button {
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tabContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-3);
+}
+
+.encodingOptionSelect {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-size: var(--typography-fontSize-sm);
+  cursor: pointer;
+}
+
+.droppableEncodingControl {
+  padding: var(--spacing-3);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-base);
+  background: var(--color-surface);
+  transition: all var(--transition-duration-normal) var(--transition-easing-standard);
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+}
+
+.droppableEncodingControl.canDrop {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.droppableEncodingControl.isOver {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  transform: scale(1.01);
+  box-shadow: var(--shadow-md);
+}
+
+.columnTokenContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+}
+
+.dropHint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  font-size: var(--typography-fontSize-sm);
+  gap: var(--spacing-2);
+  padding: var(--spacing-4);
+  text-align: center;
+}
+
+.dragIcon {
+  font-size: var(--typography-fontSize-xl);
+  color: var(--color-text-tertiary);
+  opacity: 0.6;
+}
+
+.columnTypeSection {
+  margin-bottom: 16px;
+}
+
+.columnTypeHeading {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--typography-fontSize-sm);
+  font-weight: var(--typography-fontWeight-semibold);
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--spacing-xs);
+}
+
+.availableColumnsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  margin-top: var(--spacing-4);
+  padding: var(--spacing-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+}
+
+.columnTypeSection {
+  background: var(--color-background-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  padding: var(--spacing-3);
+}
+
+.columnTypeHeading {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--typography-fontSize-sm);
+  font-weight: var(--typography-fontWeight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-3);
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-md);
+    gap: var(--spacing-md);
+  }
+  
+  .section {
+    padding: var(--spacing-md);
+  }
+  
+  .datasetGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .markTypeGrid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+  
+  .encodingGrid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+  
+  .encodingRow {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+}
+
+/* Mark Type Grid Styles */
+.markTypeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.markTypeCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: center;
+}
+
+.markTypeCard:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--elevation-md);
+}
+
+.markTypeCard.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+.markIcon {
+  font-size: 24px;
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-text-secondary);
+}
+
+.markTypeCard.active .markIcon {
+  color: var(--color-primary);
+}
+
+.markName {
+  font-size: var(--typography-fontSize-sm);
+  font-weight: var(--typography-fontWeight-medium);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.markTooltip {
+  font-size: var(--typography-fontSize-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.markInfo {
+  /* Tooltip content styling - intentionally empty for now */
+  display: none;
+}
+
+.markDescription {
+  margin-bottom: var(--spacing-xs);
+}
+
+/* Button Styles */
+.randomizeButton,
+.templateButton,
+.recommendButton {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: var(--typography-fontSize-sm);
+  font-weight: var(--typography-fontWeight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.randomizeButton:hover,
+.templateButton:hover,
+.recommendButton:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.randomizeButton:active,
+.templateButton:active,
+.recommendButton:active {
+  transform: translateY(0);
+  background: var(--color-surface-active);
+}
+
+/* Action Button Styles */
+.actionButton {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--typography-fontSize-sm);
+  font-weight: var(--typography-fontWeight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.actionButton:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.actionButton:active {
+  transform: translateY(0);
+  background: var(--color-primary-darker);
+}
+
+/* Recommendation Card Styles */
+.recommendationCard {
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-bottom: var(--spacing-sm);
+}
+
+.recommendationCard:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--elevation-md);
+}
+
+.recommendationTitle {
+  font-size: var(--typography-fontSize-base);
+  font-weight: var(--typography-fontWeight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.recommendationReason {
+  font-size: var(--typography-fontSize-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xs);
+  line-height: 1.4;
+}
+
+.confidenceBadge {
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: var(--typography-fontSize-xs);
+  font-weight: var(--typography-fontWeight-medium);
+  background: var(--color-success-light);
+  color: var(--color-success-dark);
+}
+
+.confidenceBadge.confidence-90,
+.confidenceBadge.confidence-100 {
+  background: var(--color-success-light);
+  color: var(--color-success-dark);
+}
+
+.confidenceBadge.confidence-70,
+.confidenceBadge.confidence-80 {
+  background: var(--color-warning-light);
+  color: var(--color-warning-dark);
+}
+
+.confidenceBadge.confidence-50,
+.confidenceBadge.confidence-60 {
+  background: var(--color-error-light);
+  color: var(--color-error-dark);
+}
+
+/* Available Columns Container */
+.availableColumnsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.columnTypeSection {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  padding: var(--spacing-md);
+}
+
+.columnTypeHeading {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--typography-fontSize-sm);
+  font-weight: var(--typography-fontWeight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.columnTokenContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+}
+
+/* Droppable Encoding Control */
+.droppableEncodingControl {
+  padding: var(--spacing-3);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-base);
+  background: var(--color-surface);
+  transition: all var(--transition-fast);
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+  min-width: 200px;
+}
+
+.droppableEncodingControl.canDrop {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.droppableEncodingControl.isOver {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  transform: scale(1.02);
+}
+
+.dropHint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  font-size: var(--typography-fontSize-sm);
+  gap: var(--spacing-xs);
+}
+
+.dragIcon {
+  font-size: var(--typography-fontSize-lg);
+  color: var(--color-text-secondary);
+}
+
+/* Encoding Option Select */
+.encodingOptionSelect {
+  width: 100%;
+  min-width: 200px;
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: var(--typography-fontSize-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.encodingOptionSelect:hover {
+  border-color: var(--color-primary);
+}
+
+.encodingOptionSelect:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+/* Type Buttons */
+.typeButtons {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.encodingTypeButton {
+  padding: var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: var(--typography-fontSize-sm);
+  cursor: pointer;
+  transition: all var(--transition-duration-normal) var(--transition-easing-standard);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  box-shadow: var(--shadow-sm);
+}
+
+.encodingTypeButton:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.encodingTypeButton.active {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.encodingTypeButton.active:hover {
+  background: var(--color-primary-dark);
+  color: var(--color-primary-contrast);
+  transform: translateY(-1px);
+}
+
+.encodingTypeButton.compatible {
+  opacity: 1;
+}
+
+.encodingTypeButton.incompatible {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.encodingTypeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Encoding Row */
+.encodingRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  margin-bottom: var(--spacing-2);
+  min-height: 50px;
+}
+
+.encodingLabel {
+  font-size: var(--typography-fontSize-sm);
+  font-weight: var(--typography-fontWeight-medium);
+  color: var(--color-text-primary);
+  min-width: 120px;
+  flex-shrink: 0;
+  text-align: left;
+}
+
+.encodingTypeControls {
+  display: flex;
+  gap: var(--spacing-2);
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+/* Section Title */
+.sectionTitle {
+  font-size: var(--typography-fontSize-base);
+  font-weight: var(--typography-fontWeight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-md) 0;
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Description text */
+.description {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-4);
+  font-size: var(--typography-fontSize-sm);
+  line-height: var(--typography-lineHeight-relaxed);
+}
+
+/* Button group */
+.buttonGroup {
+  display: flex;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+}
+
+/* Template section */
+.templateSection {
+  margin-bottom: var(--spacing-3);
+}
+
+.templateGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+}
+
+.templateHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.templateIcon {
+  font-size: var(--typography-fontSize-xl);
+}
+
+/* Recommendation section */
+.recommendationSection {
+  margin-bottom: var(--spacing-3);
+}
+
+.suggestionText {
+  font-size: var(--typography-fontSize-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Columns section */
+.columnsSection {
+  margin-top: var(--spacing-3);
+}
+
+/* Encodings section */
+.encodingsSection {
+  margin-top: var(--spacing-3);
+}
+
+/* Filter select */
+.filterSelect {
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--typography-fontSize-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  position: relative;
+  z-index: 999999;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filterSelect:hover {
+  border-color: var(--color-primary);
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}

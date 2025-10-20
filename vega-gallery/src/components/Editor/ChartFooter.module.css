@@ -1,0 +1,161 @@
+/* ChartFooter Component Styles */
+.footerContainer {
+  border-top: 1px solid var(--color-border);
+  background: var(--color-background);
+  padding: var(--spacing-md);
+}
+
+.tableContainer {
+  border-radius: var(--radius-base);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  overflow: hidden;
+  transition: all var(--transition-normal);
+}
+
+.tableContainer.open {
+  max-height: 400px;
+  opacity: 1;
+}
+
+.tableContainer.closed {
+  max-height: 0;
+  opacity: 0;
+  border: none;
+}
+
+.tableScroller {
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--typography-fontSize-sm);
+}
+
+.table th,
+.table td {
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table th {
+  background: var(--color-surface-secondary);
+  font-weight: var(--typography-fontWeight-medium);
+  color: var(--color-text-secondary);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.table tbody tr:hover {
+  background: var(--color-surface-hover);
+}
+
+.dataSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-surface-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.summaryText {
+  font-size: var(--typography-fontSize-sm);
+  color: var(--color-text-secondary);
+}
+
+.viewDataButton {
+  background: var(--color-primary);
+  color: var(--color-surface);
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--typography-fontSize-xs);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.viewDataButton:hover {
+  background: var(--color-primary-dark);
+}
+
+.samplingContainer {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-surface-tertiary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sampleOption {
+  font-size: var(--typography-fontSize-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-xs);
+  transition: all var(--transition-fast);
+}
+
+.sampleOption.active {
+  background: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.sampleOption:hover {
+  background: var(--color-surface-hover);
+}
+
+.samplingIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-info-light);
+  color: var(--color-info-dark);
+  border-radius: var(--radius-sm);
+  font-size: var(--typography-fontSize-xs);
+  font-weight: var(--typography-fontWeight-medium);
+}
+
+.paginationContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-surface-secondary);
+  border-top: 1px solid var(--color-border);
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.rowsPerPageSelect {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-size: var(--typography-fontSize-xs);
+  color: var(--color-text-primary);
+}
+
+.buttonContainer {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.iconWrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

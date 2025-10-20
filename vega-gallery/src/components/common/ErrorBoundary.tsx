@@ -1,46 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import styled from 'styled-components';
-
-const ErrorContainer = styled.div`
-  padding: 20px;
-  margin: 20px 0;
-  border-radius: 8px;
-  background-color: #ffebee;
-  border: 1px solid #ffcdd2;
-`;
-
-const ErrorTitle = styled.h2`
-  color: #c62828;
-  margin-top: 0;
-`;
-
-const ErrorMessage = styled.p`
-  color: #b71c1c;
-`;
-
-const ErrorDetails = styled.pre`
-  background-color: #f5f5f5;
-  padding: 10px;
-  border-radius: 4px;
-  overflow: auto;
-  font-size: 12px;
-  max-height: 200px;
-`;
-
-const ReloadButton = styled.button`
-  background-color: #2196f3;
-  color: var(--color-surface);
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  margin-top: 16px;
-
-  &:hover {
-    background-color: var(--color-primary);
-  }
-`;
+import styles from './ErrorBoundary.module.css';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -89,20 +48,20 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       }
       
       return (
-        <ErrorContainer>
-          <ErrorTitle>Something went wrong</ErrorTitle>
-          <ErrorMessage>
+        <div className={styles.errorContainer}>
+          <h2 className={styles.errorTitle}>Something went wrong rendering this component.</h2>
+          <p className={styles.errorMessage}>
             {this.state.error?.message || 'An unexpected error occurred'}
-          </ErrorMessage>
+          </p>
           {this.state.errorInfo && (
-            <ErrorDetails>
+            <pre className={styles.errorDetails}>
               {this.state.errorInfo.componentStack}
-            </ErrorDetails>
+            </pre>
           )}
-          <ReloadButton onClick={this.handleReload}>
+          <button className={styles.reloadButton} onClick={this.handleReload}>
             Reload Application
-          </ReloadButton>
-        </ErrorContainer>
+          </button>
+        </div>
       );
     }
 

@@ -1,57 +1,9 @@
 import { useState } from 'react'
-import styled from 'styled-components'
 import { CodeEditor } from './CodeEditor'
 import { VisualEditor } from './VisualEditor'
 import { StyleEditor } from './StyleEditor'
 import { TopLevelSpec } from 'vega-lite'
-
-const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-`
-
-const TabContainer = styled.div`
-  display: flex;
-  gap: 12px;
-  background: var(--color-background);
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-`
-
-const Tab = styled.button<{ $active: boolean }>`
-  padding: 8px 16px;
-  border: none;
-  background: ${props => props.$active ? 'var(--color-surface)' : 'transparent'};
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  color: ${props => props.$active ? 'var(--color-text-primary)' : 'var(--color-text-secondary)'};
-  box-shadow: ${props => props.$active ? `0 2px 4px ${props.theme.mode === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)'}` : 'none'};
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${props => props.$active ? 'var(--color-surface)' : 'var(--color-surface-hover)'};
-  }
-`
-
-const EditorContent = styled.div`
-  flex: 1;
-  min-height: 0;
-`
-
-const EditorPanel = styled.div`
-  height: 100%;
-  overflow-y: auto;
-  background: var(--color-surface);
-`
-
-const PreviewPanel = styled.div`
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-`
+import styles from './TemplateEditor.module.css'
 
 interface TemplateEditorProps {
   spec: string;
@@ -104,21 +56,30 @@ export const TemplateEditor = ({ spec, onChange }: TemplateEditorProps) => {
   }
 
   return (
-    <Container>
-      <TabContainer>
-        <Tab $active={mode === 'visual'} onClick={() => setMode('visual')}>
+    <div className={styles.container}>
+      <div className={styles.tabContainer}>
+        <button 
+          className={`${styles.tab} ${mode === 'visual' ? styles.active : ''}`}
+          onClick={() => setMode('visual')}
+        >
           Visual Editor
-        </Tab>
-        <Tab $active={mode === 'style'} onClick={() => setMode('style')}>
+        </button>
+        <button 
+          className={`${styles.tab} ${mode === 'style' ? styles.active : ''}`}
+          onClick={() => setMode('style')}
+        >
           Style Editor
-        </Tab>
-        <Tab $active={mode === 'code'} onClick={() => setMode('code')}>
+        </button>
+        <button 
+          className={`${styles.tab} ${mode === 'code' ? styles.active : ''}`}
+          onClick={() => setMode('code')}
+        >
           Code Editor
-        </Tab>
-      </TabContainer>
+        </button>
+      </div>
       
-      <EditorContent>
-        <EditorPanel>
+      <div className={styles.editorContent}>
+        <div className={styles.editorPanel}>
           {mode === 'code' ? (
             <CodeEditor value={spec} onChange={onChange} />
           ) : mode === 'style' ? (
@@ -126,8 +87,8 @@ export const TemplateEditor = ({ spec, onChange }: TemplateEditorProps) => {
           ) : (
             <VisualEditor spec={JSON.parse(spec)} onChange={handleVisualChange} />
           )}
-        </EditorPanel>
-      </EditorContent>
-    </Container>
+        </div>
+      </div>
+    </div>
   )
 } 

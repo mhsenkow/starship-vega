@@ -1,100 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import styled from 'styled-components';
 import { exportAllData, importData, calculateDatabaseSize } from '../../utils/exportImport';
+import { Button, ButtonGroup } from '../../design-system/components/ButtonSystem';
+import styles from './ExportImport.module.css';
 
-const Container = styled.div`
-  background: var(--color-surface);
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  padding: 20px;
-  margin-bottom: 20px;
-`;
-
-const Title = styled.h3`
-  margin-top: 0;
-  margin-bottom: 16px;
-  color: var(--color-text-primary);
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  gap: 16px;
-  margin-top: 16px;
-`;
-
-const Button = styled.button`
-  padding: 8px 16px;
-  background-color: var(--color-primary);
-  color: var(--color-surface);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background-color: var(--color-primaryDark);
-  }
-
-  &:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-  }
-`;
-
-const FileInput = styled.input`
-  display: none;
-`;
-
-const ImportButton = styled(Button)`
-  background-color: var(--color-secondary);
-  
-  &:hover {
-    background-color: var(--color-secondaryDark);
-  }
-`;
-
-const MessageContainer = styled.div<{ $success?: boolean }>`
-  margin-top: 16px;
-  padding: 12px;
-  background-color: ${props => props.$success ? '#e6f7e6' : '#fff6f6'};
-  border: 1px solid ${props => props.$success ? '#c3e6c3' : '#f8d7d7'};
-  border-radius: 4px;
-  color: ${props => props.$success ? '#2c662d' : '#9f3a38'};
-`;
-
-const InfoText = styled.p`
-  margin-top: 8px;
-  color: var(--color-text-secondary);
-  font-size: 14px;
-`;
-
-const StatsContainer = styled.div`
-  display: flex;
-  gap: 16px;
-  margin-top: 16px;
-  margin-bottom: 16px;
-  background-color: var(--color-background);
-  padding: 12px;
-  border-radius: 4px;
-`;
-
-const StatItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const StatValue = styled.div`
-  font-size: 1.2rem;
-  font-weight: 500;
-  color: var(--color-text-primary);
-`;
-
-const StatLabel = styled.div`
-  font-size: 0.8rem;
-  color: var(--color-text-secondary);
-`;
+// Styled components removed - using CSS modules instead
 
 export const ExportImport: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
@@ -175,49 +84,58 @@ export const ExportImport: React.FC = () => {
   };
 
   return (
-    <Container>
-      <Title>Export & Import</Title>
+    <div className={styles.container}>
+      <h3 className={styles.title}>Export & Import</h3>
       
-      <InfoText>
+      <p className={styles.description}>
         Export your snapshots and dashboards to share them or create a backup.
         Import previously exported data to restore your snapshots and dashboards.
-      </InfoText>
+      </p>
 
-      <StatsContainer>
-        <StatItem>
-          <StatValue>{dbSize}</StatValue>
-          <StatLabel>Database Size</StatLabel>
-        </StatItem>
-      </StatsContainer>
+      <div className={styles.statsContainer}>
+        <div className={styles.statItem}>
+          <div className={styles.statValue}>{dbSize}</div>
+          <div className={styles.statLabel}>Database Size</div>
+        </div>
+      </div>
       
-      <ButtonContainer>
-        <Button 
-          onClick={handleExport} 
-          disabled={isExporting}
-        >
-          {isExporting ? 'Exporting...' : 'Export All Data'}
-        </Button>
+      <div className={styles.buttonContainer}>
+        <ButtonGroup buttonStyle="floating">
+          <Button 
+            variant="primary"
+            size="medium"
+            onClick={handleExport} 
+            disabled={isExporting}
+            loading={isExporting}
+          >
+            {isExporting ? 'Exporting...' : 'Export All Data'}
+          </Button>
+          
+          <Button 
+            variant="secondary"
+            size="medium"
+            onClick={handleImportClick}
+            disabled={isImporting}
+            loading={isImporting}
+          >
+            {isImporting ? 'Importing...' : 'Import Data'}
+          </Button>
+        </ButtonGroup>
         
-        <ImportButton 
-          onClick={handleImportClick}
-          disabled={isImporting}
-        >
-          {isImporting ? 'Importing...' : 'Import Data'}
-        </ImportButton>
-        
-        <FileInput 
+        <input 
           type="file" 
           ref={fileInputRef} 
           accept=".json" 
           onChange={handleFileSelect}
+          className={styles.fileInput}
         />
-      </ButtonContainer>
+      </div>
       
       {message && (
-        <MessageContainer $success={message.success}>
+        <div className={`${styles.message} ${message.success ? styles.success : styles.error}`}>
           {message.text}
-        </MessageContainer>
+        </div>
       )}
-    </Container>
+    </div>
   );
 }; 

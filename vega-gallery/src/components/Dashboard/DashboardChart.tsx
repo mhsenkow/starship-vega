@@ -1,108 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import styled from 'styled-components';
 import { DashboardChart as DashboardChartType } from '../../types/dashboard';
 import { renderVegaLite } from '../../utils/chartRenderer';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import InfoIcon from '@mui/icons-material/Info';
+import { DeleteOutlineIcon, InfoIcon } from '../common/Icons';
 import { DatasetInfoPanel } from '../Chart/DatasetInfoPanel';
 import { getDataset } from '../../utils/indexedDB';
 import { DataAsset } from '../../types/dataset';
-import { getThemeSpecificChartStyles } from '../../utils/vegaThemes';
-import { useTheme } from '../../styles/ThemeProvider';
-
-const ChartCard = styled.div`
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-height: 300px;
-  position: relative;
-  
-  /* Apply theme-specific container styles */
-  ${(props: any) => {
-    const themeStyles = getThemeSpecificChartStyles();
-    const containerStyle = themeStyles.containerStyle;
-    
-    if (containerStyle && Object.keys(containerStyle).length > 0) {
-      return Object.entries(containerStyle)
-        .map(([key, value]) => `${key.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${value};`)
-        .join(' ');
-    }
-    
-    // Default fallback styling
-    return `
-      background-color: var(--color-surface);
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    `;
-  }}
-`;
-
-const ChartHeader = styled.div`
-  padding: 12px 16px;
-  background-color: var(--color-background);
-  border-bottom: 1px solid var(--color-border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-const ChartTitle = styled.div`
-  font-weight: 500;
-  font-size: 0.95rem;
-  color: var(--color-text-primary);
-`;
-
-const ChartContent = styled.div`
-  flex-grow: 1;
-  position: relative;
-  min-height: 250px;
-  
-  /* Make chart container properly sized */
-  & > div {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  /* Make Vega charts responsive */
-  .vega-embed {
-    width: 100% !important;
-    height: 100% !important;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  /* Ensure SVG expands to fill container */
-  svg {
-    width: 100% !important;
-    height: 100% !important;
-    max-width: 100%;
-  }
-`;
-
-const MetadataContainer = styled.div`
-  padding: 0 16px 16px;
-`;
-
-const ActionButton = styled.button`
-  background: none;
-  border: none;
-  padding: 4px;
-  cursor: pointer;
-  color: var(--color-text-secondary);
-  border-radius: 4px;
-
-  &:hover {
-    background-color: var(--color-surfaceHover);
-    color: var(--color-text-primary);
-  }
-`;
+import { useThemeContext } from '../../styles/ThemeProvider.module';
+import styles from './DashboardChart.module.css';
 
 interface DashboardChartProps {
   chart: DashboardChartType;
@@ -118,7 +22,7 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
   const [dataset, setDataset] = useState<DataAsset | null>(null);
   
   // Get current theme to detect theme changes
-  const { mode: currentTheme } = useTheme();
+  const { mode: currentTheme } = useThemeContext();
   const previousThemeRef = useRef(currentTheme);
   
   // Effect to render the chart
@@ -207,33 +111,36 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
   };
   
   return (
-    <ChartCard>
-      <ChartHeader>
-        <ChartTitle>{chart.snapshot?.name || 'Unnamed Chart'}</ChartTitle>
-        <div>
+    <div className={`${styles.chartCard} ${styles[currentTheme] || ''}`}>
+      <div className={styles.chartHeader}>
+        <div className={styles.chartTitle}>{chart.snapshot?.name || 'Unnamed Chart'}</div>
+        <div className={styles.chartActions}>
           {(dataset || chart.snapshot?.datasetMetadata) && (
-            <ActionButton 
+            <button 
+              className={styles.actionButton}
               onClick={handleToggleMetadata}
               title={showMetadata ? "Hide dataset info" : "Show dataset info"}
             >
-              <InfoIcon fontSize="small" />
-            </ActionButton>
+              <InfoIcon size={16} />
+            </button>
           )}
-          <ActionButton 
+          <button 
+            className={`${styles.actionButton} ${styles.danger}`}
             onClick={() => onRemove(chart.id)}
             title="Remove chart"
           >
-            <DeleteOutlineIcon fontSize="small" />
-          </ActionButton>
+            <DeleteOutlineIcon size={16} />
+          </button>
         </div>
-      </ChartHeader>
-      <ChartContent ref={chartRef} />
-      
-      {showMetadata && dataset && (
-        <MetadataContainer>
-          <DatasetInfoPanel dataset={dataset} />
-        </MetadataContainer>
-      )}
-    </ChartCard>
+      </div>
+      <div className={styles.chartContent}>
+        <div className={styles.chartContainer} ref={chartRef} />
+        {showMetadata && dataset && (
+          <div className={styles.chartMetadata}>
+            <DatasetInfoPanel dataset={dataset} />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }; 

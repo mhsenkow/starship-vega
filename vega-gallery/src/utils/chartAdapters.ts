@@ -4,8 +4,8 @@ import { detectDataTypes } from './dataUtils';
 import { TopLevelSpec } from 'vega-lite';
 
 interface EncodingConfig {
-  x?: { field: string; type: string };
-  y?: { field: string; type: string };
+  x?: { field: string; type: string; bin?: boolean };
+  y?: { field: string; type: string; bin?: boolean };
   color?: { field: string; type: string };
   size?: { field: string; type: string };
   theta?: { field: string; type: string };
@@ -33,7 +33,7 @@ export const determineChartEncodings = (
   chartType: MarkType,
   dataset: DatasetMetadata
 ): EncodingConfig => {
-  const dataTypes = detectDataTypes(dataset.values);
+  const dataTypes = detectDataTypes(dataset.values || []);
   const fields = Object.entries(dataTypes);
   
   // Find fields by type
@@ -49,7 +49,9 @@ export const determineChartEncodings = (
           { field: temporalFields[0], type: 'temporal' },
         y: { field: quantitativeFields[0], type: 'quantitative' },
         color: categoricalFields.length > 1 ? 
-          { field: categoricalFields[1], type: 'nominal' } : undefined
+          { field: categoricalFields[1], type: 'nominal' } : undefined,
+        text: categoricalFields.length > 2 ? 
+          { field: categoricalFields[2], type: 'nominal' } : undefined
       };
 
     case 'line':
@@ -59,7 +61,9 @@ export const determineChartEncodings = (
           { field: quantitativeFields[0], type: 'quantitative' },
         y: { field: quantitativeFields[temporalFields.length ? 0 : 1], type: 'quantitative' },
         color: categoricalFields.length ? 
-          { field: categoricalFields[0], type: 'nominal' } : undefined
+          { field: categoricalFields[0], type: 'nominal' } : undefined,
+        text: categoricalFields.length > 1 ? 
+          { field: categoricalFields[1], type: 'nominal' } : undefined
       };
 
     case 'point':
@@ -73,13 +77,17 @@ export const determineChartEncodings = (
         size: quantitativeFields[2] ? 
           { field: quantitativeFields[2], type: 'quantitative' } : undefined,
         color: categoricalFields.length ? 
-          { field: categoricalFields[0], type: 'nominal' } : undefined
+          { field: categoricalFields[0], type: 'nominal' } : undefined,
+        text: categoricalFields.length > 1 ? 
+          { field: categoricalFields[1], type: 'nominal' } : undefined
       };
 
     case 'arc':
       return {
         theta: { field: quantitativeFields[0], type: 'quantitative' },
-        color: { field: categoricalFields[0], type: 'nominal' }
+        color: { field: categoricalFields[0], type: 'nominal' },
+        text: categoricalFields.length > 1 ? 
+          { field: categoricalFields[1], type: 'nominal' } : undefined
       };
 
     case 'boxplot':
@@ -95,7 +103,9 @@ export const determineChartEncodings = (
         x: { field: categoricalFields[0], type: 'nominal' },
         y: { field: quantitativeFields[0], type: 'quantitative' },
         color: categoricalFields.length > 1 ? 
-          { field: categoricalFields[1], type: 'nominal' } : undefined
+          { field: categoricalFields[1], type: 'nominal' } : undefined,
+        text: categoricalFields.length > 2 ? 
+          { field: categoricalFields[2], type: 'nominal' } : undefined
       };
 
     case 'area':
@@ -133,6 +143,83 @@ export const determineChartEncodings = (
           { field: categoricalFields[0], type: 'nominal' } : undefined
       };
 
+    case 'circle':
+      return {
+        x: quantitativeFields[0] ? 
+          { field: quantitativeFields[0], type: 'quantitative' } :
+          { field: categoricalFields[0], type: 'nominal' },
+        y: quantitativeFields[1] ? 
+          { field: quantitativeFields[1], type: 'quantitative' } :
+          { field: quantitativeFields[0], type: 'quantitative' },
+        size: quantitativeFields[2] ? 
+          { field: quantitativeFields[2], type: 'quantitative' } : undefined,
+        color: categoricalFields.length ? 
+          { field: categoricalFields[0], type: 'nominal' } : undefined
+      };
+
+    case 'rect':
+      return {
+        x: categoricalFields.length ? 
+          { field: categoricalFields[0], type: 'nominal' } :
+          { field: quantitativeFields[0], type: 'quantitative', bin: true },
+        y: categoricalFields.length > 1 ? 
+          { field: categoricalFields[1], type: 'nominal' } :
+          { field: quantitativeFields[1] || quantitativeFields[0], type: 'quantitative', bin: true },
+        color: quantitativeFields.length ? 
+          { field: quantitativeFields[0], type: 'quantitative' } : undefined
+      };
+
+    case 'rule':
+      return {
+        x: quantitativeFields[0] ? 
+          { field: quantitativeFields[0], type: 'quantitative' } :
+          { field: categoricalFields[0], type: 'nominal' },
+        y: quantitativeFields[1] ? 
+          { field: quantitativeFields[1], type: 'quantitative' } : undefined,
+        color: categoricalFields.length ? 
+          { field: categoricalFields[0], type: 'nominal' } : undefined
+      };
+
+    case 'tick':
+      return {
+        x: quantitativeFields[0] ? 
+          { field: quantitativeFields[0], type: 'quantitative' } :
+          { field: categoricalFields[0], type: 'nominal' },
+        y: { field: categoricalFields[0] || quantitativeFields[0], type: 'nominal' }
+      };
+
+    case 'trail':
+      return {
+        x: temporalFields.length ? 
+          { field: temporalFields[0], type: 'temporal' } :
+          { field: quantitativeFields[0], type: 'quantitative' },
+        y: { field: quantitativeFields[temporalFields.length ? 0 : 1], type: 'quantitative' },
+        size: quantitativeFields[2] ? 
+          { field: quantitativeFields[2], type: 'quantitative' } : undefined,
+        color: categoricalFields.length ? 
+          { field: categoricalFields[0], type: 'nominal' } : undefined
+      };
+
+    case 'square':
+      return {
+        x: categoricalFields.length ? 
+          { field: categoricalFields[0], type: 'nominal' } :
+          { field: quantitativeFields[0], type: 'quantitative' },
+        y: categoricalFields.length > 1 ? 
+          { field: categoricalFields[1], type: 'nominal' } :
+          { field: quantitativeFields[1] || quantitativeFields[0], type: 'quantitative' },
+        color: categoricalFields.length > 2 ? 
+          { field: categoricalFields[2], type: 'nominal' } : undefined
+      };
+
+    case 'sunburst':
+      return {
+        size: quantitativeFields[0] ? 
+          { field: quantitativeFields[0], type: 'quantitative' } : undefined,
+        color: categoricalFields.length ? 
+          { field: categoricalFields[0], type: 'nominal' } : undefined
+      };
+
     default:
       return {};
   }
@@ -142,7 +229,7 @@ export const getCompatibleEncodings = (
   chartType: MarkType,
   dataset: DatasetMetadata
 ): EncodingOptions => {
-  const dataTypes = detectDataTypes(dataset.values);
+  const dataTypes = detectDataTypes(dataset.values || []);
   const fields = Object.entries(dataTypes);
   
   // Group fields by type with descriptions
@@ -170,6 +257,9 @@ export const getCompatibleEncodings = (
       description: `Categories in ${field}`
     }));
 
+  // Create text fields from all field types for text encoding
+  const textFields = [...categoricalFields, ...quantitativeFields, ...temporalFields];
+
   // Define compatible encodings for each channel based on chart type
   switch (chartType) {
     case 'bar':
@@ -177,10 +267,10 @@ export const getCompatibleEncodings = (
         x: [...categoricalFields, ...temporalFields],
         y: quantitativeFields,
         color: categoricalFields,
-        size: [],
+        size: quantitativeFields,
         theta: [],
         radius: [],
-        text: quantitativeFields
+        text: textFields
       };
 
     case 'point':
@@ -191,20 +281,74 @@ export const getCompatibleEncodings = (
         size: quantitativeFields,
         theta: [],
         radius: [],
-        text: []
+        text: textFields
       };
 
-    // Add more chart types...
-    
-    default:
+    case 'line':
       return {
-        x: [],
-        y: [],
-        color: [],
+        x: [...quantitativeFields, ...temporalFields],
+        y: quantitativeFields,
+        color: [...categoricalFields, ...quantitativeFields],
         size: [],
         theta: [],
         radius: [],
-        text: []
+        text: textFields
+      };
+
+    case 'violin':
+      return {
+        x: categoricalFields,
+        y: quantitativeFields,
+        color: categoricalFields,
+        size: [],
+        theta: [],
+        radius: [],
+        text: textFields
+      };
+
+    case 'arc':
+    case 'pie':
+      return {
+        x: [],
+        y: [],
+        color: categoricalFields,
+        size: [],
+        theta: quantitativeFields,
+        radius: quantitativeFields,
+        text: textFields
+      };
+
+    case 'sunburst':
+      return {
+        x: [],
+        y: [],
+        color: categoricalFields,
+        size: quantitativeFields,
+        theta: quantitativeFields,
+        radius: quantitativeFields,
+        text: textFields
+      };
+
+    case 'wordcloud':
+      return {
+        x: [],
+        y: [],
+        color: [...categoricalFields, ...quantitativeFields],
+        size: quantitativeFields,
+        theta: [],
+        radius: [],
+        text: categoricalFields
+      };
+    
+    default:
+      return {
+        x: [...quantitativeFields, ...categoricalFields, ...temporalFields],
+        y: [...quantitativeFields, ...categoricalFields],
+        color: [...categoricalFields, ...quantitativeFields],
+        size: quantitativeFields,
+        theta: quantitativeFields,
+        radius: quantitativeFields,
+        text: textFields
       };
   }
 };

@@ -1,12 +1,5 @@
 import Editor from '@monaco-editor/react'
-import styled from 'styled-components'
-
-const EditorContainer = styled.div`
-  border: 1px solid rgba(0,0,0,0.05);
-  border-radius: 8px;
-  overflow: hidden;
-  height: 100%;
-`
+import styles from './CodeEditor.module.css'
 
 interface CodeEditorProps {
   value: string;
@@ -15,7 +8,7 @@ interface CodeEditorProps {
 
 export const CodeEditor = ({ value, onChange }: CodeEditorProps) => {
   return (
-    <EditorContainer>
+    <div className={styles.editorContainer}>
       <Editor
         height="100%"
         defaultLanguage="json"
@@ -30,6 +23,6 @@ export const CodeEditor = ({ value, onChange }: CodeEditorProps) => {
           formatOnType: true,
         }}
       />
-    </EditorContainer>
+    </div>
   )
 }

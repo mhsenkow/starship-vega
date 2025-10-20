@@ -1,254 +1,72 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import styled from 'styled-components';
-import { TablePagination } from '@mui/material';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import React, { useState, useEffect, useMemo } from 'react';
+import styles from './ChartFooter.module.css';
 import { TopLevelSpec } from 'vega-lite';
 import { createDataSample, detectDataTypes } from '../../utils/dataUtils';
-import InfoIcon from '@mui/icons-material/Info';
-import TuneIcon from '@mui/icons-material/Tune';
+import { VisibilityIcon, VisibilityOffIcon, TuneIcon, InfoIcon } from '../common/Icons';
+import { Button } from '../../design-system/components/ButtonSystem';
 import DataColumnToken, { ColumnMetadata } from '../common/DataColumnToken';
 
-const FooterContainer = styled.div`
-  margin-top: 20px;
-  border-top: 1px solid var(--color-border);
-  padding-top: 12px;
-`;
+// Simple TablePagination replacement
+interface PaginationProps {
+  count: number;
+  page: number;
+  rowsPerPage: number;
+  onPageChange: (event: unknown, newPage: number) => void;
+  onRowsPerPageChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  rowsPerPageOptions?: number[];
+}
 
-const ToggleButton = styled.button<{ $isOpen: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  width: 100%;
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  color: var(--color-text-primary);
-  transition: all 0.2s ease;
-  margin-bottom: 4px;
+// Styled components migrated to CSS modules
 
-  &:hover {
-    background: var(--color-surfaceHover);
-    border-color: var(--color-border);
-  }
+const CustomTablePagination: React.FC<PaginationProps> = ({
+  count,
+  page,
+  rowsPerPage,
+  onPageChange,
+  onRowsPerPageChange,
+  rowsPerPageOptions = [5, 10, 25]
+}) => {
+  return (
+    <div className={styles.paginationContainer}>
+      <div>
+        Showing {page * rowsPerPage + 1} to {Math.min((page + 1) * rowsPerPage, count)} of {count} entries
+      </div>
+      <div className={styles.paginationControls}>
+        <span>Rows per page:</span>
+        <select
+          className={styles.rowsPerPageSelect}
+          value={rowsPerPage}
+          onChange={onRowsPerPageChange}
+        >
+          {rowsPerPageOptions.map(option => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+        <Button 
+          variant="secondary" 
+          size="small"
+          onClick={() => onPageChange(null, page - 1)}
+          disabled={page === 0}
+        >
+          Previous
+        </Button>
+        <Button 
+          variant="secondary" 
+          size="small"
+          onClick={() => onPageChange(null, page + 1)}
+          disabled={(page + 1) * rowsPerPage >= count}
+        >
+          Next
+        </Button>
+      </div>
+    </div>
+  );
+};
 
-  svg {
-    transform: rotate(${props => props.$isOpen ? '180deg' : '0deg'});
-    transition: transform 0.3s ease;
-  }
-`;
+// Additional styled components migrated to CSS modules
 
-const TableContainer = styled.div<{ $isOpen: boolean }>`
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  max-height: ${props => props.$isOpen ? '600px' : '0'};
-  transition: max-height 0.3s ease;
-  margin-top: 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-`;
 
-const TableScroller = styled.div`
-  flex: 1;
-  overflow: auto;
-  min-height: 200px;
-`;
-
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-
-  th, td {
-    padding: 6px 12px;
-    text-align: left;
-    border-bottom: 1px solid var(--color-border);
-    white-space: nowrap;
-  }
-
-  th {
-    position: sticky;
-    top: 0;
-    background: var(--color-background);
-    z-index: 1;
-  }
-
-  tbody tr:hover {
-    background: var(--color-background);
-  }
-`;
-
-const PaginationControls = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px;
-  background: var(--color-background);
-  border-top: 1px solid var(--color-border);
-
-  select {
-    padding: 4px 8px;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-  }
-
-  .pagination {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    button {
-      padding: 4px 8px;
-      border: 1px solid var(--color-border);
-      border-radius: 4px;
-      background: var(--color-surface);
-      cursor: pointer;
-
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      &:hover:not(:disabled) {
-        background: var(--color-surfaceHover);
-      }
-    }
-  }
-`;
-
-const TableControls = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  background: var(--color-background);
-  border-bottom: 1px solid var(--color-border);
-
-  input {
-    padding: 4px 8px;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    width: 200px;
-  }
-`;
-
-const LoadingOverlay = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255,255,255,0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-`;
-
-const EncodingSection = styled.div`
-  padding: 16px;
-  border-top: 1px solid var(--color-border);
-  background: var(--color-background);
-
-  h3 {
-    margin: 0 0 16px 0;
-    font-size: 1.1rem;
-    color: var(--color-text-primary);
-  }
-`;
-
-const SamplingIndicator = styled.div`
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: 8px;
-  padding: 4px 8px;
-  background: var(--color-samplingIndicator-background);
-  border: 1px solid var(--color-samplingIndicator-border);
-  border-radius: 4px;
-  font-size: 12px;
-  color: var(--color-samplingIndicator-text);
-  
-  svg {
-    font-size: 14px;
-    color: var(--color-samplingIndicator-icon);
-  }
-`;
-
-const DataSummary = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-`;
-
-const SummaryText = styled.div`
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
-  display: flex;
-  align-items: center;
-`;
-
-const ViewDataButton = styled.button`
-  padding: 6px 12px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: var(--color-primary);
-  }
-`;
-
-const SamplingContainer = styled.div`
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-  align-items: center;
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
-`;
-
-const SampleOption = styled.span<{ $active: boolean }>`
-  padding: 4px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  background: ${props => props.$active ? props.theme.colors.primary : 'transparent'};
-  color: ${props => props.$active ? 'white' : props.theme.colors.text.secondary};
-  font-size: 0.8rem;
-  
-  &:hover {
-    background: ${props => props.$active ? props.theme.colors.primary : '#f1f3f5'};
-  }
-`;
-
-const TableHeader = styled.th`
-  position: sticky;
-  top: 0;
-  background: var(--color-background);
-  z-index: 1;
-  padding: 10px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--color-border);
-  white-space: nowrap;
-  
-  &:hover {
-    background: var(--color-surfaceHover);
-  }
-  
-  & > div {
-    max-width: 100%;
-    cursor: grab;
-  }
-`;
+// All styled components migrated to CSS modules
 
 interface ChartFooterProps {
   data?: any[] | null;
@@ -269,8 +87,11 @@ export const ChartFooter = ({ data, spec, sampleSize, onSampleSizeChange }: Char
 
   // Process data for display
   useEffect(() => {
-    console.log('ChartFooter data:', data);
-    console.log('ChartFooter spec:', spec);
+    // Only log when we have meaningful data to avoid console spam
+    if (data || spec) {
+      // console.log('ChartFooter data:', data);
+      // console.log('ChartFooter spec:', spec);
+    }
     
     // Get the data from props or from spec
     let rawData: any[] = [];
@@ -284,6 +105,11 @@ export const ChartFooter = ({ data, spec, sampleSize, onSampleSizeChange }: Char
       if ('values' in specData && Array.isArray(specData.values)) {
         rawData = specData.values;
       }
+    }
+    
+    // Don't proceed if we have no data
+    if (rawData.length === 0 && !data && !spec?.data) {
+      return;
     }
     
     setOriginalDataLength(rawData.length);
@@ -353,14 +179,14 @@ export const ChartFooter = ({ data, spec, sampleSize, onSampleSizeChange }: Char
   }, [tableData, page, rowsPerPage]);
 
   const handleChangePage = (
-    event: React.MouseEvent<HTMLButtonElement> | null,
+    _event: unknown,
     newPage: number,
   ) => {
     setPage(newPage);
   };
 
   const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    event: React.ChangeEvent<HTMLSelectElement>,
   ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
@@ -374,7 +200,7 @@ export const ChartFooter = ({ data, spec, sampleSize, onSampleSizeChange }: Char
       event.stopPropagation();
     }
     
-    console.log(`Setting sample size to ${newSize}`);
+    // console.log(`Setting sample size to ${newSize}`);
     onSampleSizeChange(newSize);
     setShowSamplingOptions(false);
   };
@@ -394,87 +220,93 @@ export const ChartFooter = ({ data, spec, sampleSize, onSampleSizeChange }: Char
   const handleColumnTokenClick = (column: ColumnMetadata) => {
     // Copy column name to clipboard
     navigator.clipboard.writeText(column.name).then(() => {
-      console.log('Column name copied to clipboard:', column.name);
+      // console.log('Column name copied to clipboard:', column.name);
     });
   };
 
   return (
-    <FooterContainer>
-      <DataSummary>
-        <SummaryText>
+    <div className={styles.footerContainer}>
+      <div className={styles.dataSummary}>
+        <div className={styles.summaryText}>
           {originalDataLength > 0 ? (
             <>
               {originalDataLength} total rows{isDataSampled && ` (showing ${tableData.length} samples)`} × {columns.length} columns
               {isDataSampled && (
-                <SamplingIndicator title={`Table shows a sample of ${tableData.length} out of ${originalDataLength} rows for performance`}>
-                  <InfoIcon fontSize="small" />
+                <div className={styles.samplingIndicator} title={`Table shows a sample of ${tableData.length} out of ${originalDataLength} rows for performance`}>
+                  <InfoIcon size={16} />
                   Sampled Data
-                </SamplingIndicator>
+                </div>
               )}
             </>
           ) : (
             'No data available'
           )}
-        </SummaryText>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        </div>
+        <div className={styles.buttonContainer}>
           {originalDataLength > 100 && (
-            <ViewDataButton 
+            <button 
+              className={styles.viewDataButton}
               onClick={(event) => toggleSamplingOptions(event)} 
               title="Adjust sampling options"
-              style={{ marginRight: '8px' }}
             >
-              <TuneIcon fontSize="small" style={{ marginRight: '4px' }} />
+              <span className={styles.iconWrapper}>
+                <TuneIcon size={16} />
+              </span>
               Sampling
-            </ViewDataButton>
+            </button>
           )}
-          <ViewDataButton onClick={() => setIsOpen(!isOpen)}>
+          <button className={styles.viewDataButton} onClick={() => setIsOpen(!isOpen)}>
             {isOpen ? (
               <>
-                <VisibilityOffIcon fontSize="small" style={{ marginRight: '4px' }} />
+                <span className={styles.iconWrapper}>
+                  <VisibilityOffIcon size={16} />
+                </span>
                 Hide Data
               </>
             ) : (
               <>
-                <VisibilityIcon fontSize="small" style={{ marginRight: '4px' }} />
+                <span className={styles.iconWrapper}>
+                  <VisibilityIcon size={16} />
+                </span>
                 View Data
               </>
             )}
-          </ViewDataButton>
+          </button>
         </div>
-      </DataSummary>
+      </div>
 
       {showSamplingOptions && originalDataLength > 100 && (
-        <SamplingContainer>
+        <div className={styles.samplingContainer}>
           <span>Sample size:</span>
           {[100, 250, 500, 1000, 2000, 5000].map(size => (
-            <SampleOption
+            <span
               key={size}
-              $active={sampleSize === size}
+              className={`${styles.sampleOption} ${sampleSize === size ? styles.active : ''}`}
               onClick={(event) => handleSampleSizeChange(size, event)}
               role="button"
               tabIndex={0}
             >
               {size} rows
-            </SampleOption>
+            </span>
           ))}
-          <SampleOption
-            $active={sampleSize === originalDataLength}
+          <span
+            className={`${styles.sampleOption} ${sampleSize === originalDataLength ? styles.active : ''}`}
             onClick={(event) => handleSampleSizeChange(originalDataLength, event)}
             role="button"
             tabIndex={0}
           >
             All ({originalDataLength})
-          </SampleOption>
-        </SamplingContainer>
+          </span>
+        </div>
       )}
 
-      <TableContainer $isOpen={isOpen}>
-        <TableScroller>
-          <Table>
+      <div className={`${styles.tableContainer} ${isOpen ? styles.open : styles.closed}`}>
+        <div className={styles.tableScroller}>
+          <table className={styles.table}>
             <thead>
               <tr>
                 {columns.map(column => (
-                  <TableHeader key={column}>
+                  <th key={column} className={styles.tableHeader}>
                     {columnMetadata[column] ? (
                       <DataColumnToken 
                         column={columnMetadata[column]} 
@@ -484,7 +316,7 @@ export const ChartFooter = ({ data, spec, sampleSize, onSampleSizeChange }: Char
                     ) : (
                       column
                     )}
-                  </TableHeader>
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -497,11 +329,10 @@ export const ChartFooter = ({ data, spec, sampleSize, onSampleSizeChange }: Char
                 </tr>
               ))}
             </tbody>
-          </Table>
-        </TableScroller>
+          </table>
+        </div>
 
-        <TablePagination
-          component="div"
+        <CustomTablePagination
           count={tableData.length}
           page={page}
           onPageChange={handleChangePage}
@@ -509,7 +340,7 @@ export const ChartFooter = ({ data, spec, sampleSize, onSampleSizeChange }: Char
           onRowsPerPageChange={handleChangeRowsPerPage}
           rowsPerPageOptions={[5, 10, 25, 50]}
         />
-      </TableContainer>
-    </FooterContainer>
+      </div>
+    </div>
   );
 }; 

@@ -1,15 +1,15 @@
 import React from 'react';
-import { Box, Typography, Tooltip, useTheme as useMuiTheme } from '@mui/material';
-import { useTheme } from '../../styles/ThemeProvider';
+import { Box, Typography } from '../../design-system';
+import { useThemeContext } from '../../styles/ThemeProvider.module';
 import { getSemanticColors, applySemanticColors, triggerGlobalChartRefresh, type SemanticColorSets } from '../../utils/vegaThemes';
+import styles from './ColorSetsPanel.module.css';
 
 interface ColorSetsProps {
   onColorSetApplied?: (colorSetName: keyof SemanticColorSets, colors: string[]) => void;
 }
 
 export const ColorSetsPanel = ({ onColorSetApplied }: ColorSetsProps) => {
-  const muiTheme = useMuiTheme();
-  const { mode, selectedColorSet, setSelectedColorSet } = useTheme();
+  const { mode, selectedColorSet, setSelectedColorSet } = useThemeContext();
   const semanticColors = getSemanticColors();
 
   const colorSetMetadata = {
@@ -118,9 +118,9 @@ export const ColorSetsPanel = ({ onColorSetApplied }: ColorSetsProps) => {
         };
       default:
         return {
-          border: `1px solid ${muiTheme.palette.divider}`,
+          border: '1px solid var(--color-border)',
           borderRadius: '8px',
-          backgroundColor: muiTheme.palette.background.default,
+          backgroundColor: 'var(--color-background-primary)',
         };
     }
   };
@@ -163,9 +163,9 @@ export const ColorSetsPanel = ({ onColorSetApplied }: ColorSetsProps) => {
       default:
         return {
           ...baseStyle,
-          backgroundColor: muiTheme.palette.primary.main + '20',
-          border: `2px solid ${muiTheme.palette.primary.main}`,
-          boxShadow: muiTheme.shadows[4],
+          backgroundColor: 'var(--color-primary-20)',
+          border: '2px solid var(--color-primary)',
+          boxShadow: 'var(--shadow-md)',
         };
     }
   };
@@ -196,7 +196,7 @@ export const ColorSetsPanel = ({ onColorSetApplied }: ColorSetsProps) => {
   const getTitleStyle = () => ({
     color: mode === 'brutalist' ? '#000000' : 
            mode === 'neon' ? '#ffffff' : 
-           mode === 'retro' ? '#2f1b14' : muiTheme.palette.text.primary,
+           mode === 'retro' ? '#2f1b14' : 'var(--color-text-primary)',
     fontWeight: mode === 'brutalist' ? 900 : 600,
     textTransform: mode === 'brutalist' ? 'uppercase' as const : 'none' as const,
     fontFamily: mode === 'brutalist' ? '"Arial Black", sans-serif' : 'inherit',
@@ -205,18 +205,18 @@ export const ColorSetsPanel = ({ onColorSetApplied }: ColorSetsProps) => {
   const getDescriptionStyle = () => ({
     color: mode === 'brutalist' ? '#333333' : 
            mode === 'neon' ? '#00f5ff' : 
-           mode === 'retro' ? '#5d4e37' : muiTheme.palette.text.secondary,
+           mode === 'retro' ? '#5d4e37' : 'var(--color-text-secondary)',
     fontSize: '0.8rem',
     textTransform: mode === 'brutalist' ? 'uppercase' as const : 'none' as const,
   });
 
   return (
-    <Box sx={{ mt: 2 }}>
+    <Box marginTop="var(--spacing-md)">
       <Typography 
         variant="body2" 
-        sx={{ 
+        style={{ 
           ...getTitleStyle(),
-          mb: 2,
+          marginBottom: 'var(--spacing-md)',
         }}
       >
         {mode === 'brutalist' ? 'COLOR SETS' : 'Color Sets'}
@@ -224,9 +224,9 @@ export const ColorSetsPanel = ({ onColorSetApplied }: ColorSetsProps) => {
       
       <Typography 
         variant="caption" 
-        sx={{ 
+        style={{ 
           ...getDescriptionStyle(),
-          mb: 2,
+          marginBottom: 'var(--spacing-md)',
           display: 'block',
         }}
       >
@@ -234,54 +234,47 @@ export const ColorSetsPanel = ({ onColorSetApplied }: ColorSetsProps) => {
       </Typography>
 
       <Typography 
-        variant="subtitle2" 
-        sx={{ 
-          mb: 2, 
-          fontSize: '0.85rem',
+        variant="body2" 
+        style={{ 
+          marginBottom: 'var(--spacing-md)', 
+          fontSize: '0.9rem',
           fontWeight: 'medium' 
         }}
       >
         Semantic Color Sets
       </Typography>
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      <Box display="flex" flexDirection="column" gap="var(--spacing-sm)">
         {Object.entries(colorSetMetadata).map(([key, meta]) => {
           const colorSetKey = key as keyof SemanticColorSets;
           const colors = semanticColors[colorSetKey];
           const isActive = selectedColorSet === colorSetKey;
           
           return (
-            <Tooltip 
+            <div 
               key={key}
-              title={`${meta.description} • ${colors.length} colors • ${
+              className={styles.tooltip}
+              data-tooltip={`${meta.description} • ${colors.length} colors • ${
                 isActive ? 'Click to deactivate and reset to theme colors' : 'Click to apply to all charts'
               }`}
-              placement="left"
             >
               <Box
                 onClick={() => handleColorSetClick(colorSetKey)}
-                sx={{
+                p={1.5}
+                cursor="pointer"
+                transition="all 0.2s ease"
+                position="relative"
+                style={{
                   ...getContainerStyleForColorSet(colorSetKey),
-                  p: 1.5,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  position: 'relative',
-                  '&:hover': {
-                    transform: mode === 'brutalist' ? 'none' : 'translateX(-2px)',
-                    boxShadow: mode === 'brutalist' ? '4px 4px 0px #000000' :
-                              mode === 'neon' ? '0 0 20px rgba(0, 245, 255, 0.4)' :
-                              mode === 'neumorphism' ? '4px 4px 8px #d1d1d1, -4px -4px 8px #ffffff' :
-                              muiTheme.shadows[4],
-                  },
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Typography sx={{ fontSize: '1rem', mr: 1 }}>
+                <Box display="flex" alignItems="center" mb={1}>
+                  <Typography style={{ fontSize: '1rem', marginRight: 'var(--spacing-xs)' }}>
                     {meta.icon}
                   </Typography>
                   <Typography 
                     variant="body2" 
-                    sx={{ 
+                    style={{ 
                       ...getTitleStyle(),
                       fontSize: '0.85rem',
                       flexGrow: 1,
@@ -290,15 +283,14 @@ export const ColorSetsPanel = ({ onColorSetApplied }: ColorSetsProps) => {
                     {mode === 'brutalist' ? meta.name.toUpperCase() : meta.name}
                     {isActive && (
                       <Typography
-                        component="span"
-                        sx={{
-                          ml: 1,
+                        style={{
+                          marginLeft: 'var(--spacing-xs)',
                           fontSize: '0.75rem',
                           opacity: 0.8,
                           fontWeight: 'bold',
                           color: mode === 'brutalist' ? '#000000' : 
                                  mode === 'neon' ? '#39ff14' : 
-                                 mode === 'retro' ? '#2f1b14' : 'primary.main',
+                                 mode === 'retro' ? '#2f1b14' : 'var(--color-primary)',
                         }}
                       >
                         {mode === 'brutalist' ? '• ACTIVE' : '• Active'}
@@ -307,7 +299,7 @@ export const ColorSetsPanel = ({ onColorSetApplied }: ColorSetsProps) => {
                   </Typography>
                   <Typography 
                     variant="caption" 
-                    sx={{ 
+                    style={{ 
                       ...getDescriptionStyle(),
                       opacity: 0.7,
                     }}
@@ -316,13 +308,13 @@ export const ColorSetsPanel = ({ onColorSetApplied }: ColorSetsProps) => {
                   </Typography>
                 </Box>
                 
-                <Box sx={{ display: 'flex', gap: mode === 'neumorphism' ? 0.5 : 0, mb: 0.5 }}>
+                <Box display="flex" gap={mode === 'neumorphism' ? 0.5 : 0} mb={0.5}>
                   {colors.map((color, index) => (
                     <Box
                       key={index}
-                      sx={{
-                        width: mode === 'neumorphism' ? 16 : 20,
-                        height: mode === 'neumorphism' ? 16 : 20,
+                      width={mode === 'neumorphism' ? 16 : 20}
+                      height={mode === 'neumorphism' ? 16 : 20}
+                      style={{
                         flex: mode === 'neumorphism' ? 'none' : 1,
                         ...getColorSwatchStyle(color, index === 0, index === colors.length - 1),
                       }}
@@ -332,7 +324,7 @@ export const ColorSetsPanel = ({ onColorSetApplied }: ColorSetsProps) => {
                 
                 <Typography 
                   variant="caption" 
-                  sx={{ 
+                  style={{ 
                     ...getDescriptionStyle(),
                     fontSize: '0.75rem',
                   }}
@@ -340,7 +332,7 @@ export const ColorSetsPanel = ({ onColorSetApplied }: ColorSetsProps) => {
                   {meta.description}
                 </Typography>
               </Box>
-            </Tooltip>
+            </div>
           );
         })}
       </Box>

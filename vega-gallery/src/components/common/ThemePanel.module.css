@@ -1,0 +1,106 @@
+/* ThemePanel Component Styles */
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 380px;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  transform: translateX(100%);
+  transition: transform var(--transition-duration-normal) var(--transition-easing-standard);
+  overflow-y: auto;
+}
+
+.drawer.open {
+  transform: translateX(0);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-6);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-secondary);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--typography-fontSize-lg);
+  font-weight: var(--typography-fontWeight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.titleIcon {
+  color: var(--color-primary);
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-2);
+  border-radius: var(--radius-base);
+  transition: all var(--transition-duration-fast) var(--transition-easing-standard);
+}
+
+.closeButton:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.content {
+  padding: var(--spacing-6);
+}
+
+.testButton {
+  margin-top: var(--spacing-6);
+  width: 100%;
+}
+
+/* Theme-specific button styles */
+.testButton.brutalist {
+  background-color: #ffff00;
+  color: #000000;
+  border: 2px solid #000000;
+  border-radius: 0px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.testButton.neon {
+  background-color: rgba(0, 245, 255, 0.1);
+  color: #00f5ff;
+  border: 1px solid rgba(0, 245, 255, 0.5);
+}
+
+.testButton.default {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: 1px solid var(--color-primary);
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-duration-normal) var(--transition-easing-standard);
+}
+
+.overlay.open {
+  opacity: 1;
+  visibility: visible;
+}

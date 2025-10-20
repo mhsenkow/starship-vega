@@ -1,0 +1,73 @@
+/* Filter Bar Component Styles */
+.container {
+  display: flex;
+  gap: var(--spacing-4);
+  align-items: center;
+  flex-wrap: wrap;
+  padding: var(--spacing-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-base);
+  border: 1px solid var(--color-border);
+  margin-bottom: var(--spacing-6);
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.label {
+  font-weight: var(--typography-fontWeight-medium);
+  color: var(--color-text-primary);
+  font-size: var(--typography-fontSize-sm);
+}
+
+.select {
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-size: var(--typography-fontSize-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: border-color var(--transition-duration-fast) var(--transition-easing-standard);
+}
+
+.select:hover {
+  border-color: var(--color-primary);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.searchInput {
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-size: var(--typography-fontSize-sm);
+  color: var(--color-text-primary);
+  min-width: 200px;
+  transition: border-color var(--transition-duration-fast) var(--transition-easing-standard);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.chartCount {
+  font-size: var(--typography-fontSize-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--typography-fontWeight-medium);
+  margin-left: auto;
+}

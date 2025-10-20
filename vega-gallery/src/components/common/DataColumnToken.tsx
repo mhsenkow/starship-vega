@@ -1,12 +1,6 @@
 import React, { useMemo, useRef } from 'react';
 import styled from 'styled-components';
-import { useDrag } from 'react-dnd';
-import { Tooltip } from '@mui/material';
-import NumbersIcon from '@mui/icons-material/Numbers';
-import TimelineIcon from '@mui/icons-material/Timeline';
-import CategoryIcon from '@mui/icons-material/Category';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { NumbersIcon, TimelineIcon, CategoryIcon, BarChartIcon, InfoIcon } from './Icons';
 
 // Types
 export interface ColumnMetadata {
@@ -31,7 +25,6 @@ export interface ColumnDragItem {
 
 // Styled components
 const TokenContainer = styled.div<{
-  $isDragging?: boolean;
   $colorScheme?: string;
 }>`
   display: inline-flex;
@@ -40,31 +33,20 @@ const TokenContainer = styled.div<{
   border-radius: 20px;
   font-size: 0.85rem;
   gap: 6px;
-  cursor: grab;
-  background: ${props => 
-    props.$isDragging 
-      ? 'var(--color-background)' 
-      : props.$colorScheme || 'var(--color-surface)'};
-  border: 1px solid ${props => 
-    props.$isDragging 
-      ? 'var(--color-primary)' 
-      : 'var(--color-border)'};
-  opacity: ${props => (props.$isDragging ? 0.6 : 1)};
+  cursor: pointer;
+  background: ${props => props.$colorScheme || 'var(--color-surface)'};
+  border: 1px solid var(--color-border);
   transition: all 0.15s ease-in-out;
-  box-shadow: ${props => 
-    props.$isDragging 
-      ? '0 5px 10px rgba(0, 0, 0, 0.15)' 
-      : '0 1px 2px rgba(0, 0, 0, 0.08)'};
-  transform: ${props => props.$isDragging ? 'scale(1.05)' : 'scale(1)'};
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  position: relative;
   
   &:hover {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
     border-color: var(--color-primary);
-    background: ${props => !props.$isDragging && 'var(--color-background)'};
+    background: var(--color-background);
   }
 
   &:active {
-    cursor: grabbing;
     transform: scale(0.98);
   }
 `;
@@ -113,10 +95,25 @@ const StatsIndicator = styled.span`
   margin-left: 2px;
 `;
 
-const InfoIcon = styled(InfoOutlinedIcon)`
-  font-size: 14px !important;
-  margin-left: 3px;
-  color: var(--color-text-secondary);
+const Tooltip = styled.div<{ $title: string }>`
+  position: relative;
+  
+  &:hover::after {
+    content: "${props => props.$title}";
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: pre-line;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    max-width: 200px;
+  }
 `;
 
 interface DataColumnTokenProps {
@@ -140,23 +137,8 @@ export const DataColumnToken: React.FC<DataColumnTokenProps> = ({
   colorScheme,
   className,
 }) => {
-  // Set up drag functionality
-  const [{ isDragging }, drag] = useDrag(
-    () => ({
-      type: 'column',
-      item: () => {
-        if (onDragStart) onDragStart();
-        return { type: 'column', column };
-      },
-      collect: (monitor) => ({
-        isDragging: monitor.isDragging(),
-      }),
-      end: () => {
-        if (onDragEnd) onDragEnd();
-      },
-    }),
-    [column, onDragStart, onDragEnd]
-  );
+  // Simple state for hover effects (no drag-and-drop)
+  const [isHovered, setIsHovered] = React.useState(false);
 
   // Get appropriate icon for the data type
   const getTypeIcon = useMemo(() => {
@@ -205,22 +187,14 @@ export const DataColumnToken: React.FC<DataColumnTokenProps> = ({
     return parts.join('\n');
   }, [column]);
 
-  // Add a ref for the container
-  const containerRef = useRef<HTMLDivElement>(null);
-  
-  // Connect the drag ref to our ref
-  if (draggable) {
-    drag(containerRef);
-  }
-
   return (
-    <Tooltip title={tooltipContent} placement="top">
+    <Tooltip $title={tooltipContent}>
       <TokenContainer
-        ref={containerRef}
-        $isDragging={isDragging}
         $colorScheme={colorScheme}
         onClick={onClick ? () => onClick(column) : undefined}
         className={className}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
         <TypeIndicator $type={column.type}>
           {getTypeIcon}
@@ -228,7 +202,7 @@ export const DataColumnToken: React.FC<DataColumnTokenProps> = ({
         <ColumnName>{column.name}</ColumnName>
         {showStats && column.stats && (
           <StatsIndicator>
-            <InfoIcon />
+            <InfoIcon fontSize="small" />
           </StatsIndicator>
         )}
       </TokenContainer>

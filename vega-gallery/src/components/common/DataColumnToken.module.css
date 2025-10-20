@@ -1,0 +1,95 @@
+/* DataColumnToken Component Styles */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip:hover::after {
+  content: attr(data-title);
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.columnToken {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--typography-fontSize-sm);
+  cursor: grab;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.columnToken:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
+  box-shadow: var(--elevation-sm);
+}
+
+.columnToken:active {
+  cursor: grabbing;
+  transform: scale(0.95);
+}
+
+.columnToken.dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
+}
+
+.typeIcon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+}
+
+.columnName {
+  font-weight: var(--typography-fontWeight-medium);
+  color: var(--color-text-primary);
+}
+
+.columnType {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stats {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  margin-left: var(--spacing-xs);
+}
+
+/* Type-specific colors - matching design system semantic colors */
+.columnToken.quantitative {
+  border-left: 3px solid var(--color-primary);
+}
+
+.columnToken.temporal {
+  border-left: 3px solid var(--color-info);
+}
+
+.columnToken.nominal {
+  border-left: 3px solid var(--color-success);
+}
+
+.columnToken.ordinal {
+  border-left: 3px solid var(--color-warning);
+}

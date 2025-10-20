@@ -1,57 +1,9 @@
-import React, { useEffect, useRef } from 'react';
-import styled from 'styled-components';
+import React from 'react';
+import { Button } from '../../design-system/components/ButtonSystem';
 import { useDashboardStore } from '../../store/dashboardStore';
 import { ChartSelector } from './ChartSelector';
 import { DashboardChart } from './DashboardChart';
-
-const GridContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 16px;
-  flex-grow: 1;
-`;
-
-const EmptyState = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 300px;
-  background-color: var(--color-background);
-  border: 2px dashed var(--color-border);
-  border-radius: 8px;
-  color: var(--color-text-secondary);
-  text-align: center;
-  padding: 32px;
-`;
-
-const AddChartButton = styled.button`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 300px;
-  background-color: var(--color-background);
-  border: 2px dashed var(--color-border);
-  border-radius: 8px;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: all 0.2s;
-  
-  &:hover {
-    background-color: var(--color-border);
-    border-color: var(--color-text-tertiary);
-  }
-`;
-
-const PlusIcon = styled.div`
-  font-size: 2rem;
-  margin-bottom: 8px;
-  
-  &::before {
-    content: '+';
-  }
-`;
+import styles from './GridView.module.css';
 
 export const GridView: React.FC = () => {
   const { 
@@ -80,19 +32,24 @@ export const GridView: React.FC = () => {
   
   if (!currentDashboard) {
     return (
-      <EmptyState>
+      <div className={styles.emptyState}>
         <p>No dashboard selected. Create a new one or select an existing one.</p>
-      </EmptyState>
+      </div>
     );
   }
   
   if (currentDashboard.charts.length === 0) {
     return (
       <>
-        <AddChartButton onClick={handleAddChart}>
-          <PlusIcon />
-          <div>Add Chart</div>
-        </AddChartButton>
+        <Button
+          variant="ghost"
+          size="large"
+          onClick={handleAddChart}
+          className={styles.addChartButton}
+        >
+          <div className={styles.plusIcon}>+</div>
+          <div className={styles.addChartText}>Add Chart</div>
+        </Button>
         
         {showChartSelector && (
           <ChartSelector 
@@ -107,7 +64,7 @@ export const GridView: React.FC = () => {
   
   return (
     <>
-      <GridContainer>
+      <div className={styles.gridContainer}>
         {currentDashboard.charts.map(chart => (
           <DashboardChart 
             key={chart.id} 
@@ -115,11 +72,16 @@ export const GridView: React.FC = () => {
             onRemove={handleRemoveChart} 
           />
         ))}
-        <AddChartButton onClick={handleAddChart}>
-          <PlusIcon />
-          <div>Add Chart</div>
-        </AddChartButton>
-      </GridContainer>
+        <Button
+          variant="ghost"
+          size="large"
+          onClick={handleAddChart}
+          className={styles.addChartButton}
+        >
+          <div className={styles.plusIcon}>+</div>
+          <div className={styles.addChartText}>Add Chart</div>
+        </Button>
+      </div>
       
       {showChartSelector && (
         <ChartSelector 

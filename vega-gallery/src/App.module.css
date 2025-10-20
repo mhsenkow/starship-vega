@@ -1,0 +1,21 @@
+/* App Component Styles using CSS Modules */
+.appContainer {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  /* Ensure CSS variables are always available */
+  --color-background: var(--color-background-primary, #ffffff);
+  --color-text-primary: var(--color-text-primary, #000000);
+  --color-surface: var(--color-surface-primary, #ffffff);
+  --color-border: var(--color-border-light, #e0e0e0);
+  --color-primary: var(--color-primary-500, #1976d2);
+  --color-primary-light: var(--color-primary-100, rgba(25, 118, 210, 0.1));
+  --spacing-xs: var(--spacing-xs, 4px);
+  --spacing-sm: var(--spacing-sm, 8px);
+  --spacing-md: var(--spacing-md, 16px);
+  --spacing-lg: var(--spacing-lg, 24px);
+  --radius-sm: var(--radius-sm, 4px);
+  --radius-base: var(--radius-base, 8px);
+  --transition-fast: var(--transition-fast, 0.2s ease);
+  --transition-normal: var(--transition-normal, 0.3s ease);
+}

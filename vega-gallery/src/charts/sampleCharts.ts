@@ -127,11 +127,24 @@ export const timeSeries = {
         value: 20 + Math.sin(i / 24 * Math.PI * 2) * 10 + Math.random() * 5
       }))
     },
-    encoding: {
-      theta: { field: 'hour', type: 'quantitative', scale: { domain: [0, 24] } },
-      radius: { field: 'value', type: 'quantitative' }
+    mark: {
+      type: 'line',
+      point: true,
+      interpolate: 'cardinal',
+      strokeWidth: 2
     },
-    mark: 'line',
+    encoding: {
+      theta: { 
+        field: 'hour', 
+        type: 'quantitative', 
+        scale: { domain: [0, 24], range: [0, 2 * Math.PI] }
+      },
+      radius: { 
+        field: 'value', 
+        type: 'quantitative',
+        scale: { type: 'sqrt', zero: true }
+      }
+    },
     width: 300,
     height: 300
   } as TopLevelSpec,
@@ -188,7 +201,10 @@ export const comparison = {
         value: Math.random() * 100
       }))
     },
-    mark: 'violin',
+    mark: {
+      type: 'violin',
+      orient: 'vertical'
+    },
     encoding: {
       x: { field: 'category', type: 'nominal' },
       y: { field: 'value', type: 'quantitative' }
@@ -361,109 +377,68 @@ export const partToWhole = {
 // Hierarchical Charts
 export const hierarchical = {
   'treemap': {
-    $schema: 'https://vega.github.io/schema/vega/v5.json',
-    padding: 5,
-    data: [
-      {
-        name: 'tree',
-        values: [
-          {"id": 1, "name": "Root", "parent": null, "size": 100},
-          {"id": 2, "name": "A", "parent": 1, "size": 50},
-          {"id": 3, "name": "B", "parent": 1, "size": 30},
-          {"id": 4, "name": "C", "parent": 1, "size": 20},
-          {"id": 5, "name": "A1", "parent": 2, "size": 20},
-          {"id": 6, "name": "A2", "parent": 2, "size": 30},
-          {"id": 7, "name": "B1", "parent": 3, "size": 15},
-          {"id": 8, "name": "B2", "parent": 3, "size": 15},
-          {"id": 9, "name": "C1", "parent": 4, "size": 20}
-        ],
-        transform: [
-          { type: "stratify", key: "id", parentKey: "parent" },
-          { type: "treemap", field: "size", sort: { field: "value", order: "descending" } }
-        ]
-      }
-    ],
-    marks: [
-      {
-        type: "rect",
-        from: { data: "tree" },
-        encode: {
-          enter: {
-            x: { field: "x0" },
-            y: { field: "y0" },
-            x2: { field: "x1" },
-            y2: { field: "y1" },
-            fill: { scale: "color", field: "name" },
-            stroke: { value: "white" }
-          }
-        }
-      }
-    ],
-    scales: [
-      {
-        name: "color",
-        type: "ordinal",
-        range: { scheme: "category10" }
-      }
-    ]
-  } as VegaSpec,
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: {
+      values: [
+        {"name": "A", "size": 50, "category": "Group A"},
+        {"name": "B", "size": 30, "category": "Group B"},
+        {"name": "C", "size": 20, "category": "Group C"},
+        {"name": "A1", "size": 20, "category": "Group A"},
+        {"name": "A2", "size": 30, "category": "Group A"},
+        {"name": "B1", "size": 15, "category": "Group B"},
+        {"name": "B2", "size": 15, "category": "Group B"},
+        {"name": "C1", "size": 20, "category": "Group C"}
+      ]
+    },
+    mark: {
+      type: 'rect',
+      tooltip: true
+    },
+    encoding: {
+      size: { field: 'size', type: 'quantitative' },
+      color: { field: 'category', type: 'nominal', scale: { scheme: 'category10' } },
+      tooltip: [
+        { field: 'name', type: 'nominal', title: 'Name' },
+        { field: 'size', type: 'quantitative', title: 'Size' },
+        { field: 'category', type: 'nominal', title: 'Category' }
+      ]
+    },
+    config: {
+      view: { stroke: null }
+    }
+  } as TopLevelSpec,
   'sunburst': {
-    $schema: 'https://vega.github.io/schema/vega/v5.json',
-    padding: 5,
-    data: [
-      {
-        name: "tree",
-        values: [
-          {"id": 1, "name": "Root", "parent": null, "size": 100},
-          {"id": 2, "name": "A", "parent": 1, "size": 50},
-          {"id": 3, "name": "B", "parent": 1, "size": 30},
-          {"id": 4, "name": "C", "parent": 1, "size": 20},
-          {"id": 5, "name": "A1", "parent": 2, "size": 20},
-          {"id": 6, "name": "A2", "parent": 2, "size": 30},
-          {"id": 7, "name": "B1", "parent": 3, "size": 15},
-          {"id": 8, "name": "B2", "parent": 3, "size": 15},
-          {"id": 9, "name": "C1", "parent": 4, "size": 20}
-        ],
-        transform: [
-          { type: "stratify", key: "id", parentKey: "parent" },
-          { 
-            type: "partition", 
-            field: "size", 
-            sort: { field: "value", order: "descending" },
-            size: [{ signal: "width" }, { signal: "height" }],
-            round: true
-          }
-        ]
-      }
-    ],
-    scales: [
-      {
-        name: "color",
-        type: "ordinal",
-        range: { scheme: "category10" }
-      }
-    ],
-    marks: [
-      {
-        type: "arc",
-        from: { data: "tree" },
-        encode: {
-          enter: {
-            x: { signal: "width / 2" },
-            y: { signal: "height / 2" },
-            fill: { scale: "color", field: "name" },
-            stroke: { value: "white" }
-          },
-          update: {
-            startAngle: { field: "x0" },
-            endAngle: { field: "x1" },
-            innerRadius: { field: "y0" },
-            outerRadius: { field: "y1" }
-          }
-        }
-      }
-    ]
-  } as VegaSpec
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: {
+      values: [
+        {"name": "A", "size": 50, "category": "Group A"},
+        {"name": "B", "size": 30, "category": "Group B"},
+        {"name": "C", "size": 20, "category": "Group C"},
+        {"name": "A1", "size": 20, "category": "Group A"},
+        {"name": "A2", "size": 30, "category": "Group A"},
+        {"name": "B1", "size": 15, "category": "Group B"},
+        {"name": "B2", "size": 15, "category": "Group B"},
+        {"name": "C1", "size": 20, "category": "Group C"}
+      ]
+    },
+    mark: {
+      type: 'arc',
+      innerRadius: 20,
+      outerRadius: 100
+    },
+    encoding: {
+      theta: { field: 'size', type: 'quantitative' },
+      color: { field: 'category', type: 'nominal', scale: { scheme: 'category10' } },
+      tooltip: [
+        { field: 'name', type: 'nominal', title: 'Name' },
+        { field: 'size', type: 'quantitative', title: 'Size' },
+        { field: 'category', type: 'nominal', title: 'Category' }
+      ]
+    },
+    config: {
+      view: { stroke: null }
+    }
+  } as TopLevelSpec
 };
 
 // Text Analysis Charts

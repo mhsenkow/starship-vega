@@ -1,236 +1,32 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
-import styled from 'styled-components'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import styles from './Preview.module.css';
 import { renderVegaLite } from '../../utils/chartRenderer'
 import { ChartFooter } from './ChartFooter'
 import { TopLevelSpec } from 'vega-lite'
-import DownloadIcon from '@mui/icons-material/Download'
-import { ExtendedSpec, MarkType } from '../../types/vega'
-import WidthNormalIcon from '@mui/icons-material/CropLandscape'
-import WidthMediumIcon from '@mui/icons-material/Crop169'
-import WidthWideIcon from '@mui/icons-material/Crop75'
-import { Tooltip, ToggleButtonGroup, ToggleButton } from '@mui/material'
+import { ExtendedSpec } from '../../types/vega'
 import { enhanceChartSpec } from '../../utils/chartEnhancements'
-import InfoIcon from '@mui/icons-material/Info'
-import { getThemeSpecificChartStyles } from '../../utils/vegaThemes'
-import { useTheme } from '../../styles/ThemeProvider'
+import { Tooltip } from '../../design-system'
+import { Button, ButtonGroup } from '../../design-system/components/ButtonSystem'
+import { 
+  DownloadIcon, 
+  WidthNormalIcon, 
+  WidthMediumIcon, 
+  WidthWideIcon, 
+  InfoIcon 
+} from '../common/Icons'
+import { useThemeContext } from '../../styles/ThemeProvider.module'
 
-const PreviewContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  padding: 0 10px;
-`
-
-const ChartContainer = styled.div<{ $isActive: boolean; $chartWidth: string }>`
-  position: relative;
-  flex: 1;
-  min-height: 150px;
-  overflow: hidden;
-  transition: all 0.2s ease;
-  cursor: ${(props: any) => !props.$isActive ? 'pointer' : 'default'};
-  border-radius: 4px;
-  
-  /* Apply theme-specific container styles */
-  ${(props: any) => {
-    const { mode } = props.theme;
-    const themeStyles = getThemeSpecificChartStyles();
-    const containerStyle = themeStyles.containerStyle;
-    
-    if (containerStyle && Object.keys(containerStyle).length > 0) {
-      return Object.entries(containerStyle)
-        .map(([key, value]) => `${key.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${value};`)
-        .join(' ');
-    }
-    
-    // Default fallback styling
-    return `
-      background: var(--color-chart-background);
-      border: 1px solid var(--color-chart-border);
-    `;
-  }}
-  
-  width: ${(props: any) => {
-    switch (props.$chartWidth) {
-      case 'medium': return '60%';
-      case 'wide': return '80%';
-      default: return '50%';
-    }
-  }};
-  margin: 0 auto;
-  
-  .vega-embed {
-    width: 100% !important;
-    height: 100% !important;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 4px;
-    position: relative;
-    z-index: 1;
-  }
-
-  .vega-embed .marks {
-    max-width: 100%;
-  }
-  
-  /* Ensure SVG is properly contained */
-  svg {
-    overflow: hidden;
-    max-width: 98%;
-    max-height: 98%;
-    margin: 0 auto;
-    position: relative;
-    z-index: 1;
-  }
-  
-  /* For arc charts, ensure SVG takes maximum space but stays contained */
-  &[data-chart-type="arc"] {
-    padding: 0 2px 6px;
-    
-    .vega-embed {
-      padding: 2px;
-      overflow: hidden;
-    }
-    
-    svg {
-      max-width: 99%;
-      max-height: 99%;
-      overflow: hidden;
-    }
-    
-    /* Completely hide all axis-related elements for arc charts */
-    .mark-group .role-axis,
-    .mark-group .role-axis-grid,
-    .mark-group .role-axis-domain,
-    .mark-group .role-axis-label,
-    .mark-group .role-axis-tick,
-    .mark-group .role-axis-title,
-    g[aria-label*="X-axis"],
-    g[aria-label*="Y-axis"],
-    g[class*="axis"],
-    g[role="graphics-symbol"][aria-roledescription="axis"],
-    .role-axis,
-    .role-axis-grid,
-    .role-axis-domain,
-    .role-axis-label,
-    .role-axis-tick,
-    .role-axis-title {
-      display: none !important;
-      visibility: hidden !important;
-    }
-    
-    /* Hide any remaining grid lines */
-    path[stroke-dasharray],
-    line[stroke-dasharray],
-    .grid line,
-    .grid path {
-      display: none !important;
-    }
-    
-    /* Hide axis tick marks and domain lines */
-    .axis line,
-    .axis path,
-    .domain {
-      display: none !important;
-    }
-    
-    /* Hide axis text labels */
-    .axis text,
-    .tick text {
-      display: none !important;
-    }
-  }
-  
-  ${(props: any) => !props.$isActive && `
-    &::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: ${props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.02)'};
-      pointer-events: none;
-      z-index: 2;
-    }
-  `}
-`
-
-const DataContainer = styled.div`
-  flex: 1;
-  min-height: 150px;
-  border-top: 1px solid var(--color-border);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  padding-top: 6px;
-`
-
-const ErrorMessage = styled.div`
-  color: var(--color-error);
-  padding: 16px;
-  background: ${props => props.theme.mode === 'dark' ? '#372c2c' : '#fff5f5'};
-  border-radius: 4px;
-  margin-top: 16px;
-`
-
-const ResizeHandle = styled.div`
-  width: 100%;
-  height: 12px;
-  margin: -6px 0;
-  background: transparent;
-  cursor: ns-resize;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  user-select: none;
-  position: relative;
-  z-index: 10;
-
-  &::after {
-    content: '';
-    width: 60px;
-    height: 4px;
-    background: var(--color-border);
-    border-radius: 2px;
-    opacity: 0;
-    transition: all 0.2s ease;
-  }
-
-  &:hover::after {
-    opacity: 1;
-    transform: scaleY(1.5);
-  }
-
-  &:active::after {
-    opacity: 1;
-    background: var(--color-primary);
-    transform: scaleY(1.5);
-  }
-`
-
-const SamplingIndicator = styled.div`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  background: var(--sampling-indicator-bg);
-  border: 1px solid var(--sampling-indicator-border);
-  border-radius: 4px;
-  font-size: 12px;
-  color: var(--sampling-indicator-text);
-  z-index: 100;
-  
-  svg {
-    font-size: 16px;
-    color: var(--sampling-indicator-icon);
-  }
-`
+// Aspect ratio definitions
+const ASPECT_RATIOS = [
+  { name: 'Free', width: 0, height: 0, description: 'Free aspect ratio' },
+  { name: 'Square', width: 1, height: 1, description: 'Square (1:1)' },
+  { name: '16:9', width: 16, height: 9, description: 'Widescreen (16:9)' },
+  { name: '4:5', width: 4, height: 5, description: 'Portrait (4:5)' },
+  { name: '9:16', width: 9, height: 16, description: 'Vertical (9:16)' },
+  { name: '1.91:1', width: 1.91, height: 1, description: 'Facebook/Instagram (1.91:1)' },
+  { name: '3:2', width: 3, height: 2, description: 'Photo (3:2)' },
+  { name: '2.35:1', width: 2.35, height: 1, description: 'Cinematic (2.35:1)' }
+];
 
 interface AspectRatio {
   name: string;
@@ -239,134 +35,19 @@ interface AspectRatio {
   description: string;
 }
 
-const ASPECT_RATIOS: AspectRatio[] = [
-  { name: 'Free', width: 0, height: 0, description: 'Freely resizable' },
-  { name: 'Square', width: 1, height: 1, description: 'Instagram, Facebook' },
-  { name: '16:9', width: 16, height: 9, description: 'YouTube, Twitter' },
-  { name: '4:5', width: 4, height: 5, description: 'Instagram Feed' },
-  { name: '9:16', width: 9, height: 16, description: 'Instagram Stories, TikTok' },
-  { name: '1.91:1', width: 1910, height: 1000, description: 'Facebook Feed' },
-  { name: '3:2', width: 3, height: 2, description: 'LinkedIn' },
-  { name: '2.35:1', width: 2350, height: 1000, description: 'Twitter Card' },
-];
-
-const AspectRatioControl = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
-  padding: 8px 12px;
-  background: var(--color-background);
-  border-radius: 4px;
-  overflow: visible;
-  position: relative;
-  z-index: 100;
-`;
-
-const RatioContainer = styled.div`
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  flex: 1;
-  min-width: 0;
-`;
-
-const WidthToggleContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-right: 32px;
-`;
-
-const IconOnlyButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  color: var(--color-text-primary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  padding: 6px;
-  height: 32px;
-  width: 32px;
-  margin: 0 4px;
-  position: relative;
-  z-index: 101;
-
-  &:hover {
-    background: var(--color-background);
-    border-color: var(--color-primary);
+// Helper function to get chart type from spec
+const getChartType = (spec: any): string => {
+  if (!spec || !spec.mark) return 'unknown';
+  
+  if (typeof spec.mark === 'string') {
+    return spec.mark;
   }
-
-  svg {
-    font-size: 18px;
+  
+  if (typeof spec.mark === 'object' && spec.mark.type) {
+    return spec.mark.type;
   }
-`;
-
-const RatioButton = styled.button<{ $active: boolean }>`
-  padding: 6px 12px;
-  border: 1px solid ${props => props.$active ? 'var(--color-primary)' : 'var(--color-border)'};
-  border-radius: 4px;
-  background: ${props => props.$active ? `rgba(var(--color-primary-rgb), 0.1)` : 'var(--color-surface)'};
-  color: ${props => props.$active ? 'var(--color-primary)' : 'var(--color-text-primary)'};
-  cursor: pointer;
-  white-space: nowrap;
-  font-size: 0.9rem;
-
-  &:hover {
-    border-color: var(--color-primary);
-  }
-
-  .description {
-    font-size: 0.8rem;
-    color: var(--color-text-secondary);
-    margin-top: 2px;
-  }
-`;
-
-const DownloadMenu = styled.div`
-  position: relative;
-  display: inline-block;
-  z-index: 15;
-`;
-
-const DownloadOptions = styled.div<{ $show: boolean }>`
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 4px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  box-shadow: 0 2px 8px ${(props: any) => props.theme.mode === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.1)'};
-  display: ${(props: any) => props.$show ? 'block' : 'none'};
-  z-index: 20;
-  min-width: 150px;
-`;
-
-const DownloadOption = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 16px;
-  border: none;
-  background: none;
-  text-align: left;
-  cursor: pointer;
-  white-space: nowrap;
-
-  &:hover {
-    background: var(--color-background);
-  }
-`;
-
-// Helper function to determine chart type from spec
-const getChartType = (spec: any): MarkType => {
-  if (!spec || !spec.mark) return 'bar';
-  return typeof spec.mark === 'string' ? spec.mark : spec.mark.type;
+  
+  return 'unknown';
 };
 
 interface PreviewProps {
@@ -384,7 +65,7 @@ interface InlineData {
 export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps) => {
   const [chartHeight, setChartHeight] = useState(400)
   const [chartWidth, setChartWidth] = useState<string>('medium')
-  const [isResizing, setIsResizing] = useState(false)
+  const [, setIsResizing] = useState(false)
   const isResizingRef = useRef(false)
   const [initialY, setInitialY] = useState(0)
   const [initialHeight, setInitialHeight] = useState(0)
@@ -395,7 +76,6 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
   const [error, setError] = useState<string | null>(null)
   const [showDownloadMenu, setShowDownloadMenu] = useState(false)
   const [chartActive, setChartActive] = useState(false)
-  const [vegaViewReady, setVegaViewReady] = useState(false)
   const [selectedRatio, setSelectedRatio] = useState<AspectRatio>(ASPECT_RATIOS[0])
   const [parsedSpec, setParsedSpec] = useState<any>(null)
   const [isDataSampled, setIsDataSampled] = useState(false)
@@ -404,8 +84,30 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
   const [sampleSize, setSampleSize] = useState(1000);
 
   // Get current theme to detect theme changes
-  const { mode: currentTheme } = useTheme();
+  const { mode: currentTheme } = useThemeContext();
+
+  // Debug chartHeight changes
+  useEffect(() => {
+    console.log('chartHeight state changed to:', chartHeight);
+  }, [chartHeight]);
+
+  // Helper function to check if spec is valid for rendering
+  const isValidSpec = (spec: any) => {
+    if (!spec || typeof spec !== 'object') return false;
+    
+    const hasData = spec.data || spec.datasets;
+    const hasMark = spec.mark || spec.layer || spec.concat || spec.facet || spec.repeat;
+    
+    return hasData && hasMark;
+  };
   const previousThemeRef = useRef(currentTheme);
+  
+  // Ref to track timeouts for cleanup
+  const timeoutRefs = useRef<Set<NodeJS.Timeout>>(new Set());
+  
+  // Refs to track current values for reliable access in callbacks
+  const selectedRatioRef = useRef(selectedRatio);
+  const chartWidthRef = useRef(chartWidth);
 
   // Parse the input spec
   useEffect(() => {
@@ -425,15 +127,38 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
     }
   }, [spec]);
 
+  // Update refs when values change
+  useEffect(() => {
+    selectedRatioRef.current = selectedRatio;
+  }, [selectedRatio]);
+
+  useEffect(() => {
+    chartWidthRef.current = chartWidth;
+  }, [chartWidth]);
+
   // Function to render the chart
   const renderChart = useCallback(async () => {
     if (!chartContentRef.current || !parsedSpec) {
       return;
     }
 
+    // Check if spec is valid for rendering
+    if (!isValidSpec(parsedSpec)) {
+      // Don't set error for empty specs - this is normal when first loading
+      if (Object.keys(parsedSpec).length === 0) {
+        setError(null);
+      } else {
+        const errorMsg = parsedSpec.data ? 
+          'Chart specification is missing required mark property' : 
+          'Chart specification is missing required data property';
+        console.error(errorMsg);
+        setError(errorMsg);
+      }
+      return;
+    }
+
     if (currentViewRef.current) {
       try {
-        console.log('Finalizing existing view before re-render');
         currentViewRef.current.finalize();
         currentViewRef.current = null;
       } catch (e) {
@@ -450,15 +175,50 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
       const originalData = parsedSpec.data?.values;
       let renderSpec;
       
+      // Get container dimensions for proper sizing - use fallback values if container isn't ready
+      let containerWidth = 400;
+      let containerHeight = 400;
+      
+      if (chartContentRef.current) {
+        const rect = chartContentRef.current.getBoundingClientRect();
+        const chartRect = chartRef.current?.getBoundingClientRect();
+        
+        // Use the ChartContainer dimensions if available, otherwise use ChartContent
+        const parentRect = chartRect && chartRect.height > 0 ? chartRect : rect;
+        
+        if (parentRect && parentRect.width > 0 && parentRect.height > 0) {
+          // Use the actual container width since we're controlling it at the container level
+          containerWidth = Math.max(300, parentRect.width - 32); // Account for padding
+          containerHeight = Math.max(200, parentRect.height - 32);
+          
+          console.log('Chart width calculation:', {
+            chartWidth,
+            containerWidth,
+            parentRectWidth: parentRect.width
+          });
+        } else {
+          // Use chartHeight state as fallback for height
+          const fallbackHeight = chartHeight || 400;
+          containerWidth = Math.max(300, (chartRef.current?.clientWidth || 400) - 32);
+          containerHeight = Math.max(200, fallbackHeight - 32);
+          
+          console.log('Chart width calculation (fallback):', {
+            chartWidth,
+            containerWidth,
+            fallbackHeight
+          });
+        }
+      }
+      
+      
       // Check if the dataset is large and apply sampling
       if (originalData && originalData.length > 1000) {
-        console.log(`Applying sampling to large dataset (${originalData.length} points) for ${chartType} chart`);
         
         // Apply enhancements including sampling
         renderSpec = enhanceChartSpec({
           ...parsedSpec,
-          width: 'container',
-          height: 'container',
+          width: containerWidth,
+          height: containerHeight,
           autosize: {
             type: 'fit',
             contains: 'padding'
@@ -468,7 +228,7 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
             _forceNewView: renderKey, // This will cause Vega to create a new View
             sampleSize: sampleSize // Add sampleSize to config
           }
-        }, chartType, sampleSize);
+        }, chartType as any, sampleSize);
         
         // Check if sampling was applied with proper type casting
         const inlineData = renderSpec.data as InlineData;
@@ -478,7 +238,7 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
         
         if (wasSampled && sampledData) {
           setSampledDataLength(sampledData.length);
-          console.log(`Dataset sampled from ${originalData.length} to ${sampledData.length} points`);
+          // console.log(`Dataset sampled from ${originalData.length} to ${sampledData.length} points`);
         } else {
           setSampledDataLength(null);
         }
@@ -486,8 +246,8 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
         // For smaller datasets, no sampling needed
         renderSpec = {
           ...parsedSpec,
-          width: 'container',
-          height: 'container',
+          width: containerWidth,
+          height: containerHeight,
           autosize: {
             type: 'fit',
             contains: 'padding'
@@ -502,7 +262,7 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
         setSampledDataLength(null);
       }
       
-      console.log('Rendering chart with spec:', renderSpec);
+      // console.log('Rendering chart with spec:', renderSpec);
       
       // Set chart type data attribute for styling
       if (chartRef.current) {
@@ -517,18 +277,16 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
       
       // If view is available, update state and callback
       if (view) {
-        console.log('Vega view successfully created');
-        setVegaViewReady(true);
+        // console.log('Vega view successfully created');
         setChartActive(true);
         
         // If callback is provided, pass the view
         if (onVegaViewUpdate) {
-          console.log('Updating Vega view reference in parent component');
+          // console.log('Updating Vega view reference in parent component');
           onVegaViewUpdate(view);
         }
       } else {
         console.warn('renderVegaLite returned no view');
-        setVegaViewReady(false);
         
         // Reset the view reference in parent if no view is available
         if (onVegaViewUpdate) {
@@ -540,7 +298,6 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
     } catch (err) {
       console.error('Error rendering chart:', err);
       setError(err instanceof Error ? err.message : 'Failed to render chart');
-      setVegaViewReady(false);
       
       // Reset the view if there's an error
       currentViewRef.current = null;
@@ -548,31 +305,36 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
         onVegaViewUpdate(null);
       }
     }
-  }, [parsedSpec, renderKey, onVegaViewUpdate, sampleSize]);
+  }, [parsedSpec, onVegaViewUpdate, sampleSize]);
 
   // Ensure chart is rendered when component mounts or spec changes
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      console.log('Initial chart render');
+      // console.log('Initial chart render');
       renderChart().then(() => {
         // Automatically activate the chart when it's rendered
         if (currentViewRef.current) {
           setChartActive(true);
-          setVegaViewReady(true);
           if (onVegaViewUpdate) {
-            console.log('Auto-activating chart and updating parent view reference');
+            // console.log('Auto-activating chart and updating parent view reference');
             onVegaViewUpdate(currentViewRef.current);
           }
         }
       });
     }, 200); // Slightly longer timeout to ensure DOM is ready
-    return () => clearTimeout(timeoutId);
-  }, [renderChart, onVegaViewUpdate]);
+    
+    // Track timeout for cleanup
+    timeoutRefs.current.add(timeoutId);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      timeoutRefs.current.delete(timeoutId);
+    };
+  }, [parsedSpec, sampleSize]); // Remove renderChart and onVegaViewUpdate from dependencies
 
   // Listen for theme changes and re-render chart
   useEffect(() => {
     if (previousThemeRef.current !== currentTheme) {
-      console.log(`Theme changed from ${previousThemeRef.current} to ${currentTheme}, re-rendering chart`);
       previousThemeRef.current = currentTheme;
       
       // Re-render chart with new theme
@@ -586,14 +348,11 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
       
       return () => clearTimeout(timeoutId);
     }
-  }, [currentTheme, renderChart, onVegaViewUpdate]);
+  }, [currentTheme]); // Remove renderChart and onVegaViewUpdate from dependencies
 
   // Listen for color set changes and re-render chart
   useEffect(() => {
-    const handleColorSetChange = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      console.log(`Preview: Color set changed, re-rendering chart`, customEvent.detail);
-      
+    const handleColorSetChange = () => {
       // Re-render chart with new color set
       const timeoutId = setTimeout(() => {
         renderChart().then(() => {
@@ -612,28 +371,23 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
     return () => {
       window.removeEventListener('vega-color-set-changed', handleColorSetChange);
     };
-  }, [renderChart, onVegaViewUpdate]);
+  }, []); // Remove renderChart and onVegaViewUpdate from dependencies
 
   // Add a separate effect to ensure chart is re-rendered when renderKey changes
   useEffect(() => {
-    if (renderKey > 0) {
-      console.log('Rendering chart with key:', renderKey);
-      const timeoutId = setTimeout(() => {
-        renderChart().then(() => {
-          // Auto-activate on re-render as well
-          if (currentViewRef.current) {
-            setChartActive(true);
-            setVegaViewReady(true);
-            if (onVegaViewUpdate) {
-              console.log('View updated after renderKey change');
-              onVegaViewUpdate(currentViewRef.current);
-            }
+    const timeoutId = setTimeout(() => {
+      renderChart().then(() => {
+        // Auto-activate on re-render as well
+        if (currentViewRef.current) {
+          setChartActive(true);
+          if (onVegaViewUpdate) {
+            onVegaViewUpdate(currentViewRef.current);
           }
-        });
-      }, 200);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [renderKey, renderChart, onVegaViewUpdate]);
+        }
+      });
+    }, 200);
+    return () => clearTimeout(timeoutId);
+  }, [renderKey]); // Remove renderChart and onVegaViewUpdate from dependencies
 
   // Handle resize
   useEffect(() => {
@@ -648,21 +402,74 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
     }
 
     return () => observer.disconnect();
-  }, [renderChart]);
+  }, []); // Remove renderChart dependency to avoid infinite loops
 
   const updateHeightForRatio = useCallback(() => {
-    if (selectedRatio.width === 0 || !containerRef.current) return;
+    const currentRatio = selectedRatioRef.current;
+    const currentChartWidth = chartWidthRef.current;
     
-    const containerWidth = containerRef.current.clientWidth;
-    const newHeight = (containerWidth * selectedRatio.height) / selectedRatio.width;
-    setChartHeight(Math.min(1200, Math.max(200, newHeight)));
+    console.log('updateHeightForRatio called', {
+      ratioName: currentRatio.name,
+      ratioWidth: currentRatio.width,
+      ratioHeight: currentRatio.height,
+      chartWidth: currentChartWidth,
+      containerExists: !!containerRef.current,
+      chartExists: !!chartRef.current,
+      actualChartWidth: containerRef.current?.clientWidth
+    });
+    
+    if (currentRatio.width === 0) {
+      console.log('Skipping - ratio width is 0 (Free mode)');
+      return;
+    }
+    
+    if (!containerRef.current) {
+      console.log('Skipping - containerRef not available');
+      return;
+    }
+    
+    // Get the actual chart container width (which is now controlled by the width setting)
+    const actualChartWidth = containerRef.current.clientWidth;
+    console.log('Actual chart container width:', actualChartWidth);
+    
+    // Calculate height based on the aspect ratio
+    if (actualChartWidth > 0) {
+      const newHeight = (actualChartWidth * currentRatio.height) / currentRatio.width;
+      const constrainedHeight = Math.min(1200, Math.max(200, newHeight));
+      console.log(`Aspect ratio update: ${currentRatio.name}, width: ${actualChartWidth}, calculated height: ${constrainedHeight}`);
+      console.log('Setting chartHeight to:', constrainedHeight);
+      setChartHeight(constrainedHeight);
+    } else {
+      console.log('Skipping - actualChartWidth is 0 or negative');
+    }
+  }, [selectedRatio, chartWidth]);
+
+  useEffect(() => {
+    if (selectedRatio.width > 0) {
+      // Immediate update
+      updateHeightForRatio();
+      
+      // Also set up a ResizeObserver to watch for container size changes
+      const resizeObserver = new ResizeObserver(() => {
+        updateHeightForRatio();
+      });
+      
+      if (containerRef.current) {
+        resizeObserver.observe(containerRef.current);
+      }
+      
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }
   }, [selectedRatio]);
 
+  // Also update height when chart width changes
   useEffect(() => {
     if (selectedRatio.width > 0) {
       updateHeightForRatio();
     }
-  }, [selectedRatio, updateHeightForRatio]);
+  }, [chartWidth]);
 
   useEffect(() => {
     if (selectedRatio.width === 0) return;
@@ -673,7 +480,35 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [selectedRatio, updateHeightForRatio]);
+  }, [selectedRatio]);
+
+  // Effect to trigger chart re-render when chart width changes
+  useEffect(() => {
+    // Debounce the re-render to avoid excessive updates
+    const timeoutId = setTimeout(() => {
+      renderChart();
+      
+      // Also update aspect ratio if one is selected
+      if (selectedRatio.width > 0) {
+        // Use a longer delay to ensure the container width has updated
+        setTimeout(() => {
+          updateHeightForRatio();
+        }, 50);
+      }
+    }, 100);
+    return () => clearTimeout(timeoutId);
+  }, [chartWidth]); // Re-render when width setting changes
+
+  // Effect to trigger chart re-render when chart height changes due to aspect ratio
+  useEffect(() => {
+    if (selectedRatio.width > 0) {
+      // Debounce the re-render to avoid excessive updates
+      const timeoutId = setTimeout(() => {
+        renderChart();
+      }, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [chartHeight]); // Only depend on chartHeight to avoid infinite loops
 
   const handleDownloadSVG = useCallback(() => {
     if (!chartRef.current) return;
@@ -767,35 +602,25 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
     URL.revokeObjectURL(url);
   }, [parsedSpec]);
 
-  const handleChartClick = useCallback(() => {
-    console.log('Chart clicked, force activating...');
-    
-    // Force re-render of the chart to ensure view is available
-    renderChart().then(() => {
-      // If view is now available, make sure to update parent
-      if (currentViewRef.current && onVegaViewUpdate) {
-        console.log('View available after click, updating parent');
-        setChartActive(true);
-        setVegaViewReady(true);
-        onVegaViewUpdate(currentViewRef.current);
-      } else {
-        console.warn('Failed to create view after click');
-      }
-    });
-  }, [renderChart, onVegaViewUpdate]);
 
-  const handleChartWidthChange = (event: React.MouseEvent<HTMLElement>, newValue: string | null) => {
-    if (newValue) {
-      setChartWidth(newValue);
-      localStorage.setItem('chartWidth', newValue);
-      // Trigger a resize to update the chart
-      setTimeout(() => {
-        window.dispatchEvent(new Event('resize'));
-      }, 100);
-    }
+  const handleChartWidthChange = (newValue: string) => {
+    console.log('Width button clicked:', newValue);
+    console.log('Current selectedRatio:', selectedRatio);
+    setChartWidth(newValue);
+    localStorage.setItem('chartWidth', newValue);
+    // Trigger a resize to update the chart
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 100);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    // Only allow manual resizing if aspect ratio is set to "Free"
+    if (selectedRatio.width !== 0) {
+      e.preventDefault();
+      return;
+    }
+    
     setIsResizing(true);
     isResizingRef.current = true;
     setInitialY(e.clientY);
@@ -837,89 +662,195 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
     e.preventDefault();
   };
 
+  // Cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Clear all timeouts
+      timeoutRefs.current.forEach(timeoutId => clearTimeout(timeoutId));
+      timeoutRefs.current.clear();
+      
+      // Clean up Vega view
+      if (currentViewRef.current) {
+        try {
+          currentViewRef.current.finalize();
+        } catch (e) {
+          console.error('Error finalizing view on cleanup:', e);
+        }
+      }
+      
+      // Reset document cursor and ensure proper cleanup
+      if (document.body) {
+        document.body.style.cursor = '';
+      }
+      
+      // Ensure cursor is reset if component unmounts during resizing
+      if (isResizingRef.current) {
+        isResizingRef.current = false;
+        setIsResizing(false);
+      }
+    };
+  }, []);
+
   return (
-    <PreviewContainer ref={containerRef}>
-      <AspectRatioControl>
-        <RatioContainer>
-          {ASPECT_RATIOS.map((ratio) => (
-            <Tooltip key={ratio.name} title={ratio.description} arrow>
-              <RatioButton
-                $active={selectedRatio.name === ratio.name}
-                onClick={() => setSelectedRatio(ratio)}
-              >
-                {ratio.name}
-              </RatioButton>
-            </Tooltip>
-          ))}
-        </RatioContainer>
+    <div className={styles.previewContainer} ref={containerRef}>
+      <div className={styles.aspectRatioControl}>
+        <div className={styles.ratioContainer}>
+          <ButtonGroup buttonStyle="embedded">
+            {ASPECT_RATIOS.map((ratio) => (
+              <Tooltip key={ratio.name} title={ratio.description}>
+                <Button
+                  variant={selectedRatio.name === ratio.name ? 'primary' : 'ghost'}
+                  size="small"
+                  buttonStyle="embedded"
+                  onClick={() => {
+                    console.log('Aspect ratio button clicked:', ratio.name);
+                    // Update the ref immediately so updateHeightForRatio can access the new value
+                    selectedRatioRef.current = ratio;
+                    setSelectedRatio(ratio);
+                    
+                    // Try to update immediately and with delayed attempts
+                    updateHeightForRatio();
+                    
+                    // Use requestAnimationFrame to ensure DOM is updated
+                    requestAnimationFrame(() => {
+                      updateHeightForRatio();
+                    });
+                    
+                    // Also try with a slight delay as backup
+                    setTimeout(() => {
+                      updateHeightForRatio();
+                    }, 100);
+                  }}
+                >
+                  {ratio.name}
+                </Button>
+              </Tooltip>
+            ))}
+          </ButtonGroup>
+        </div>
         
-        <WidthToggleContainer>
+        <div className={styles.widthToggleContainer}>
           <span>Width:</span>
-          <ToggleButtonGroup
-            value={chartWidth}
-            exclusive
-            onChange={handleChartWidthChange}
-            aria-label="chart width"
-            size="small"
-          >
-            <ToggleButton value="narrow" aria-label="narrow width">
+          <ButtonGroup buttonStyle="embedded">
+            <Button
+              variant={chartWidth === "narrow" ? 'primary' : 'ghost'}
+              size="small"
+              buttonStyle="embedded"
+              onClick={() => handleChartWidthChange("narrow")}
+              aria-label="narrow width"
+            >
               <WidthNormalIcon />
-            </ToggleButton>
-            <ToggleButton value="medium" aria-label="medium width">
+            </Button>
+            <Button
+              variant={chartWidth === "medium" ? 'primary' : 'ghost'}
+              size="small"
+              buttonStyle="embedded"
+              onClick={() => handleChartWidthChange("medium")}
+              aria-label="medium width"
+            >
               <WidthMediumIcon />
-            </ToggleButton>
-            <ToggleButton value="wide" aria-label="wide width">
+            </Button>
+            <Button
+              variant={chartWidth === "wide" ? 'primary' : 'ghost'}
+              size="small"
+              buttonStyle="embedded"
+              onClick={() => handleChartWidthChange("wide")}
+              aria-label="wide width"
+            >
               <WidthWideIcon />
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </WidthToggleContainer>
+            </Button>
+          </ButtonGroup>
+        </div>
         
-        <IconOnlyButton
+        <Button
+          variant="icon"
+          size="small"
           onClick={() => setShowDownloadMenu(!showDownloadMenu)}
           aria-label="Download chart"
         >
           <DownloadIcon />
-        </IconOnlyButton>
+        </Button>
         
-        <DownloadMenu>
-          <DownloadOptions $show={showDownloadMenu}>
-            <DownloadOption onClick={handleDownloadSVG}>SVG Image</DownloadOption>
-            <DownloadOption onClick={handleDownloadPNG}>PNG Image</DownloadOption>
-            <DownloadOption onClick={handleDownloadJSON}>JSON Spec</DownloadOption>
-          </DownloadOptions>
-        </DownloadMenu>
-      </AspectRatioControl>
+        <div className={styles.downloadMenu}>
+          <div className={`${styles.downloadOptions} ${showDownloadMenu ? styles.show : ''}`}>
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={handleDownloadSVG}
+            >
+              SVG Image
+            </Button>
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={handleDownloadPNG}
+            >
+              PNG Image
+            </Button>
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={handleDownloadJSON}
+            >
+              JSON Spec
+            </Button>
+          </div>
+        </div>
+      </div>
 
-      <ChartContainer
+      <div
+        className={`${styles.chartContainer} ${chartActive ? styles.active : ''}`}
         ref={chartRef}
-        $isActive={chartActive}
-        $chartWidth={chartWidth}
         onClick={() => !chartActive && setChartActive(true)}
-        style={{ height: `${chartHeight}px` }}
+        style={{ 
+          '--chart-height': `${Math.max(400, chartHeight)}px`,
+          height: 'var(--chart-height)',
+          minHeight: '400px',
+          width: chartWidth === 'narrow' ? '40%' : chartWidth === 'medium' ? '60%' : chartWidth === 'wide' ? '80%' : '60%',
+          maxWidth: '100%',
+          margin: '0 auto',
+          flexShrink: 0
+        } as React.CSSProperties}
+        data-debug-height={chartHeight}
       >
         {isDataSampled && (
-          <SamplingIndicator title={`Showing a sample of ${sampledDataLength} out of ${originalDataLength} data points for better performance`}>
-            <InfoIcon fontSize="small" />
+          <div className={styles.samplingIndicator} title={`Showing a sample of ${sampledDataLength} out of ${originalDataLength} data points for better performance`}>
+            <InfoIcon size={16} />
             Showing sampled data for performance
-          </SamplingIndicator>
+          </div>
         )}
         
-        <div ref={chartContentRef} style={{ width: '100%', height: '100%' }} />
-      </ChartContainer>
+        {!isValidSpec(parsedSpec) && !error ? (
+          <div className={styles.emptyStateMessage}>
+            <h3>No Chart to Display</h3>
+            <p>
+              Select a dataset and chart type from the left panel to create a visualization.
+            </p>
+          </div>
+        ) : error ? (
+          <div className={styles.emptyStateMessage}>
+            <h3>Chart Error</h3>
+            <p>{error}</p>
+          </div>
+        ) : (
+          <div className={styles.chartContent} ref={chartContentRef} />
+        )}
+      </div>
 
-      <ResizeHandle
+      <div
+        className={`${styles.resizeHandle} ${selectedRatio.width !== 0 ? styles.disabled : ''}`}
         onMouseDown={handleMouseDown}
-        title="Drag to resize chart"
+        title={selectedRatio.width !== 0 ? "Manual resize disabled - aspect ratio locked" : "Drag to resize chart"}
       />
 
-      <DataContainer>
-        {error && <ErrorMessage>{error}</ErrorMessage>}
+      <div className={styles.dataContainer}>
+        {error && <div className={styles.errorMessage}>{error}</div>}
         <ChartFooter
           data={parsedSpec?.data?.values}
           spec={parsedSpec}
           sampleSize={sampleSize}
           onSampleSizeChange={(newSize) => {
-            console.log(`Preview: Changing sample size from ${sampleSize} to ${newSize}`);
+            // console.log(`Preview: Changing sample size from ${sampleSize} to ${newSize}`);
             setSampleSize(newSize);
             
             // Ensure we're not in resize mode when changing sample size
@@ -936,7 +867,7 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
             }, 0);
           }}
         />
-      </DataContainer>
-    </PreviewContainer>
+      </div>
+    </div>
   )
 }

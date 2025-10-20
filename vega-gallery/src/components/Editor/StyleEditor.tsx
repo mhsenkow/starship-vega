@@ -1,432 +1,20 @@
-import styled from 'styled-components'
-import { TopLevelSpec } from 'vega-lite'
+import styles from './StyleEditor.module.css';
 import { useState, useEffect, useMemo } from 'react'
 import { ExtendedSpec, VegaMarkConfig } from '../../types/vega'
-import { ChartStyle } from '../../types/chart'
-import FormatSizeIcon from '@mui/icons-material/FormatSize';
-import FormatColorFillIcon from '@mui/icons-material/FormatColorFill';
-import BorderStyleIcon from '@mui/icons-material/BorderStyle';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
-import { Color, ColorPicker } from 'mui-color'
-import { Slider, TextField, MenuItem } from '@mui/material'
-import { SketchPicker } from 'react-color'
-import { themeColors, setMarkColors, getFromSpec } from '../../utils/themeUtils'
+import { 
+  FormatSizeIcon, 
+  FormatColorFillIcon, 
+  AutoFixHighIcon 
+} from '../common/Icons'
+// Note: Using local styled components instead of Material UI
+// Removed problematic external dependencies: mui-color and react-color
+// import { themeColors, setMarkColors, getFromSpec } from '../../utils/themeUtils'
+// TODO: themeUtils doesn't exist - need to implement or find alternative
 
-const Container = styled.div`
-  padding: 16px;
-  height: 100%;
-  overflow-y: auto;
-`
-
-const Section = styled.div`
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 24px;
-`
-
-const SectionTitle = styled.h3`
-  margin: 0 0 16px 0;
-  font-size: 1.25rem;
-  color: var(--color-text-primary);
-  font-weight: 600;
-  font-family: 'IBM Plex Sans', sans-serif;
-  border-bottom: 2px solid var(--color-border);
-  padding-bottom: 8px;
-`
-
-const Control = styled.div`
-  margin-bottom: 16px;
-`
-
-const Label = styled.label`
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: var(--color-text-primary);
-`
-
-const Input = styled.input`
-  width: 100%;
-  padding: 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  margin-bottom: 8px;
-`
-
-const Select = styled.select`
-  width: 100%;
-  padding: 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-`
-
-const ColorInput = styled.input`
-  padding: 4px;
-  width: 60px;
-  height: 30px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-`
-
-const RangeInput = styled.input`
-  width: 100%;
-  margin: 8px 0;
-`
-
-const StyleSection = styled(Section)`
-  position: relative;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    left: 16px;
-    right: 16px;
-    bottom: -1px;
-    height: 1px;
-    background: var(--color-border);
-  }
-`;
-
-const StyleHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  
-  svg {
-    color: var(--color-text-secondary);
-    font-size: 20px;
-  }
-`;
-
-const FontPreview = styled.div<{ $font: string }>`
-  padding: 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  font-family: ${props => props.$font};
-  margin-bottom: 8px;
-  color: var(--color-text-primary);
-`;
-
-const TypographySection = styled(StyleSection)`
-  .preview-text {
-    margin: 8px 0;
-    padding: 12px;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-  }
-`;
-
-const FontScaleControl = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 16px;
-`;
-
-const ScalePreview = styled.div<{ $scale: number }>`
-  h1 { font-size: ${props => 2.5 * props.$scale}rem; }
-  h2 { font-size: ${props => 2 * props.$scale}rem; }
-  h3 { font-size: ${props => 1.5 * props.$scale}rem; }
-  .body { font-size: ${props => 1 * props.$scale}rem; }
-  .small { font-size: ${props => 0.875 * props.$scale}rem; }
-`;
-
-// Component interface
 interface StyleEditorProps {
   spec: ExtendedSpec;
-  onChange: (updates: Partial<ExtendedSpec>) => void;
+  onChange: (spec: ExtendedSpec) => void;
 }
-
-// Add this type for mark size handling
-interface MarkSizeConfig {
-  baseSize: number;  // Base size as a percentage (1-100)
-  scaleRatio: number;  // Ratio for size differences (0.1-2)
-}
-
-// Update the mark-specific controls
-const getMarkSpecificControls = (markType: string, currentMark: any, updateMark: Function) => {
-  switch (markType) {
-    case 'point':
-    case 'circle':
-      return (
-        <>
-          <Control>
-            <Label>Base Size (%)</Label>
-            <RangeInput
-              type="range"
-              min="1"
-              max="100"
-              value={Math.sqrt(currentMark?.size || 50)}
-              onChange={e => {
-                const sliderValue = parseInt(e.target.value);
-                const size = sliderValue * sliderValue;
-                updateMark({ 
-                  size,
-                  filled: true
-                });
-              }}
-            />
-            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
-              {currentMark?.size || 50}%
-            </div>
-          </Control>
-          <Control>
-            <Label>Shape</Label>
-            <Select
-              value={currentMark?.shape || 'circle'}
-              onChange={e => {
-                const shape = e.target.value;
-                updateMark({ 
-                  type: 'point',
-                  shape,
-                  filled: true,  // Keep filled true
-                  size: currentMark?.size || 50
-                });
-              }}
-            >
-              <option value="circle">Circle</option>
-              <option value="square">Square</option>
-              <option value="cross">Cross</option>
-              <option value="diamond">Diamond</option>
-              <option value="triangle">Triangle</option>
-              <option value="star">Star</option>
-            </Select>
-          </Control>
-          <Control>
-            <Label>Stroke Color</Label>
-            <ColorInput
-              type="color"
-              value={currentMark?.stroke || '#4c78a8'}
-              onChange={e => updateMark({ 
-                stroke: e.target.value,
-                filled: true  // Keep filled true
-              })}
-            />
-          </Control>
-          <Control>
-            <Label>Stroke Width</Label>
-            <RangeInput
-              type="range"
-              min="0.5"
-              max="5"
-              step="0.5"
-              value={currentMark?.strokeWidth || 2}
-              onChange={e => updateMark({ 
-                strokeWidth: parseFloat(e.target.value),
-                filled: true  // Keep filled true
-              })}
-            />
-          </Control>
-        </>
-      );
-
-    case 'bar':
-      return (
-        <>
-          <Control>
-            <Label>Bar Width</Label>
-            <RangeInput
-              type="range"
-              min="1"
-              max="100"
-              value={currentMark?.width || 'auto'}
-              onChange={e => updateMark({ width: parseInt(e.target.value) })}
-            />
-          </Control>
-          <Control>
-            <Label>Corner Radius</Label>
-            <RangeInput
-              type="range"
-              min="0"
-              max="20"
-              value={currentMark?.cornerRadius || 0}
-              onChange={e => updateMark({ cornerRadius: parseInt(e.target.value) })}
-            />
-          </Control>
-          <Control>
-            <Label>Fill Color</Label>
-            <ColorInput
-              type="color"
-              value={currentMark?.fill || '#4c78a8'}
-              onChange={e => updateMark({ fill: e.target.value })}
-            />
-          </Control>
-        </>
-      );
-
-    case 'line':
-      return (
-        <>
-          <Control>
-            <Label>Line Width</Label>
-            <RangeInput
-              type="range"
-              min="1"
-              max="10"
-              value={currentMark?.strokeWidth || 2}
-              onChange={e => updateMark({ strokeWidth: parseInt(e.target.value) })}
-            />
-          </Control>
-          <Control>
-            <Label>Line Style</Label>
-            <Select
-              value={currentMark?.interpolate || 'linear'}
-              onChange={e => updateMark({ interpolate: e.target.value })}
-            >
-              <option value="linear">Linear</option>
-              <option value="step">Step</option>
-              <option value="stepAfter">Step After</option>
-              <option value="stepBefore">Step Before</option>
-              <option value="basis">Basis</option>
-              <option value="cardinal">Cardinal</option>
-              <option value="monotone">Monotone</option>
-            </Select>
-          </Control>
-          <Control>
-            <Label>Line Color</Label>
-            <ColorInput
-              type="color"
-              value={currentMark?.stroke || '#4c78a8'}
-              onChange={e => updateMark({ stroke: e.target.value })}
-            />
-          </Control>
-          <Control>
-            <Label>Point Size</Label>
-            <RangeInput
-              type="range"
-              min="0"
-              max="100"
-              value={currentMark?.point?.size || 0}
-              onChange={e => updateMark({ point: { size: parseInt(e.target.value) } })}
-            />
-          </Control>
-        </>
-      );
-
-    case 'area':
-      return (
-        <>
-          <Control>
-            <Label>Fill Color</Label>
-            <ColorInput
-              type="color"
-              value={currentMark?.fill || '#4c78a8'}
-              onChange={e => updateMark({ fill: e.target.value })}
-            />
-          </Control>
-          <Control>
-            <Label>Fill Opacity</Label>
-            <RangeInput
-              type="range"
-              min="0"
-              max="1"
-              step="0.1"
-              value={currentMark?.fillOpacity || 0.7}
-              onChange={e => updateMark({ fillOpacity: parseFloat(e.target.value) })}
-            />
-          </Control>
-          <Control>
-            <Label>Line Width</Label>
-            <RangeInput
-              type="range"
-              min="0"
-              max="5"
-              value={currentMark?.strokeWidth || 0}
-              onChange={e => updateMark({ strokeWidth: parseInt(e.target.value) })}
-            />
-          </Control>
-          <Control>
-            <Label>Interpolation</Label>
-            <Select
-              value={currentMark?.interpolate || 'linear'}
-              onChange={e => updateMark({ interpolate: e.target.value })}
-            >
-              <option value="linear">Linear</option>
-              <option value="step">Step</option>
-              <option value="monotone">Monotone</option>
-            </Select>
-          </Control>
-        </>
-      );
-
-    case 'text':
-      return (
-        <>
-          <Control>
-            <Label>Font Size</Label>
-            <RangeInput
-              type="range"
-              min="8"
-              max="32"
-              value={currentMark?.fontSize || 11}
-              onChange={e => updateMark({ fontSize: parseInt(e.target.value) })}
-            />
-          </Control>
-          <Control>
-            <Label>Text Color</Label>
-            <ColorInput
-              type="color"
-              value={currentMark?.color || '#000000'}
-              onChange={e => updateMark({ color: e.target.value })}
-            />
-          </Control>
-          <Control>
-            <Label>Angle</Label>
-            <RangeInput
-              type="range"
-              min="0"
-              max="360"
-              value={currentMark?.angle || 0}
-              onChange={e => updateMark({ angle: parseInt(e.target.value) })}
-            />
-          </Control>
-          <Control>
-            <Label>Alignment</Label>
-            <Select
-              value={currentMark?.align || 'center'}
-              onChange={e => updateMark({ align: e.target.value })}
-            >
-              <option value="left">Left</option>
-              <option value="center">Center</option>
-              <option value="right">Right</option>
-            </Select>
-          </Control>
-        </>
-      );
-
-    // Add case for new chart type
-    case 'your-new-chart-type':
-      return (
-        <>
-          <Control>
-            <Label>Point Size</Label>
-            <RangeInput
-              type="range"
-              min="1"
-              max="100"
-              value={currentMark?.size || 50}
-              onChange={e => updateMark({ size: parseInt(e.target.value) })}
-            />
-          </Control>
-          <Control>
-            <Label>Color</Label>
-            <ColorInput
-              type="color"
-              value={currentMark?.color || '#4c78a8'}
-              onChange={e => updateMark({ color: e.target.value })}
-            />
-          </Control>
-        </>
-      );
-
-    // Add more chart types...
-    default:
-      return null;
-  }
-};
 
 export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
   const updateConfig = (updates: Partial<ExtendedSpec['config']>) => {
@@ -437,11 +25,11 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
         ...updates,
         mark: {
           ...spec.config?.mark,
-          ...updates.mark
+          ...(updates.mark || {})
         },
         view: {
           ...spec.config?.view,
-          ...updates.view
+          ...(updates.view || {})
         }
       }
     });
@@ -482,7 +70,7 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
       ...spec,
       mark: newMark,
       encoding: {
-        ...spec.encoding,
+        ...((spec as any).encoding || {}),
         // Only add valid numerical values to encodings
         ...(updates.opacity !== undefined && !isNaN(updates.opacity) && {
           opacity: { value: updates.opacity }
@@ -580,24 +168,41 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
   };
 
   return (
-    <Container>
-      <StyleSection>
-        <StyleHeader>
+    <div className={styles.container}>
+      <div className={styles.section}>
+        <div className={styles.styleHeader}>
           <FormatColorFillIcon />
-          <SectionTitle>Mark Style</SectionTitle>
-        </StyleHeader>
-        {getMarkSpecificControls(markType, currentMark, updateMark)}
-      </StyleSection>
+          <h3 className={styles.sectionTitle}>Mark Style</h3>
+        </div>
+        <div className={styles.control}>
+          <label className={styles.label}>Mark Type</label>
+          <select
+            className={styles.select}
+            value={markType}
+            onChange={(e) => updateMark({ type: e.target.value as any })}
+          >
+            <option value="bar">Bar</option>
+            <option value="line">Line</option>
+            <option value="area">Area</option>
+            <option value="point">Point</option>
+            <option value="circle">Circle</option>
+            <option value="square">Square</option>
+            <option value="rect">Rectangle</option>
+            <option value="arc">Arc</option>
+          </select>
+        </div>
+      </div>
 
-      <StyleSection>
-        <StyleHeader>
+      <div className={styles.section}>
+        <div className={styles.styleHeader}>
           <FormatSizeIcon />
-          <SectionTitle>Typography</SectionTitle>
-        </StyleHeader>
+          <h3 className={styles.sectionTitle}>Typography</h3>
+        </div>
         
-        <Control>
-          <Label>Font Family</Label>
-          <Select
+        <div className={styles.control}>
+          <label className={styles.label}>Font Family</label>
+          <select
+            className={styles.select}
             value={spec.config?.font || 'Inter'}
             onChange={e => updateConfig({ 
               font: e.target.value,
@@ -611,12 +216,13 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
             <option value="IBM Plex Sans">IBM Plex Sans</option>
             <option value="Roboto">Roboto</option>
             <option value="system-ui">System Default</option>
-          </Select>
-        </Control>
+          </select>
+        </div>
 
-        <Control>
-          <Label>Text Scale Factor</Label>
-          <RangeInput
+          <div className={styles.control}>
+            <label className={styles.label}>Text Scale Factor</label>
+            <input
+            className={styles.rangeInput}
             type="range"
             min="0.5"
             max="3.0"
@@ -643,21 +249,22 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
               });
             }}
           />
-          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
+          <div style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>
             {`${((spec.config?.textScale || 1) * 100).toFixed(0)}%`}
           </div>
-          <ScalePreview $scale={spec.config?.textScale || 1}>
+          <div className={styles.scalePreview}>
             <div className="preview-text">
               <h3>Title Text</h3>
               <div className="body">Body Text</div>
               <div className="small">Small Text</div>
             </div>
-          </ScalePreview>
-        </Control>
+          </div>
+        </div>
 
-        <Control>
-          <Label>Text Weight</Label>
-          <Select
+          <div className={styles.control}>
+            <label className={styles.label}>Text Weight</label>
+            <select
+            className={styles.select}
             value={spec.config?.fontWeight || 400}
             onChange={e => {
               const weight = parseInt(e.target.value);
@@ -673,12 +280,13 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
             <option value="400">Regular</option>
             <option value="500">Medium</option>
             <option value="600">Semi Bold</option>
-          </Select>
-        </Control>
+          </select>
+        </div>
 
-        <Control>
-          <Label>Text Color</Label>
-          <ColorInput
+          <div className={styles.control}>
+            <label className={styles.label}>Text Color</label>
+          <input
+          className={styles.colorInput}
             type="color"
             value={spec.config?.color || '#2c3e50'}
             onChange={e => {
@@ -691,18 +299,19 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
               });
             }}
           />
-        </Control>
-      </StyleSection>
+        </div>
+      </div>
 
-      <StyleSection>
-        <StyleHeader>
+      <div className={styles.section}>
+        <div className={styles.styleHeader}>
           <AutoFixHighIcon />
-          <SectionTitle>Effects</SectionTitle>
-        </StyleHeader>
+          <h3 className={styles.sectionTitle}>Effects</h3>
+        </div>
 
-        <Control>
-          <Label>Mark Opacity</Label>
-          <RangeInput
+          <div className={styles.control}>
+            <label className={styles.label}>Mark Opacity</label>
+            <input
+            className={styles.rangeInput}
             type="range"
             min="0"
             max="1"
@@ -720,11 +329,12 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
               });
             }}
           />
-        </Control>
+        </div>
 
-        <Control>
-          <Label>Blend Mode</Label>
-          <Select
+          <div className={styles.control}>
+            <label className={styles.label}>Blend Mode</label>
+            <select
+            className={styles.select}
             value={currentMark?.blend || 'normal'}
             onChange={e => updateEffects({ blend: e.target.value })}
           >
@@ -732,12 +342,13 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
             <option value="multiply">Multiply</option>
             <option value="screen">Screen</option>
             <option value="overlay">Overlay</option>
-          </Select>
-        </Control>
+          </select>
+        </div>
 
-        <Control>
-          <Label>Animation Duration (ms)</Label>
-          <RangeInput
+          <div className={styles.control}>
+            <label className={styles.label}>Animation Duration (ms)</label>
+            <input
+            className={styles.rangeInput}
             type="range"
             min="0"
             max="2000"
@@ -748,22 +359,24 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
               updateAnimation(duration);
             }}
           />
-        </Control>
-      </StyleSection>
+        </div>
+      </div>
 
-      <Section>
-        <SectionTitle>Axis Style</SectionTitle>
-        <Control>
-          <Label>Grid Color</Label>
-          <ColorInput
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>Axis Style</h3>
+          <div className={styles.control}>
+            <label className={styles.label}>Grid Color</label>
+          <input
+          className={styles.colorInput}
             type="color"
             value={spec.config?.axis?.gridColor || '#dddddd'}
             onChange={e => updateConfig({ axis: { gridColor: e.target.value } })}
           />
-        </Control>
-        <Control>
-          <Label>Grid Opacity</Label>
-          <RangeInput
+        </div>
+          <div className={styles.control}>
+            <label className={styles.label}>Grid Opacity</label>
+            <input
+            className={styles.rangeInput}
             type="range"
             min="0"
             max="1"
@@ -771,24 +384,26 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
             value={spec.config?.axis?.gridOpacity || 0.5}
             onChange={e => updateConfig({ axis: { gridOpacity: parseFloat(e.target.value) } })}
           />
-        </Control>
-        <Control>
-          <Label>Label Size</Label>
-          <RangeInput
+        </div>
+          <div className={styles.control}>
+            <label className={styles.label}>Label Size</label>
+            <input
+            className={styles.rangeInput}
             type="range"
             min="8"
             max="20"
             value={spec.config?.axis?.labelFontSize || 11}
             onChange={e => updateConfig({ axis: { labelFontSize: parseInt(e.target.value) } })}
           />
-        </Control>
-      </Section>
+        </div>
+      </div>
 
-      <Section>
-        <SectionTitle>Legend Style</SectionTitle>
-        <Control>
-          <Label>Position</Label>
-          <Select
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>Legend Style</h3>
+          <div className={styles.control}>
+            <label className={styles.label}>Position</label>
+            <select
+            className={styles.select}
             value={spec.config?.legend?.orient || 'right'}
             onChange={e => updateConfig({ legend: { orient: e.target.value } })}
           >
@@ -796,33 +411,36 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
             <option value="right">Right</option>
             <option value="top">Top</option>
             <option value="bottom">Bottom</option>
-          </Select>
-        </Control>
-        <Control>
-          <Label>Title Size</Label>
-          <RangeInput
+          </select>
+        </div>
+          <div className={styles.control}>
+            <label className={styles.label}>Title Size</label>
+            <input
+            className={styles.rangeInput}
             type="range"
             min="8"
             max="20"
             value={spec.config?.legend?.titleFontSize || 11}
             onChange={e => updateConfig({ legend: { titleFontSize: parseInt(e.target.value) } })}
           />
-        </Control>
-      </Section>
+        </div>
+      </div>
 
-      <Section>
-        <SectionTitle>Chart Style</SectionTitle>
-        <Control>
-          <Label>Background Color</Label>
-          <ColorInput
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>Chart Style</h3>
+          <div className={styles.control}>
+            <label className={styles.label}>Background Color</label>
+          <input
+          className={styles.colorInput}
             type="color"
             value={spec.config?.view?.fill || '#ffffff'}
             onChange={e => updateConfig({ view: { fill: e.target.value } })}
           />
-        </Control>
-        <Control>
-          <Label>Padding</Label>
-          <RangeInput
+        </div>
+          <div className={styles.control}>
+            <label className={styles.label}>Padding</label>
+            <input
+            className={styles.rangeInput}
             type="range"
             min="0"
             max="50"
@@ -833,8 +451,8 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
               padding: parseInt(e.target.value)
             })}
           />
-        </Control>
-      </Section>
-    </Container>
+        </div>
+      </div>
+    </div>
   );
 }; 

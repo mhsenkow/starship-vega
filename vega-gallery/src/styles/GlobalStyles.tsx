@@ -1,5 +1,6 @@
 import { createGlobalStyle } from 'styled-components';
 import { Theme } from './theme';
+import { localFontFaces, fontCSSVariables, fontStacks } from './fonts';
 
 // Utility to convert hex color to RGB format
 const hexToRgb = (hex: string) => {
@@ -36,24 +37,83 @@ const hexToRgb = (hex: string) => {
 // Helper function to safely get theme mode
 const getThemeMode = (theme: Theme): string => theme?.mode || 'light';
 
-export const GlobalStyles = createGlobalStyle<{ theme: Theme }>`
-  /* Import Google Fonts for enhanced typography */
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap');
-  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+export const GlobalStyles = createGlobalStyle<{ theme?: Theme }>`
+  /* Local font system for robust offline functionality */
+  ${localFontFaces}
   
   :root {
-    /* Define CSS variables for easy access to theme values */
-    --font-family-body: ${({ theme }) => theme?.typography?.fontFamily?.body || 'Inter, system-ui, sans-serif'};
-    --font-family-mono: ${({ theme }) => theme?.typography?.fontFamily?.mono || 'SF Mono, Monaco, monospace'};
-    --font-family-heading: ${({ theme }) => theme?.typography?.fontFamily?.heading || 'Inter, system-ui, sans-serif'};
+    /* Font family variables with robust fallbacks */
+    ${fontCSSVariables}
+    
+    /* Override with theme-specific fonts if available, otherwise use system fallbacks */
+    --font-family-body: ${({ theme }) => theme?.typography?.fontFamily?.body || fontStacks.body};
+    --font-family-mono: ${({ theme }) => theme?.typography?.fontFamily?.mono || fontStacks.mono};
+    --font-family-heading: ${({ theme }) => theme?.typography?.fontFamily?.heading || fontStacks.heading};
+    
+    /* Typography variables */
+    --typography-fontFamily-primary: ${({ theme }) => theme?.typography?.fontFamily?.body || fontStacks.body};
+    --typography-fontFamily-mono: ${({ theme }) => theme?.typography?.fontFamily?.mono || fontStacks.mono};
+    --typography-fontSize-xs: ${({ theme }) => theme?.typography?.fontSize?.xs || '0.75rem'};
+    --typography-fontSize-sm: ${({ theme }) => theme?.typography?.fontSize?.sm || '0.875rem'};
+    --typography-fontSize-base: ${({ theme }) => theme?.typography?.fontSize?.md || '1rem'};
+    --typography-fontSize-lg: ${({ theme }) => theme?.typography?.fontSize?.lg || '1.125rem'};
+    --typography-fontSize-xl: ${({ theme }) => theme?.typography?.fontSize?.xl || '1.25rem'};
+    --typography-fontWeight-regular: ${({ theme }) => theme?.typography?.fontWeight?.regular || '400'};
+    --typography-fontWeight-medium: ${({ theme }) => theme?.typography?.fontWeight?.medium || '500'};
+    --typography-fontWeight-semibold: ${({ theme }) => theme?.typography?.fontWeight?.semibold || '600'};
+    --typography-lineHeight-normal: ${({ theme }) => theme?.typography?.lineHeight?.normal || '1.5'};
+    --typography-lineHeight-tight: ${({ theme }) => theme?.typography?.lineHeight?.tight || '1.25'};
+    --typography-lineHeight-loose: ${({ theme }) => theme?.typography?.lineHeight?.loose || '1.75'};
+    
+    /* Design System compatibility aliases */
+    --font-family-primary: ${({ theme }) => theme?.typography?.fontFamily?.body || fontStacks.body};
+    --color-background-primary: ${({ theme }) => theme?.colors?.background || '#ffffff'};
+    --color-surface-primary: ${({ theme }) => theme?.colors?.surface || '#ffffff'};
+    --color-border-light: ${({ theme }) => theme?.colors?.border || '#e0e0e0'};
+    
+    /* Spacing aliases for design system */
+    --spacing-1: ${({ theme }) => theme?.spacing?.xs || '4px'};
+    --spacing-2: ${({ theme }) => theme?.spacing?.sm || '8px'};
+    --spacing-3: ${({ theme }) => theme?.spacing?.md || '12px'};
+    --spacing-4: ${({ theme }) => theme?.spacing?.md || '16px'};
+    --spacing-6: ${({ theme }) => theme?.spacing?.lg || '24px'};
+    --spacing-8: ${({ theme }) => theme?.spacing?.xl || '32px'};
+    
+    /* Component aliases */
+    --component-button-fontWeight: ${({ theme }) => theme?.typography?.fontWeight?.medium || '500'};
+    --component-button-borderRadius: ${({ theme }) => theme?.borderRadius?.md || '8px'};
+    --component-button-height-small: 32px;
+    --component-button-height-medium: 40px;
+    --component-button-height-large: 48px;
+    --component-button-padding-small: ${({ theme }) => theme?.spacing?.sm || '8px'} ${({ theme }) => theme?.spacing?.md || '16px'};
+    --component-button-padding-medium: ${({ theme }) => theme?.spacing?.md || '12px'} ${({ theme }) => theme?.spacing?.lg || '20px'};
+    --component-button-padding-large: ${({ theme }) => theme?.spacing?.lg || '16px'} ${({ theme }) => theme?.spacing?.xl || '24px'};
+    
+    /* Transition aliases */
+    --transition-duration-normal: ${({ theme }) => theme?.transitions?.normal || '0.3s ease'};
+    --transition-easing-standard: ease;
+    
+    /* Shadow aliases */
+    --shadow-sm: ${({ theme }) => theme?.elevation?.sm || '0px 1px 2px rgba(0, 0, 0, 0.05)'};
+    --shadow-base: ${({ theme }) => theme?.elevation?.md || '0px 2px 4px rgba(0, 0, 0, 0.1)'};
+    --shadow-md: ${({ theme }) => theme?.elevation?.md || '0px 2px 4px rgba(0, 0, 0, 0.1)'};
+    --shadow-lg: ${({ theme }) => theme?.elevation?.lg || '0px 4px 8px rgba(0, 0, 0, 0.12)'};
+    
+    /* Border radius aliases */
+    --radius-sm: ${({ theme }) => theme?.borderRadius?.sm || '4px'};
+    --radius-base: ${({ theme }) => theme?.borderRadius?.md || '8px'};
+    --radius-md: ${({ theme }) => theme?.borderRadius?.md || '8px'};
+    --radius-lg: ${({ theme }) => theme?.borderRadius?.lg || '12px'};
+    --radius-full: 9999px;
     
     /* Base colors */
     --color-primary: ${({ theme }) => theme?.colors?.primary || '#1976d2'};
+    --color-primary-light: ${({ theme }) => (theme?.colors?.primary || '#1976d2') + '20'};
     --color-secondary: ${({ theme }) => theme?.colors?.secondary || '#666666'};
     --color-success: ${({ theme }) => theme?.colors?.success || '#4caf50'};
+    --color-success-light: ${({ theme }) => (theme?.colors?.success || '#4caf50') + '20'};
     --color-warning: ${({ theme }) => theme?.colors?.warning || '#ff9800'};
+    --color-warning-light: ${({ theme }) => (theme?.colors?.warning || '#ff9800') + '20'};
     --color-error: ${({ theme }) => theme?.colors?.error || '#f44336'};
     --color-error-light: ${({ theme }) => (theme?.colors?.error || '#f44336') + '20'};
     --color-error-dark: ${({ theme }) => getThemeMode(theme) === 'dark' || getThemeMode(theme) === 'neon' ? '#ff1744' : '#c82333'};
@@ -88,6 +148,13 @@ export const GlobalStyles = createGlobalStyle<{ theme: Theme }>`
     /* Specific UI elements */
     --color-app-bar: ${({ theme }) => theme?.colors?.appBar || '#ffffff'};
     --color-app-bar-text: ${({ theme }) => theme?.colors?.appBarText || '#000000'};
+    --color-appBar: ${({ theme }) => theme?.colors?.appBar || '#ffffff'};
+    --color-appBarText: ${({ theme }) => theme?.colors?.appBarText || '#000000'};
+    --color-text-on-primary: ${({ theme }) => theme?.colors?.text?.inverse || '#ffffff'};
+    --color-primary-hover: ${({ theme }) => {
+      const primary = theme?.colors?.primary || '#1976d2';
+      return getThemeMode(theme) === 'dark' ? primary + 'cc' : primary + 'e0';
+    }};
     --color-focus-ring: ${({ theme }) => theme?.colors?.focusRing || 'rgba(25, 118, 210, 0.5)'};
     
     /* Chart-specific colors */
@@ -99,6 +166,12 @@ export const GlobalStyles = createGlobalStyle<{ theme: Theme }>`
     --sampling-indicator-border: ${({ theme }) => theme?.colors?.samplingIndicator?.border || '#ffe58f'};
     --sampling-indicator-text: ${({ theme }) => theme?.colors?.samplingIndicator?.text || '#755c0d'};
     --sampling-indicator-icon: ${({ theme }) => theme?.colors?.samplingIndicator?.icon || '#f5a623'};
+    
+    /* Sampling indicator aliases for backward compatibility */
+    --color-samplingIndicator-background: ${({ theme }) => theme?.colors?.samplingIndicator?.background || '#fffce8'};
+    --color-samplingIndicator-border: ${({ theme }) => theme?.colors?.samplingIndicator?.border || '#ffe58f'};
+    --color-samplingIndicator-text: ${({ theme }) => theme?.colors?.samplingIndicator?.text || '#755c0d'};
+    --color-samplingIndicator-icon: ${({ theme }) => theme?.colors?.samplingIndicator?.icon || '#f5a623'};
     
     /* Spacing */
     --spacing-xs: ${({ theme }) => theme?.spacing?.xs || '4px'};
@@ -116,6 +189,11 @@ export const GlobalStyles = createGlobalStyle<{ theme: Theme }>`
     --transition-fast: ${({ theme }) => theme?.transitions?.fast || '0.15s ease'};
     --transition-normal: ${({ theme }) => theme?.transitions?.normal || '0.3s ease'};
     --transition-slow: ${({ theme }) => theme?.transitions?.slow || '0.5s ease'};
+    
+    /* Elevation (shadows) */
+    --elevation-sm: ${({ theme }) => theme?.elevation?.sm || '0px 1px 2px rgba(0, 0, 0, 0.05)'};
+    --elevation-md: ${({ theme }) => theme?.elevation?.md || '0px 2px 4px rgba(0, 0, 0, 0.1)'};
+    --elevation-lg: ${({ theme }) => theme?.elevation?.lg || '0px 4px 8px rgba(0, 0, 0, 0.12)'};
   }
 
   * {
@@ -125,7 +203,7 @@ export const GlobalStyles = createGlobalStyle<{ theme: Theme }>`
   }
   
   html, body {
-    font-family: ${({ theme }) => theme?.typography?.fontFamily?.body || 'Inter, system-ui, sans-serif'};
+    font-family: ${({ theme }) => theme?.typography?.fontFamily?.body || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'};
     font-size: 16px;
     line-height: ${({ theme }) => theme?.typography?.lineHeight?.normal || '1.5'};
     background: ${({ theme }) => theme?.colors?.background || '#ffffff'};
@@ -145,7 +223,7 @@ export const GlobalStyles = createGlobalStyle<{ theme: Theme }>`
   
   /* Typography scale with theme-specific adjustments */
   h1, h2, h3, h4, h5, h6 {
-    font-family: ${({ theme }) => theme?.typography?.fontFamily?.heading || 'Inter, system-ui, sans-serif'};
+    font-family: ${({ theme }) => theme?.typography?.fontFamily?.heading || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'};
     font-weight: ${({ theme }) => {
       const mode = getThemeMode(theme);
       if (mode === 'brutalist') return '900';
@@ -191,7 +269,7 @@ export const GlobalStyles = createGlobalStyle<{ theme: Theme }>`
 
   p {
     margin-bottom: ${({ theme }) => theme?.spacing?.md || '16px'};
-    font-family: ${({ theme }) => theme?.typography?.fontFamily?.body || 'Inter, system-ui, sans-serif'};
+    font-family: ${({ theme }) => theme?.typography?.fontFamily?.body || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'};
     
     /* Theme-specific paragraph styling */
     ${({ theme }) => {
@@ -235,7 +313,7 @@ export const GlobalStyles = createGlobalStyle<{ theme: Theme }>`
 
   /* Enhanced code elements with theme fonts */
   code, pre {
-    font-family: ${({ theme }) => theme?.typography?.fontFamily?.mono || 'SF Mono, Monaco, monospace'};
+    font-family: ${({ theme }) => theme?.typography?.fontFamily?.mono || '"SF Mono", "Monaco", "Inconsolata", "Roboto Mono", "Source Code Pro", "Consolas", "Courier New", monospace'};
     background-color: ${({ theme }) => 
       getThemeMode(theme) === 'light' ? '#f5f7fa' : 
       getThemeMode(theme) === 'neon' ? 'rgba(0, 245, 255, 0.1)' :
@@ -281,7 +359,7 @@ export const GlobalStyles = createGlobalStyle<{ theme: Theme }>`
     font-size: 12px;
     color: var(--sampling-indicator-text);
     z-index: 100;
-    font-family: ${({ theme }) => theme?.typography?.fontFamily?.body || 'Inter, system-ui, sans-serif'};
+    font-family: ${({ theme }) => theme?.typography?.fontFamily?.body || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'};
     
     ${({ theme }) => {
       const mode = getThemeMode(theme);
@@ -1727,7 +1805,7 @@ export const GlobalStyles = createGlobalStyle<{ theme: Theme }>`
   .vega-bind tspan,
   svg text,
   svg tspan {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif !important;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
     font-weight: 400 !important;
     letter-spacing: normal !important;
     text-transform: none !important;
@@ -1757,7 +1835,7 @@ export const GlobalStyles = createGlobalStyle<{ theme: Theme }>`
   [data-chart-type] .role-axis-title text,
   [data-chart-type] .role-legend text,
   [data-chart-type] .role-legend-title text {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif !important;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
     font-weight: 400 !important;
     font-size: 11px !important;
     letter-spacing: normal !important;
@@ -1793,11 +1871,11 @@ export const GlobalStyles = createGlobalStyle<{ theme: Theme }>`
   body.retro-theme [data-chart-type],
   body.retro-theme [class*="Chart"]:not(.theme-panel),
   body.retro-theme [class*="chart"]:not(.theme-panel) {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif !important;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
     
     /* Override all text elements inside charts */
     text, tspan, * {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif !important;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
       font-weight: 400 !important;
       letter-spacing: normal !important;
       text-transform: none !important;

@@ -5,7 +5,6 @@ import styled from 'styled-components';
 import { v4 as uuidv4 } from 'uuid';
 import { generatePreviewRows, enhanceDatasetMetadata, generateDataFingerprint, createDataSample, processInChunks } from '../../utils/dataUtils';
 import { DatasetMetadataForm } from '../DataManagement/DatasetMetadataForm';
-import { LinearProgress, Typography, Box } from '@mui/material';
 
 interface DataUploaderProps {
   onDatasetAdd: (dataset: DatasetMetadata) => void;
@@ -16,31 +15,31 @@ interface DataUploaderProps {
 const UploadButton = styled.label`
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 4px;
-  background-color: #f0f0f0;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
   
   &:hover {
-    background-color: #e4e4e4;
+    background-color: var(--color-surface-hover);
   }
 `;
 
 const DropArea = styled.div<{ $isDragging: boolean }>`
-  padding: 32px;
-  border: 2px dashed ${props => props.$isDragging ? '#4dabf7' : '#ddd'};
-  border-radius: 8px;
-  margin: 16px 0;
+  padding: var(--spacing-xl);
+  border: 2px dashed ${props => props.$isDragging ? 'var(--color-primary)' : 'var(--color-border)'};
+  border-radius: var(--radius-base);
+  margin: var(--spacing-md) 0;
   text-align: center;
-  transition: all 0.2s;
-  background-color: ${props => props.$isDragging ? 'rgba(77, 171, 247, 0.1)' : '#f8f9fa'};
+  transition: all var(--transition-fast);
+  background-color: ${props => props.$isDragging ? 'var(--color-primary-light)' : 'var(--color-background)'};
   
   &:hover {
     border-color: var(--color-primary);
-    background-color: rgba(77, 171, 247, 0.1);
+    background-color: var(--color-primary-light);
   }
 `;
 
@@ -49,9 +48,59 @@ const HiddenInput = styled.input`
 `;
 
 const StatusText = styled.div`
-  margin-top: 16px;
-  font-size: 0.9rem;
-  color: #555;
+  margin-top: var(--spacing-md);
+  font-size: var(--typography-fontSize-sm);
+  color: var(--color-text-secondary);
+`;
+
+const HelperText = styled.div`
+  margin-top: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  font-size: var(--typography-fontSize-sm);
+  color: var(--color-text-secondary);
+`;
+
+const ProgressContainer = styled.div`
+  width: 100%;
+  margin-top: var(--spacing-md);
+`;
+
+const ProgressBarContainer = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const ProgressBarWrapper = styled.div`
+  width: 100%;
+  margin-right: var(--spacing-sm);
+`;
+
+const ProgressPercentage = styled.div`
+  min-width: 35px;
+  font-size: var(--typography-fontSize-sm);
+  color: var(--color-text-secondary);
+`;
+
+const ProgressBar = styled.div<{ $progress: number }>`
+  width: 100%;
+  height: 4px;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    display: block;
+    width: ${props => props.$progress}%;
+    height: 100%;
+    background-color: var(--color-primary);
+    transition: width 0.3s ease;
+  }
+`;
+
+const DropText = styled.div`
+  font-size: var(--typography-fontSize-base);
+  color: var(--color-text-primary);
 `;
 
 export const DataUploader: React.FC<DataUploaderProps> = ({ 
@@ -439,9 +488,9 @@ export const DataUploader: React.FC<DataUploaderProps> = ({
             />
           </UploadButton>
           
-          <Typography variant="body2" sx={{ mt: 1, mb: 2 }}>
+          <HelperText>
             or drop your file here
-          </Typography>
+          </HelperText>
           
           <DropArea 
             $isDragging={isDragging}
@@ -449,25 +498,25 @@ export const DataUploader: React.FC<DataUploaderProps> = ({
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
           >
-            <Typography>
+            <DropText>
               Drag & Drop CSV or JSON file here
-            </Typography>
+            </DropText>
           </DropArea>
         </>
       )}
       
       {isLoading && (
-        <Box sx={{ width: '100%', mt: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Box sx={{ width: '100%', mr: 1 }}>
-              <LinearProgress variant="determinate" value={progress} />
-            </Box>
-            <Box sx={{ minWidth: 35 }}>
-              <Typography variant="body2" color="text.secondary">{`${Math.round(progress)}%`}</Typography>
-            </Box>
-          </Box>
+        <ProgressContainer>
+          <ProgressBarContainer>
+            <ProgressBarWrapper>
+              <ProgressBar $progress={progress} />
+            </ProgressBarWrapper>
+            <ProgressPercentage>
+              {`${Math.round(progress)}%`}
+            </ProgressPercentage>
+          </ProgressBarContainer>
           <StatusText>{uploadStatus}</StatusText>
-        </Box>
+        </ProgressContainer>
       )}
       
       {showMetadataForm && uploadedData && (

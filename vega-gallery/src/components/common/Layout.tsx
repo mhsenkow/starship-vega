@@ -1,16 +1,4 @@
-import styled from 'styled-components'
-import { Header } from './Header'
-
-const LayoutContainer = styled.div`
-  width: 100%;
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: var(--spacing-lg);
-  background-color: var(--color-background);
-  color: var(--color-text-primary);
-  transition: background-color var(--transition-normal), 
-              color var(--transition-normal);
-`
+import styles from './Layout.module.css'
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,9 +6,10 @@ interface LayoutProps {
 
 export const Layout = ({ children }: LayoutProps) => {
   return (
-    <LayoutContainer className="layout-container">
-      <Header />
-      {children}
-    </LayoutContainer>
+    <div className={styles.layout}>
+      <div className={styles.content}>
+        {children}
+      </div>
+    </div>
   )
 }

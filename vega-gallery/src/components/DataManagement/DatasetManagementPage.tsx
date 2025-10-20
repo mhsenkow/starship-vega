@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { Button, Box, Typography, Tabs, Tab } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import StorageIcon from '@mui/icons-material/Storage';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
-import ImageIcon from '@mui/icons-material/Image';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
-import TableChartIcon from '@mui/icons-material/TableChart';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import DirectionsIcon from '@mui/icons-material/Directions';
+import { Box, Typography } from '@mui/material';
+import { Button, ButtonGroup } from '../../design-system/components/ButtonSystem';
+import { Tabs, TabPanel } from '../../design-system/components/Tabs';
+import styles from './DatasetManagementPage.module.css';
+import { 
+  StorageIcon, 
+  UploadFileIcon, 
+  ImageIcon, 
+  AutoFixHighIcon, 
+  TableChartIcon, 
+  CloudUploadIcon, 
+  DirectionsIcon 
+} from '../common/Icons';
 import { DataAssetBrowser } from './DataAssetBrowser';
 import { ImageDataExtractor } from './ImageDataExtractor';
 import { DataTransformationPanel } from './DataTransformationPanel';
@@ -20,53 +23,10 @@ import { detectDataTypes, determineCompatibleCharts } from '../../utils/dataUtil
 import { DatasetMetadata } from '../../types/dataset';
 import { updateSampleDatasets } from '../../utils/seedData';
 
-const PageContainer = styled.div`
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-`;
-
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-`;
-
-const TabPanel = styled.div<{ $active: boolean }>`
-  display: ${props => props.$active ? 'block' : 'none'};
-  padding: 16px 0;
-`;
-
-const ActionButton = styled(Button)`
-  margin-left: 8px;
-`;
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function CustomTabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`dataset-tabpanel-${index}`}
-      aria-labelledby={`dataset-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box>{children}</Box>}
-    </div>
-  );
-}
+// Styled components removed - using CSS modules instead
 
 export const DatasetManagementPage: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [selectedDataset, setSelectedDataset] = useState<DatasetMetadata | null>(null);
   const [isUpdatingSamples, setIsUpdatingSamples] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -82,9 +42,17 @@ export const DatasetManagementPage: React.FC = () => {
     }
   }, [successMessage]);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
+  const handleTabChange = (newValue: string | number) => {
+    setTabValue(newValue as number);
   };
+
+  const tabs = [
+    { label: "Browse Datasets", value: 0, icon: <TableChartIcon /> },
+    { label: "Upload Dataset", value: 1, icon: <UploadFileIcon /> },
+    { label: "Image Extraction", value: 2, icon: <ImageIcon /> },
+    { label: "Export/Import", value: 3, icon: <CloudUploadIcon /> },
+    ...(selectedDataset ? [{ label: "Transform", value: 4, icon: <DirectionsIcon /> }] : [])
+  ];
 
   const handleExportAllData = async () => {
     try {
@@ -99,8 +67,6 @@ export const DatasetManagementPage: React.FC = () => {
   const handleDatasetAdd = async (dataset: DatasetMetadata) => {
     try {
       await storeDataset(dataset);
-      // Trigger refresh of data assets browser
-      setRefreshTrigger(prev => prev + 1);
       setSuccessMessage("Dataset added successfully!");
     } catch (error) {
       console.error('Failed to store dataset:', error);
@@ -116,14 +82,12 @@ export const DatasetManagementPage: React.FC = () => {
   const handleTransformComplete = () => {
     setSelectedDataset(null);
     setTabValue(0); // Back to browse tab
-    setRefreshTrigger(prev => prev + 1);
     setSuccessMessage("Dataset transformed successfully!");
   };
 
   const handleImageDataExtracted = async (dataset: DatasetMetadata) => {
     try {
       await storeDataset(dataset);
-      setRefreshTrigger(prev => prev + 1);
       setSuccessMessage("Data extracted from image successfully!");
     } catch (error) {
       console.error('Failed to save extracted dataset:', error);
@@ -135,7 +99,6 @@ export const DatasetManagementPage: React.FC = () => {
     try {
       setIsUpdatingSamples(true);
       await updateSampleDatasets();
-      setRefreshTrigger(prev => prev + 1);
       setSuccessMessage("Sample datasets updated successfully!");
     } catch (error) {
       console.error('Failed to update sample datasets:', error);
@@ -156,7 +119,6 @@ export const DatasetManagementPage: React.FC = () => {
       const { seedDatabaseWithSampleData } = await import('../../utils/seedData');
       await seedDatabaseWithSampleData();
       
-      setRefreshTrigger(prev => prev + 1);
       setSuccessMessage("Database cleared and reseeded successfully!");
     } catch (error) {
       console.error('Failed to clear and reseed database:', error);
@@ -167,10 +129,10 @@ export const DatasetManagementPage: React.FC = () => {
   };
 
   return (
-    <PageContainer>
-      <Header>
+    <div className={styles.pageContainer}>
+      <div className={styles.header}>
         <Box>
-          <Typography variant="h4" component="h1" gutterBottom>
+          <Typography variant="h4" gutterBottom>
             Data Asset Management
           </Typography>
           <Typography variant="body1" color="text.secondary">
@@ -178,72 +140,72 @@ export const DatasetManagementPage: React.FC = () => {
           </Typography>
         </Box>
         <Box>
-          <ActionButton 
-            variant="outlined" 
-            onClick={handleUpdateSampleDatasets}
-            startIcon={<AutoFixHighIcon />}
-            disabled={isUpdatingSamples}
-          >
-            {isUpdatingSamples ? 'Updating...' : 'Update Sample Data'}
-          </ActionButton>
-          <ActionButton 
-            variant="outlined" 
-            color="warning"
-            onClick={handleClearAndReseedDatabase}
-            startIcon={<StorageIcon />}
-            disabled={isUpdatingSamples}
-          >
-            {isUpdatingSamples ? 'Processing...' : 'Clear & Reseed DB'}
-          </ActionButton>
-          <ActionButton 
-            variant="outlined" 
-            onClick={handleExportAllData}
-            startIcon={<StorageIcon />}
-          >
-            Export All Data
-          </ActionButton>
+          <ButtonGroup buttonStyle="floating">
+            <Button 
+              variant="secondary" 
+              size="medium"
+              onClick={handleUpdateSampleDatasets}
+              disabled={isUpdatingSamples}
+            >
+              <AutoFixHighIcon />
+              {isUpdatingSamples ? 'Updating...' : 'Update Sample Data'}
+            </Button>
+            <Button 
+              variant="tertiary" 
+              size="medium"
+              onClick={handleClearAndReseedDatabase}
+              disabled={isUpdatingSamples}
+            >
+              <StorageIcon />
+              {isUpdatingSamples ? 'Processing...' : 'Clear & Reseed DB'}
+            </Button>
+            <Button 
+              variant="tertiary" 
+              size="medium"
+              onClick={handleExportAllData}
+            >
+              <StorageIcon />
+              Export All Data
+            </Button>
+          </ButtonGroup>
         </Box>
-      </Header>
+      </div>
 
       {successMessage && (
-        <Box sx={{ 
-          p: 2, 
-          mb: 2,
-          bgcolor: '#e8f5e9', 
-          borderRadius: 1,
+        <Box style={{ 
+          padding: '16px', 
+          marginBottom: '16px',
+          backgroundColor: '#e8f5e9', 
+          borderRadius: '8px',
           border: '1px solid #c8e6c9'
         }}>
-          <Typography color="#2e7d32">{successMessage}</Typography>
+          <Typography color="success">{successMessage}</Typography>
         </Box>
       )}
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={tabValue} onChange={handleTabChange} aria-label="dataset management tabs">
-          <Tab icon={<TableChartIcon />} iconPosition="start" label="Browse Datasets" />
-          <Tab icon={<UploadFileIcon />} iconPosition="start" label="Upload Dataset" />
-          <Tab icon={<ImageIcon />} iconPosition="start" label="Image Extraction" />
-          <Tab icon={<CloudUploadIcon />} iconPosition="start" label="Export/Import" />
-          {selectedDataset && (
-            <Tab icon={<DirectionsIcon />} iconPosition="start" label="Transform" />
-          )}
-        </Tabs>
+      <Box style={{ borderBottom: '1px solid var(--color-border-light)' }}>
+        <Tabs 
+          value={tabValue} 
+          onChange={handleTabChange} 
+          tabs={tabs}
+        />
       </Box>
 
-      <CustomTabPanel value={tabValue} index={0}>
-        <Box sx={{ mt: 2 }}>
+      <TabPanel value={0} currentValue={tabValue}>
+        <Box style={{ marginTop: '16px' }}>
           <DataAssetBrowser 
-            key={`browser-${refreshTrigger}`} 
+            key="data-asset-browser" 
             onSelectDataset={handleDatasetSelect}
           />
         </Box>
-      </CustomTabPanel>
+      </TabPanel>
 
-      <CustomTabPanel value={tabValue} index={1}>
-        <Box sx={{ mt: 2, p: 3, border: '1px solid #eee', borderRadius: 2 }}>
+      <TabPanel value={1} currentValue={tabValue}>
+        <Box style={{ marginTop: '16px', padding: '24px', border: '1px solid #eee', borderRadius: '16px' }}>
           <Typography variant="h6" gutterBottom>
             Upload New Dataset
           </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
+          <Typography variant="body2" color="secondary">
             Upload CSV or JSON data. You'll be prompted to add metadata to help organize and identify your dataset.
           </Typography>
           
@@ -253,30 +215,30 @@ export const DatasetManagementPage: React.FC = () => {
             determineCompatibleCharts={determineCompatibleCharts}
           />
         </Box>
-      </CustomTabPanel>
+      </TabPanel>
 
-      <CustomTabPanel value={tabValue} index={2}>
-        <Box sx={{ mt: 2 }}>
+      <TabPanel value={2} currentValue={tabValue}>
+        <Box style={{ marginTop: '16px' }}>
           <ImageDataExtractor onDataExtracted={handleImageDataExtracted} />
         </Box>
-      </CustomTabPanel>
+      </TabPanel>
 
-      <CustomTabPanel value={tabValue} index={3}>
-        <Box sx={{ mt: 2 }}>
+      <TabPanel value={3} currentValue={tabValue}>
+        <Box style={{ marginTop: '16px' }}>
           <ExportImport />
         </Box>
-      </CustomTabPanel>
+      </TabPanel>
 
       {selectedDataset && (
-        <CustomTabPanel value={tabValue} index={4}>
-          <Box sx={{ mt: 2 }}>
+        <TabPanel value={4} currentValue={tabValue}>
+          <Box style={{ marginTop: '16px' }}>
             <DataTransformationPanel 
               dataset={selectedDataset}
               onComplete={handleTransformComplete}
             />
           </Box>
-        </CustomTabPanel>
+        </TabPanel>
       )}
-    </PageContainer>
+    </div>
   );
 }; 

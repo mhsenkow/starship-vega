@@ -1,541 +1,436 @@
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
 import { 
-  Box, 
-  Card, 
-  Typography, 
-  Chip, 
-  TextField, 
-  Button, 
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Grid,
-  IconButton,
-  Tooltip,
-  Paper
-} from '@mui/material';
-import InfoIcon from '@mui/icons-material/Info';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import { DataAsset } from '../../types/dataset';
+  InfoIcon, 
+  DeleteIcon, 
+  EditIcon, 
+  Filter as FilterListIcon 
+} from '../common/Icons';
+import { Button } from '../../design-system/components/ButtonSystem';
+import { Badge, BadgeGroup } from '../../design-system/components/BadgeSystem';
+import { DatasetMetadata } from '../../types/dataset';
 import { getAllDatasets, deleteDataset } from '../../utils/indexedDB';
 import { DatasetMetadataForm } from './DatasetMetadataForm';
-
-const SearchContainer = styled.div`
-  margin-bottom: 16px;
-  display: flex;
-  gap: 8px;
-`;
-
-const FilterContainer = styled(Paper)`
-  padding: 16px;
-  margin-bottom: 16px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-`;
-
-const DatasetGrid = styled(Grid)`
-  margin-top: 16px;
-`;
-
-const StyledCard = styled(Card)`
-  padding: 16px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const CardHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 8px;
-`;
-
-const CardActions = styled.div`
-  display: flex;
-  gap: 8px;
-  margin-top: auto;
-  padding-top: 8px;
-`;
-
-const TagsContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 8px;
-`;
-
-const StatsContainer = styled.div`
-  display: flex;
-  gap: 16px;
-  margin-top: 8px;
-  color: ${props => props.theme.colors.text?.secondary || '#6c757d'};
-  font-size: 0.8rem;
-`;
-
-const MetadataDetailTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  
-  th, td {
-    padding: 8px;
-    border-bottom: 1px solid var(--color-border);
-    text-align: left;
-  }
-  
-  th {
-    background-color: #f5f5f5;
-    font-weight: 500;
-  }
-`;
+import styles from './DataAssetBrowser.module.css';
 
 interface DataAssetBrowserProps {
-  onSelectDataset?: (dataset: DataAsset) => void;
-  onUpdateDataset?: (dataset: DataAsset) => void;
+  onSelectDataset?: (dataset: DatasetMetadata) => void;
+  onUpdateDataset?: (dataset: DatasetMetadata) => void;
   selectable?: boolean;
 }
 
 export const DataAssetBrowser: React.FC<DataAssetBrowserProps> = ({ 
   onSelectDataset, 
-  onUpdateDataset,
-  selectable = false
+  onUpdateDataset
 }) => {
-  const [datasets, setDatasets] = useState<DataAsset[]>([]);
-  const [filteredDatasets, setFilteredDatasets] = useState<DataAsset[]>([]);
+  const [datasets, setDatasets] = useState<DatasetMetadata[]>([]);
+  const [filteredDatasets, setFilteredDatasets] = useState<DatasetMetadata[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedOrigins, setSelectedOrigins] = useState<string[]>([]);
-  const [showDetailDialog, setShowDetailDialog] = useState(false);
-  const [selectedDataset, setSelectedDataset] = useState<DataAsset | null>(null);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [allTags, setAllTags] = useState<string[]>([]);
-  const [allOrigins, setAllOrigins] = useState<string[]>([]);
-  
+  const [selectedDataset, setSelectedDataset] = useState<DatasetMetadata | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load datasets on component mount
   useEffect(() => {
+    let isMounted = true;
+    const loadDatasets = async () => {
+      try {
+        setIsLoading(true);
+        const allDatasets = await getAllDatasets();
+        if (isMounted) {
+          setDatasets(allDatasets);
+          setFilteredDatasets(allDatasets);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Failed to load datasets:', error);
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
     loadDatasets();
+    return () => {
+      isMounted = false;
+    };
   }, []);
-  
-  const loadDatasets = async () => {
-    try {
-      const allDatasets = await getAllDatasets();
-      setDatasets(allDatasets);
-      setFilteredDatasets(allDatasets);
-      
-      // Extract all unique tags and origins
-      const tagSet = new Set<string>();
-      const originSet = new Set<string>();
-      
-      allDatasets.forEach(dataset => {
-        dataset.tags?.forEach(tag => tagSet.add(tag));
-        if (dataset.origin) originSet.add(dataset.origin);
-      });
-      
-      setAllTags(Array.from(tagSet));
-      setAllOrigins(Array.from(originSet));
-    } catch (error) {
-      console.error('Failed to load datasets:', error);
-    }
-  };
-  
+
+  // Filter datasets based on search query and selected filters
   useEffect(() => {
-    // Apply filters and search
-    let filtered = [...datasets];
-    
-    // Apply search query
+    let filtered = datasets;
+
+    // Apply search filter
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(dataset => 
-        dataset.name.toLowerCase().includes(query) || 
-        dataset.description?.toLowerCase().includes(query) ||
-        dataset.tags?.some(tag => tag.toLowerCase().includes(query))
+      filtered = filtered.filter(dataset =>
+        dataset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (dataset.description && dataset.description.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
-    
-    // Apply tag filters
+
+    // Apply tag filter
     if (selectedTags.length > 0) {
-      filtered = filtered.filter(dataset => 
-        dataset.tags?.some(tag => selectedTags.includes(tag))
+      filtered = filtered.filter(dataset =>
+        selectedTags.some(tag => dataset.tags?.includes(tag))
       );
     }
-    
-    // Apply origin filters
+
+    // Apply origin filter
     if (selectedOrigins.length > 0) {
-      filtered = filtered.filter(dataset => 
+      filtered = filtered.filter(dataset =>
         dataset.origin && selectedOrigins.includes(dataset.origin)
       );
     }
-    
+
     setFilteredDatasets(filtered);
-  }, [searchQuery, selectedTags, selectedOrigins, datasets]);
-  
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-  
-  const handleTagSelect = (tag: string) => {
+  }, [datasets, searchQuery, selectedTags, selectedOrigins]);
+
+  // Extract unique tags and origins for filters
+  const allTags = Array.from(new Set(datasets.flatMap(d => d.tags || [])));
+  const allOrigins = Array.from(new Set(datasets.map(d => d.origin).filter(Boolean))) as string[];
+
+  const handleTagToggle = (tag: string) => {
     setSelectedTags(prev => 
       prev.includes(tag) 
-        ? prev.filter(t => t !== tag) 
+        ? prev.filter(t => t !== tag)
         : [...prev, tag]
     );
   };
-  
-  const handleOriginSelect = (origin: string) => {
+
+  const handleOriginToggle = (origin: string) => {
     setSelectedOrigins(prev => 
       prev.includes(origin) 
-        ? prev.filter(o => o !== origin) 
+        ? prev.filter(o => o !== origin)
         : [...prev, origin]
     );
   };
-  
-  const handleViewDetails = (dataset: DataAsset) => {
-    setSelectedDataset(dataset);
-    setShowDetailDialog(true);
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedTags([]);
+    setSelectedOrigins([]);
   };
-  
-  const handleEdit = (dataset: DataAsset) => {
+
+  const handleEditDataset = (dataset: DatasetMetadata) => {
     setSelectedDataset(dataset);
-    setShowEditDialog(true);
+    setIsEditDialogOpen(true);
   };
-  
-  const handleDelete = async (dataset: DataAsset) => {
+
+  const handleViewDetails = (dataset: DatasetMetadata) => {
+    setSelectedDataset(dataset);
+    setIsDetailDialogOpen(true);
+  };
+
+  const handleDeleteDataset = async (dataset: DatasetMetadata) => {
     if (window.confirm(`Are you sure you want to delete "${dataset.name}"?`)) {
       try {
         await deleteDataset(dataset.id);
         setDatasets(prev => prev.filter(d => d.id !== dataset.id));
+        if (onUpdateDataset) {
+          onUpdateDataset(dataset);
+        }
       } catch (error) {
         console.error('Failed to delete dataset:', error);
         alert('Failed to delete dataset. Please try again.');
       }
     }
   };
-  
-  const handleMetadataSubmit = async (metadata: Partial<DataAsset>) => {
-    if (!selectedDataset) return;
-    
-    try {
-      const updatedDataset = {
-        ...selectedDataset,
-        ...metadata,
-        updatedAt: new Date().toISOString()
-      };
-      
-      // Call onUpdateDataset if provided
-      if (onUpdateDataset) {
-        onUpdateDataset(updatedDataset);
-      }
-      
-      // Update local state
+
+  const handleDatasetUpdate = (updatedMetadata: Partial<DatasetMetadata>) => {
+    if (selectedDataset && updatedMetadata.id) {
+      const updatedDataset = { ...selectedDataset, ...updatedMetadata } as DatasetMetadata;
       setDatasets(prev => 
         prev.map(d => d.id === updatedDataset.id ? updatedDataset : d)
       );
-      
-      setShowEditDialog(false);
-    } catch (error) {
-      console.error('Failed to update dataset metadata:', error);
-      alert('Failed to update dataset. Please try again.');
+      setIsEditDialogOpen(false);
+      setSelectedDataset(null);
+      if (onUpdateDataset) {
+        onUpdateDataset(updatedDataset);
+      }
     }
   };
-  
-  const handleClearFilters = () => {
-    setSearchQuery('');
-    setSelectedTags([]);
-    setSelectedOrigins([]);
+
+  const handleDatasetSelect = (dataset: DatasetMetadata) => {
+    if (onSelectDataset) {
+      onSelectDataset(dataset);
+    }
   };
-  
+
+  const formatDataPreview = (data: any[]) => {
+    if (!data || data.length === 0) return 'No data available';
+    
+    const maxRows = 10;
+    const previewData = data.slice(0, maxRows);
+    
+    return JSON.stringify(previewData, null, 2);
+  };
+
+  const getRowCount = (data: any[]) => {
+    return data ? data.length : 0;
+  };
+
+  const getColumnCount = (data: any[]) => {
+    if (!data || data.length === 0) return 0;
+    return Object.keys(data[0]).length;
+  };
+
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>
+          Loading datasets...
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <Box>
-      <Typography variant="h5" gutterBottom>Data Assets Library</Typography>
+    <div className={styles.container}>
+      <h2 className={styles.title}>Data Assets Library</h2>
       
-      <SearchContainer>
-        <TextField
+      <div className={styles.searchContainer}>
+        <input
+          type="text"
           placeholder="Search datasets..."
           value={searchQuery}
-          onChange={handleSearchChange}
-          fullWidth
-          variant="outlined"
-          size="small"
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className={styles.searchInput}
         />
-        <Button 
-          startIcon={<FilterListIcon />} 
-          variant="outlined"
-          onClick={() => setShowFilters(!showFilters)}
+        <Button
+          variant="secondary"
+          size="small"
         >
-          Filters
+          <FilterListIcon size={16} />
+          Filter
         </Button>
-      </SearchContainer>
-      
-      {showFilters && (
-        <FilterContainer>
-          <Typography variant="subtitle2" style={{ marginRight: 8 }}>Filter by:</Typography>
-          
-          <Box>
-            <Typography variant="caption" display="block">Tags:</Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {allTags.map(tag => (
-                <Chip 
-                  key={tag}
-                  label={tag}
-                  size="small"
-                  onClick={() => handleTagSelect(tag)}
-                  color={selectedTags.includes(tag) ? "primary" : "default"}
-                  variant={selectedTags.includes(tag) ? "filled" : "outlined"}
-                />
-              ))}
-            </Box>
-          </Box>
-          
-          <Box sx={{ marginLeft: 2 }}>
-            <Typography variant="caption" display="block">Origins:</Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {allOrigins.map(origin => (
-                <Chip 
-                  key={origin}
-                  label={origin}
-                  size="small"
-                  onClick={() => handleOriginSelect(origin)}
-                  color={selectedOrigins.includes(origin) ? "primary" : "default"}
-                  variant={selectedOrigins.includes(origin) ? "filled" : "outlined"}
-                />
-              ))}
-            </Box>
-          </Box>
-          
-          {(selectedTags.length > 0 || selectedOrigins.length > 0 || searchQuery) && (
-            <Button 
-              variant="text" 
-              size="small" 
-              onClick={handleClearFilters}
-              sx={{ marginLeft: 'auto' }}
-            >
-              Clear Filters
-            </Button>
-          )}
-        </FilterContainer>
-      )}
-      
-      <Typography variant="subtitle1">
+      </div>
+
+      <div className={styles.filterContainer}>
+        <div className={styles.filterSection}>
+          <span className={styles.filterLabel}>Tags:</span>
+          <div className={styles.chipContainer}>
+            {allTags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => handleTagToggle(tag)}
+                className={`${styles.chip} ${selectedTags.includes(tag) ? styles.chipSelected : ''}`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        <div className={styles.filterSection}>
+          <span className={styles.filterLabel}>Origin:</span>
+          <div className={styles.chipContainer}>
+            {allOrigins.map(origin => (
+              <button
+                key={origin}
+                onClick={() => handleOriginToggle(origin)}
+                className={`${styles.chip} ${selectedOrigins.includes(origin) ? styles.chipSelected : ''}`}
+              >
+                {origin}
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        <Button
+          variant="ghost"
+          size="small"
+          onClick={clearFilters}
+          className={styles.clearFiltersButton}
+        >
+          Clear Filters
+        </Button>
+      </div>
+
+      <div className={styles.resultsCount}>
         {filteredDatasets.length} datasets found
-      </Typography>
-      
-      <DatasetGrid container spacing={2}>
+      </div>
+
+      <div className={styles.datasetGrid}>
         {filteredDatasets.map(dataset => (
-          <Grid item xs={12} sm={6} md={4} key={dataset.id}>
-            <StyledCard>
-              <CardHeader>
-                <Typography variant="h6" noWrap title={dataset.name}>
-                  {dataset.name}
-                </Typography>
-                <Tooltip title="View Details">
-                  <IconButton 
-                    size="small" 
-                    onClick={() => handleViewDetails(dataset)}
-                  >
-                    <InfoIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </CardHeader>
-              
-              <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-                {dataset.description && dataset.description.length > 80 
-                  ? `${dataset.description.substring(0, 80)}...` 
-                  : dataset.description || 'No description'}
-              </Typography>
-              
-              {dataset.tags && dataset.tags.length > 0 && (
-                <TagsContainer>
-                  {dataset.tags.slice(0, 3).map(tag => (
-                    <Chip 
-                      key={tag} 
-                      label={tag} 
-                      size="small" 
-                      variant="outlined"
-                    />
-                  ))}
-                  {dataset.tags.length > 3 && (
-                    <Chip 
-                      label={`+${dataset.tags.length - 3} more`} 
-                      size="small" 
-                      variant="outlined" 
-                    />
-                  )}
-                </TagsContainer>
-              )}
-              
-              <StatsContainer>
-                {dataset.rowCount && (
-                  <span>{dataset.rowCount.toLocaleString()} rows</span>
-                )}
-                {dataset.columnCount && (
-                  <span>{dataset.columnCount} columns</span>
-                )}
-                {dataset.origin && (
-                  <span>Origin: {dataset.origin}</span>
-                )}
-              </StatsContainer>
-              
-              <CardActions>
-                {selectable && onSelectDataset && (
-                  <Button 
-                    variant="contained" 
+          <div
+            key={dataset.id}
+            className={styles.card}
+            onClick={() => handleDatasetSelect(dataset)}
+          >
+            <div className={styles.cardHeader}>
+              <h3 className={styles.cardTitle}>{dataset.name}</h3>
+              <Button
+                variant="icon"
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleViewDetails(dataset);
+                }}
+              >
+                <InfoIcon size={16} />
+              </Button>
+            </div>
+            
+            <p className={styles.cardDescription}>{dataset.description || 'No description available'}</p>
+            
+            {dataset.tags && dataset.tags.length > 0 && (
+              <BadgeGroup spacing="compact">
+                {dataset.tags.slice(0, 3).map(tag => (
+                  <Badge 
+                    key={tag}
+                    variant="neutral" 
                     size="small"
-                    onClick={() => onSelectDataset(dataset)}
                   >
-                    Select
-                  </Button>
+                    {tag}
+                  </Badge>
+                ))}
+                {dataset.tags.length > 3 && (
+                  <Badge 
+                    variant="secondary" 
+                    size="small"
+                  >
+                    +{dataset.tags.length - 3} more
+                  </Badge>
                 )}
-                <Button 
-                  variant="outlined" 
-                  size="small"
-                  startIcon={<EditIcon />}
-                  onClick={() => handleEdit(dataset)}
-                >
-                  Edit
-                </Button>
-                <Button 
-                  variant="outlined" 
-                  size="small"
-                  startIcon={<DeleteIcon />}
-                  color="error"
-                  onClick={() => handleDelete(dataset)}
-                >
-                  Delete
-                </Button>
-              </CardActions>
-            </StyledCard>
-          </Grid>
+              </BadgeGroup>
+            )}
+            
+            <div className={styles.statsContainer}>
+              <span>{getRowCount(dataset.values || [])} rows</span>
+              <span>{getColumnCount(dataset.values || [])} columns</span>
+              <span>Origin: {dataset.origin || 'Unknown'}</span>
+            </div>
+            
+            <div className={styles.cardActions}>
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEditDataset(dataset);
+                }}
+              >
+                <EditIcon size={14} />
+                Edit
+              </Button>
+              <Button
+                variant="ghost"
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteDataset(dataset);
+                }}
+              >
+                <DeleteIcon size={14} />
+                Delete
+              </Button>
+            </div>
+          </div>
         ))}
-      </DatasetGrid>
-      
-      {/* Details Dialog */}
-      <Dialog 
-        open={showDetailDialog} 
-        onClose={() => setShowDetailDialog(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        {selectedDataset && (
-          <>
-            <DialogTitle>
-              Dataset Details: {selectedDataset.name}
-            </DialogTitle>
-            <DialogContent>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="h6">Metadata</Typography>
-                <MetadataDetailTable>
-                  <tbody>
-                    <tr>
-                      <th>ID</th>
-                      <td>{selectedDataset.id}</td>
-                    </tr>
-                    <tr>
-                      <th>Description</th>
-                      <td>{selectedDataset.description || 'No description'}</td>
-                    </tr>
-                    <tr>
-                      <th>Source</th>
-                      <td>{selectedDataset.source || 'Unknown'}</td>
-                    </tr>
-                    <tr>
-                      <th>Origin</th>
-                      <td>{selectedDataset.origin || 'Unknown'}</td>
-                    </tr>
-                    <tr>
-                      <th>Created</th>
-                      <td>{new Date(selectedDataset.createdAt).toLocaleString()}</td>
-                    </tr>
-                    {selectedDataset.updatedAt && (
-                      <tr>
-                        <th>Last Updated</th>
-                        <td>{new Date(selectedDataset.updatedAt).toLocaleString()}</td>
-                      </tr>
-                    )}
-                    <tr>
-                      <th>Rows</th>
-                      <td>{selectedDataset.rowCount?.toLocaleString() || 'Unknown'}</td>
-                    </tr>
-                    <tr>
-                      <th>Columns</th>
-                      <td>{selectedDataset.columnCount || 'Unknown'}</td>
-                    </tr>
-                    <tr>
-                      <th>Fingerprint</th>
-                      <td>
-                        <code style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>
-                          {selectedDataset.fingerprint || 'Not available'}
-                        </code>
-                      </td>
-                    </tr>
+      </div>
+
+      {/* Edit Dialog */}
+      {isEditDialogOpen && selectedDataset && (
+        <div className={styles.dialog}>
+          <div className={styles.dialogContent}>
+            <h2 className={styles.dialogTitle}>Edit Dataset</h2>
+            <DatasetMetadataForm
+              initialMetadata={selectedDataset}
+              onSubmit={handleDatasetUpdate}
+              onCancel={() => {
+                setIsEditDialogOpen(false);
+                setSelectedDataset(null);
+              }}
+              open={true}
+              previewData={selectedDataset.values}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Detail Dialog */}
+      {isDetailDialogOpen && selectedDataset && (
+        <div className={styles.dialog}>
+          <div className={styles.dialogContent}>
+            <h2 className={styles.dialogTitle}>Dataset Details</h2>
+            
+            <div className={styles.dialogSection}>
+              <h3 className={styles.dialogSectionTitle}>Metadata</h3>
+              <table className={styles.metadataTable}>
+                <tbody>
+                  <tr>
+                    <th>Name</th>
+                    <td>{selectedDataset.name}</td>
+                  </tr>
+                  <tr>
+                    <th>Description</th>
+                    <td>{selectedDataset.description}</td>
+                  </tr>
+                  <tr>
+                    <th>Origin</th>
+                    <td>{selectedDataset.origin}</td>
+                  </tr>
+                  <tr>
+                    <th>Created</th>
+                    <td>{new Date(selectedDataset.createdAt).toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <th>Updated</th>
+                    <td>{selectedDataset.updatedAt ? new Date(selectedDataset.updatedAt).toLocaleString() : 'Never'}</td>
+                  </tr>
+                  <tr>
+                    <th>Rows</th>
+                    <td>{getRowCount(selectedDataset.values || [])}</td>
+                  </tr>
+                  <tr>
+                    <th>Columns</th>
+                    <td>{getColumnCount(selectedDataset.values || [])}</td>
+                  </tr>
+                  {selectedDataset.tags && selectedDataset.tags.length > 0 && (
                     <tr>
                       <th>Tags</th>
                       <td>
-                        {selectedDataset.tags && selectedDataset.tags.length > 0 ? (
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                            {selectedDataset.tags.map(tag => (
-                              <Chip key={tag} label={tag} size="small" />
-                            ))}
-                          </Box>
-                        ) : (
-                          'No tags'
-                        )}
+                        <BadgeGroup spacing="compact">
+                          {selectedDataset.tags.map(tag => (
+                            <Badge key={tag} variant="neutral" size="small">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </BadgeGroup>
                       </td>
                     </tr>
-                  </tbody>
-                </MetadataDetailTable>
-              </Box>
-              
-              {/* Data Preview */}
-              <Box>
-                <Typography variant="h6">Data Preview</Typography>
-                {selectedDataset.previewRows && selectedDataset.previewRows.length > 0 ? (
-                  <Box sx={{ 
-                    maxHeight: '300px', 
-                    overflowY: 'auto', 
-                    border: '1px solid #eee',
-                    borderRadius: 1,
-                    mt: 1 
-                  }}>
-                    <pre style={{ padding: 16, margin: 0, fontSize: '0.9rem' }}>
-                      {JSON.stringify(selectedDataset.previewRows, null, 2)}
-                    </pre>
-                  </Box>
-                ) : (
-                  <Typography variant="body2" color="textSecondary">
-                    No preview data available
-                  </Typography>
-                )}
-              </Box>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setShowDetailDialog(false)}>Close</Button>
-            </DialogActions>
-          </>
-        )}
-      </Dialog>
-      
-      {/* Edit Dialog */}
-      {selectedDataset && (
-        <DatasetMetadataForm
-          initialMetadata={selectedDataset}
-          onSubmit={handleMetadataSubmit}
-          onCancel={() => setShowEditDialog(false)}
-          open={showEditDialog}
-          previewData={selectedDataset.previewRows}
-        />
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className={styles.dialogSection}>
+              <h3 className={styles.dialogSectionTitle}>Data Preview</h3>
+              <p className={styles.previewText}>
+                Showing first 10 rows of data:
+              </p>
+              <div className={styles.previewContainer}>
+                <pre className={styles.previewCode}>
+                  {formatDataPreview(selectedDataset.values || [])}
+                </pre>
+              </div>
+            </div>
+
+            <div className={styles.dialogActions}>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setIsDetailDialogOpen(false);
+                  setSelectedDataset(null);
+                }}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
-    </Box>
+    </div>
   );
-}; 
+};

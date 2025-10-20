@@ -1,0 +1,291 @@
+/* CanvasView Component Styles */
+.canvasContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-background);
+  border-radius: var(--radius-base);
+}
+
+.canvasControls {
+  position: absolute;
+  top: var(--spacing-4);
+  right: var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  z-index: 10;
+}
+
+.canvasButton {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-base);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-duration-fast) var(--transition-easing-standard);
+  box-shadow: var(--shadow-sm);
+}
+
+.canvasButton:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.canvasButton.addChart {
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  border-color: var(--color-primary);
+}
+
+.canvasButton.addChart:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.canvasSurface {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  transition: transform var(--transition-duration-normal) var(--transition-easing-standard);
+}
+
+.panCue {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: var(--radius-base);
+  font-size: var(--typography-fontSize-sm);
+  font-weight: var(--typography-fontWeight-medium);
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.chartNodeContainer {
+  position: absolute;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  box-shadow: var(--shadow-sm);
+  cursor: move;
+  transition: all var(--transition-duration-fast) var(--transition-easing-standard);
+  overflow: hidden;
+}
+
+.chartNodeContainer:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+}
+
+.chartNodeContainer.selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.nodeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-surface-secondary);
+  border-bottom: 1px solid var(--color-border);
+  cursor: move;
+}
+
+.nodeTitle {
+  font-size: var(--typography-fontSize-sm);
+  font-weight: var(--typography-fontWeight-medium);
+  color: var(--color-text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.nodeContent {
+  padding: var(--spacing-3);
+  background: var(--color-surface);
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-1);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-duration-fast) var(--transition-easing-standard);
+}
+
+.actionButton:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.resizeHandle {
+  position: absolute;
+  background: var(--color-primary);
+  opacity: 0;
+  transition: opacity var(--transition-duration-fast) var(--transition-easing-standard);
+}
+
+.resizeHandle:hover {
+  opacity: 0.8;
+}
+
+.resizeHandle.bottomRight {
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: se-resize;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  background-color: var(--color-background);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-base);
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: var(--spacing-8);
+}
+
+.notification {
+  position: fixed;
+  top: var(--spacing-4);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  padding: var(--spacing-3) var(--spacing-4);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity var(--transition-duration-normal) var(--transition-easing-standard);
+  pointer-events: none;
+}
+
+.notification.visible {
+  opacity: 1;
+}
+
+.menu {
+  position: absolute;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  opacity: 0;
+  transform: scale(0.95);
+  transition: all var(--transition-duration-fast) var(--transition-easing-standard);
+  pointer-events: none;
+}
+
+.menu.open {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.menuItem {
+  padding: var(--spacing-2) var(--spacing-3);
+  cursor: pointer;
+  transition: background-color var(--transition-duration-fast) var(--transition-easing-standard);
+  font-size: var(--typography-fontSize-sm);
+  color: var(--color-text-primary);
+}
+
+.menuItem:hover {
+  background: var(--color-surface-hover);
+}
+
+.dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  opacity: 0;
+  transition: opacity var(--transition-duration-normal) var(--transition-easing-standard);
+  pointer-events: none;
+}
+
+.dialog.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.dialogTitle {
+  margin: 0 0 var(--spacing-4) 0;
+  font-size: var(--typography-fontSize-lg);
+  font-weight: var(--typography-fontWeight-semibold);
+  color: var(--color-text-primary);
+}
+
+.dialogContent {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-6);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-xl);
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-4);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .canvasControls {
+    top: var(--spacing-2);
+    right: var(--spacing-2);
+  }
+  
+  .canvasButton {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .dialogContent {
+    padding: var(--spacing-4);
+    width: 95%;
+  }
+}

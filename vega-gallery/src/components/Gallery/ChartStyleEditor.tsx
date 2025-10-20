@@ -3,19 +3,19 @@ import styled from 'styled-components';
 import { ChartStyle } from '../../types/chart';
 
 const StyleEditorContainer = styled.div`
-  padding: 16px;
+  padding: var(--spacing-lg);
   background: var(--color-surface);
-  border-radius: 8px;
+  border-radius: var(--radius-base);
 `;
 
 const ControlGroup = styled.div`
-  margin-bottom: 16px;
+  margin-bottom: var(--spacing-lg);
 `;
 
 const Label = styled.label`
   display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
+  margin-bottom: var(--spacing-sm);
+  font-weight: var(--typography-fontWeight-medium);
 `;
 
 interface ChartStyleEditorProps {

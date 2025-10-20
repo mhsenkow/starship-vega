@@ -3,37 +3,21 @@ import styled from 'styled-components';
 import { getAllSnapshots, Snapshot, Canvas, CanvasSlot as DBCanvasSlot, storeCanvas, getAllCanvases, getCanvas, deleteCanvas } from '../../utils/indexedDB';
 import { renderVegaLite } from '../../utils/chartRenderer';
 
-// Other styled components defined elsewhere in the file
-
-const CanvasContainer = styled.div`
-  padding: 20px;
-  background: var(--color-surface);
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin-bottom: 20px;
-  position: relative;
-`;
-
-const CanvasTitle = styled.h3`
-  margin-top: 0;
-  margin-bottom: 16px;
-  color: var(--color-text-primary);
-  font-size: 1.1rem;
-`;
+// Styled components defined below
 
 const DashboardCanvas = styled.div<{ $rows: number; $height: number }>`
   background-color: var(--color-background);
   border: 1px dashed var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--border-radius-lg);
   min-height: ${props => props.$height}px;
   position: relative;
-  margin-top: 16px;
+  margin-top: var(--spacing-md);
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(${props => props.$rows}, 1fr);
-  gap: 16px;
-  padding: 16px;
-  transition: min-height 0.3s ease;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  transition: min-height var(--transition-normal);
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -43,23 +27,23 @@ const DashboardCanvas = styled.div<{ $rows: number; $height: number }>`
 
 const ChartSlot = styled.div<{ $isResizing?: boolean }>`
   background-color: var(--color-surface);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--elevation-md);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   min-height: 250px;
-  transition: ${props => props.$isResizing ? 'none' : 'box-shadow 0.2s ease'};
+  transition: ${props => props.$isResizing ? 'none' : 'box-shadow var(--transition-fast)'};
   position: relative;
   
   &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--elevation-lg);
   }
 `;
 
 const ChartHeader = styled.div`
-  padding: 8px 12px;
-  background-color: var(--color-surfaceHover);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-surface-hover);
   border-bottom: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
@@ -74,7 +58,7 @@ const ChartTitle = styled.div`
 
 const ChartContent = styled.div`
   flex-grow: 1;
-  padding: 12px;
+  padding: var(--spacing-md);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -117,12 +101,12 @@ const EmptySlot = styled.div`
   color: var(--color-text-tertiary);
   font-size: 0.9rem;
   text-align: center;
-  padding: 16px;
+  padding: var(--spacing-md);
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color var(--transition-fast);
 
   &:hover {
-    background-color: var(--color-surfaceHover);
+    background-color: var(--color-surface-hover);
   }
 `;
 
@@ -136,15 +120,15 @@ const SnapshotSelector = styled.div`
   z-index: 10;
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  padding: var(--spacing-md);
 `;
 
 const SnapshotGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 12px;
+  gap: var(--spacing-md);
   overflow-y: auto;
-  padding: 16px;
+  padding: var(--spacing-md);
   max-height: 400px;
 `;
 
@@ -199,32 +183,42 @@ const CloseButton = styled.button`
 `;
 
 const Button = styled.button<{ $primary?: boolean }>`
-  padding: 8px 16px;
-  background: ${props => props.$primary ? props.theme.colors.primary : '#f1f3f5'};
-  color: ${props => props.$primary ? 'white' : props.theme.colors.text.primary};
-  border: none;
-  border-radius: 4px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: ${props => props.$primary ? 'var(--color-primary)' : 'var(--color-surface)'};
+  color: ${props => props.$primary ? 'var(--color-text-inverse)' : 'var(--color-text-primary)'};
+  border: 1px solid ${props => props.$primary ? 'var(--color-primary)' : 'var(--color-border)'};
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
   font-size: 0.9rem;
-  margin-bottom: 16px;
+  margin-bottom: var(--spacing-md);
+  transition: all var(--transition-fast);
   
   &:hover {
-    background: ${props => props.$primary ? '#1976d2' : '#e9ecef'};
+    background: ${props => props.$primary ? 'var(--color-primary-dark, #1976d2)' : 'var(--color-surface-hover)'};
+    border-color: ${props => props.$primary ? 'var(--color-primary-dark, #1976d2)' : 'var(--color-text-tertiary)'};
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--color-surface-active);
+    color: var(--color-text-disabled);
+    border-color: var(--color-border);
   }
 `;
 
 const RefreshButton = styled(Button)`
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--spacing-sm);
   
   svg {
     font-size: 16px;
-  }
-  
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
   }
 `;
 
@@ -234,7 +228,7 @@ const SpinnerIcon = styled.div`
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  border-top-color: var(--color-surface);
+  border-top-color: var(--color-text-primary);
   animation: spin 1s ease-in-out infinite;
   
   @keyframes spin {
@@ -245,28 +239,57 @@ const SpinnerIcon = styled.div`
 // Add components for canvas management
 const CanvasControls = styled.div`
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
   flex-wrap: wrap;
 `;
 
 const CanvasSelector = styled.select`
-  padding: 8px 12px;
-  border-radius: 4px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-sm);
   border: 1px solid var(--color-border);
   background-color: var(--color-surface);
+  color: var(--color-text-primary);
   font-size: 0.9rem;
   min-width: 200px;
+  transition: border-color var(--transition-fast);
+  
+  &:hover {
+    border-color: var(--color-text-tertiary);
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
+  }
+  
+  option {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+  }
 `;
 
 const CanvasNameInput = styled.input`
-  padding: 8px 12px;
-  border-radius: 4px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-sm);
   border: 1px solid var(--color-border);
   background-color: var(--color-surface);
+  color: var(--color-text-primary);
   font-size: 0.9rem;
   min-width: 200px;
   flex: 1;
+  transition: border-color var(--transition-fast);
+  
+  &:hover {
+    border-color: var(--color-text-tertiary);
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
+  }
 `;
 
 // Resize handle for canvas height
@@ -796,6 +819,7 @@ export const CanvasArea = () => {
           value={selectedCanvasId} 
           onChange={handleCanvasChange}
           disabled={isLoading}
+          aria-label="Select canvas to load"
         >
           <option value="">-- New Canvas --</option>
           {canvases.map(canvas => (
@@ -811,12 +835,14 @@ export const CanvasArea = () => {
           onChange={(e) => setCanvasName(e.target.value)}
           placeholder="Dashboard Name"
           disabled={isLoading}
+          aria-label="Canvas name"
         />
         
         <Button 
           $primary
           onClick={saveCanvas}
           disabled={isLoading || isSaving || !canvasName.trim()}
+          aria-label={isSaving ? 'Saving canvas' : 'Save current canvas configuration'}
         >
           {isSaving ? (
             <>
@@ -831,6 +857,7 @@ export const CanvasArea = () => {
           <Button
             onClick={deleteSelectedCanvas}
             disabled={isLoading}
+            aria-label="Delete selected canvas"
             style={{ background: 'var(--color-error-light)', color: 'var(--color-error)' }}
           >
             Delete

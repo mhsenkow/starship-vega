@@ -1,26 +1,24 @@
-import { IconButton, Tooltip } from '@mui/material';
-import LightModeIcon from '@mui/icons-material/LightMode';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import styled from 'styled-components';
-import { useTheme } from '../../styles/ThemeProvider';
-
-const ToggleButton = styled(IconButton)`
-  color: var(--color-text-primary);
-  transition: color var(--transition-fast);
-  
-  &:hover {
-    color: var(--color-primary);
-  }
-`;
+import { IconButton } from '../../design-system';
+import { LightModeIcon, DarkModeIcon } from './Icons';
+import { useThemeContext } from '../../styles/ThemeProvider.module';
+import styles from './ThemeToggle.module.css';
 
 export const ThemeToggle = () => {
-  const { mode, toggleTheme } = useTheme();
+  const { mode, toggleTheme } = useThemeContext();
   
   return (
-    <Tooltip title={mode === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}>
-      <ToggleButton onClick={toggleTheme} size="medium" aria-label="Toggle theme">
-        {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
-      </ToggleButton>
-    </Tooltip>
+    <div 
+      className={styles.tooltip}
+      data-tooltip={mode === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+    >
+      <IconButton 
+        className={styles.toggleButton}
+        onClick={toggleTheme} 
+        size="medium" 
+        iconOnly
+      >
+        {mode === 'light' ? <DarkModeIcon size={20} /> : <LightModeIcon size={20} />}
+      </IconButton>
+    </div>
   );
 }; 

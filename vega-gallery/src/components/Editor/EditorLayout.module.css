@@ -1,0 +1,208 @@
+/* EditorLayout Component Styles */
+.chartWarningMessage {
+  padding: var(--spacing-4);
+  background: var(--color-warning-light);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-base);
+  color: var(--color-warning-dark);
+  font-size: var(--typography-fontSize-sm);
+  margin: var(--spacing-4) 0;
+  text-align: center;
+}
+
+.pageWrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--color-background-primary);
+  box-sizing: border-box;
+  overflow: visible;
+  z-index: 1;
+}
+
+.mainContent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-surface);
+  overflow: visible;
+  transition: left var(--transition-duration-normal) var(--transition-easing-standard);
+  padding: var(--spacing-4);
+}
+
+.mainContent.withPanel {
+  left: 400px; /* Panel width when visible */
+}
+
+.floatingPanel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 400px;
+  height: 100vh;
+  background: var(--color-background-primary);
+  border-right: 1px solid var(--color-border);
+  z-index: 1000;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  transition: transform var(--transition-duration-normal) var(--transition-easing-standard);
+}
+
+.floatingPanel.hidden {
+  transform: translateX(-100%);
+}
+
+.floatingPanel.visible {
+  transform: translateX(0);
+}
+
+.floatingPanel::-webkit-scrollbar {
+  width: var(--spacing-xs);
+}
+
+.floatingPanel::-webkit-scrollbar-track {
+  background: var(--color-surface-active);
+  border-radius: var(--radius-sm);
+}
+
+.floatingPanel::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.floatingPanel::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
+}
+
+.panelContent {
+  padding: var(--spacing-4);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabContainer {
+  display: flex;
+  justify-content: space-around;
+  padding: var(--spacing-2);
+  background: var(--color-surface-secondary);
+  border-radius: var(--radius-base);
+  border: 1px solid var(--color-border);
+  position: relative;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--spacing-3);
+}
+
+.tab {
+  width: calc(var(--spacing-8) + var(--spacing-2));
+  height: calc(var(--spacing-8) + var(--spacing-2));
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.tab.active {
+  background: var(--color-primary);
+  color: white;
+}
+
+.tab:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.tab.active:hover {
+  background: var(--color-primary);
+  color: white;
+}
+
+.tab svg {
+  font-size: var(--typography-fontSize-lg);
+}
+
+.contentArea {
+  flex: 1;
+  overflow: visible;
+  padding: var(--spacing-3);
+  margin: 0 0 var(--spacing-3) 0;
+  background-color: var(--color-samplingIndicator-background);
+  color: var(--color-samplingIndicator-text);
+  border-radius: var(--radius-sm);
+  font-size: var(--typography-fontSize-sm);
+}
+
+.contentArea::-webkit-scrollbar {
+  width: var(--spacing-xs);
+}
+
+.contentArea::-webkit-scrollbar-track {
+  background: var(--color-surface-active);
+  border-radius: var(--radius-sm);
+}
+
+.contentArea::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.contentArea::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
+}
+
+.panelToggle {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: var(--spacing-lg);
+  height: calc(var(--spacing-xl) * 1.5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-duration-normal) var(--transition-easing-standard);
+  box-shadow: var(--shadow-md);
+  color: var(--color-text-primary);
+  z-index: 1001;
+}
+
+.panelToggle:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.panelToggle svg {
+  width: var(--spacing-sm);
+  height: var(--spacing-sm);
+  transition: transform var(--transition-duration-normal) var(--transition-easing-standard);
+}
+
+.panelToggle.collapsed svg {
+  transform: rotate(180deg);
+}
+
+.placeholder {
+  padding: var(--spacing-md);
+  text-align: center;
+  color: var(--color-text-secondary);
+}

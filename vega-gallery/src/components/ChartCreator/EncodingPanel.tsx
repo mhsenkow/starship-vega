@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Box, FormControl, InputLabel, MenuItem, Select, Typography, styled } from '@mui/material';
 import { EncodingChannel, MarkType } from '../../types/vega';
 import { DatasetMetadata } from '../../types/dataset';
 import { detectDataTypes } from '../../utils/dataUtils';

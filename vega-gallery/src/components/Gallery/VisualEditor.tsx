@@ -5,32 +5,33 @@ import { EncodingControls } from './EncodingControls';
 
 const EditorControls = styled.div`
   display: flex;
-  gap: 8px;
-  margin: 12px 0;
-  padding: 8px;
-  background: #f5f5f5;
-  border-radius: 4px;
+  gap: var(--spacing-sm);
+  margin: var(--spacing-md) 0;
+  padding: var(--spacing-sm);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
 `;
 
 const ControlButton = styled.button`
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
-  font-size: 13px;
+  font-size: var(--typography-fontSize-xs);
   cursor: pointer;
+  transition: all var(--transition-fast);
   
   &:hover {
-    background: #f0f0f0;
-    border-color: #999;
+    background: var(--color-surface-hover);
+    border-color: var(--color-text-tertiary);
   }
 `;
 
 const EncodingSection = styled.div`
-  margin-top: 16px;
+  margin-top: var(--spacing-lg);
 `;
 
 interface VisualEditorProps {

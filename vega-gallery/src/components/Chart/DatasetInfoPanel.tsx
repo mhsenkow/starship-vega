@@ -1,17 +1,16 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Box, Typography, Chip, Divider, Tooltip, IconButton } from '@mui/material';
-import InfoIcon from '@mui/icons-material/Info';
-import HistoryIcon from '@mui/icons-material/History';
 import { DataAsset } from '../../types/dataset';
+import { InfoIcon } from '../common/Icons';
+import { Menu as HistoryIcon } from '@carbon/icons-react';
 
-const InfoContainer = styled(Box)`
+const InfoContainer = styled.div`
   padding: 16px;
-  background-color: ${props => props.theme.colors?.surface || '#ffffff'};
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-surface);
+  border-radius: var(--radius-base);
+  box-shadow: var(--shadow-sm);
   margin-bottom: 16px;
-  border: 1px solid ${props => props.theme.colors?.border || '#e9ecef'};
+  border: 1px solid var(--color-border);
 `;
 
 const TagsContainer = styled.div`
@@ -25,14 +24,72 @@ const MetaStat = styled.div`
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.8rem;
-  color: ${props => props.theme.colors.text?.secondary || '#6c757d'};
+  font-size: var(--typography-fontSize-xs);
+  color: var(--color-text-secondary);
+`;
+
+const Divider = styled.hr`
+  border: none;
+  height: 1px;
+  background-color: var(--color-border);
+  margin: 8px 0;
+`;
+
+const Chip = styled.span`
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  border-radius: var(--radius-full);
+  font-size: var(--typography-fontSize-xs);
+  border: 1px solid var(--color-primary-light);
+`;
+
+const TooltipWrapper = styled.div`
+  position: relative;
+  display: inline-block;
+`;
+
+const InfoButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  
+  &:hover {
+    background-color: var(--color-surface-hover);
+    color: var(--color-text-primary);
+  }
 `;
 
 const MetaHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+`;
+
+const Title = styled.h3`
+  margin: 0 0 8px 0;
+  font-size: var(--typography-fontSize-lg);
+  font-weight: var(--typography-fontWeight-medium);
+  color: var(--color-text-primary);
+`;
+
+const Description = styled.p`
+  margin: 4px 0 8px 0;
+  font-size: var(--typography-fontSize-sm);
+  color: var(--color-text-secondary);
+`;
+
+const MetaContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
 `;
 
 interface DatasetInfoPanelProps {
@@ -55,27 +112,27 @@ export const DatasetInfoPanel: React.FC<DatasetInfoPanelProps> = ({
   return (
     <InfoContainer>
       <MetaHeader>
-        <Typography variant="subtitle1" fontWeight="bold">Dataset Source</Typography>
+        <Title>Dataset Source</Title>
         {showDetails && onViewDetails && (
-          <Tooltip title="View Full Details">
-            <IconButton size="small" onClick={onViewDetails}>
-              <InfoIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          <TooltipWrapper>
+            <InfoButton onClick={onViewDetails} title="View Full Details">
+              <InfoIcon size={16} />
+            </InfoButton>
+          </TooltipWrapper>
         )}
       </MetaHeader>
       
-      <Typography variant="body1">{dataset.name}</Typography>
+      <Title>{dataset.name}</Title>
       
       {dataset.description && (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+        <Description>
           {dataset.description}
-        </Typography>
+        </Description>
       )}
       
-      <Divider sx={{ my: 1 }} />
+      <Divider />
       
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+      <MetaContainer>
         {dataset.source && (
           <MetaStat>
             Source: {dataset.source}
@@ -91,20 +148,17 @@ export const DatasetInfoPanel: React.FC<DatasetInfoPanelProps> = ({
         )}
         
         <MetaStat>
-          <HistoryIcon fontSize="inherit" />
+          <HistoryIcon size={14} />
           {formattedDate}
         </MetaStat>
-      </Box>
+      </MetaContainer>
       
       {dataset.tags && dataset.tags.length > 0 && (
         <TagsContainer>
           {dataset.tags.map(tag => (
-            <Chip 
-              key={tag} 
-              label={tag} 
-              size="small" 
-              variant="outlined"
-            />
+            <Chip key={tag}>
+              {tag}
+            </Chip>
           ))}
         </TagsContainer>
       )}

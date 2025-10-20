@@ -1,0 +1,189 @@
+/* StyleEditor Component Styles */
+.styleHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+.container {
+  padding: var(--spacing-md);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.section {
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.sectionTitle {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--typography-fontSize-lg);
+  font-weight: var(--typography-fontWeight-semibold);
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--spacing-sm);
+}
+
+.control {
+  margin-bottom: var(--spacing-md);
+}
+
+.label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-weight: var(--typography-fontWeight-medium);
+  color: var(--color-text-primary);
+}
+
+.input {
+  width: 100%;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: var(--typography-fontSize-sm);
+  transition: all var(--transition-fast);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
+}
+
+.select {
+  width: 100%;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.colorInput {
+  padding: var(--spacing-xs);
+  width: calc(var(--spacing-xl) * 2);
+  height: calc(var(--spacing-xl) * 2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: transparent;
+}
+
+.rangeInput {
+  width: 100%;
+  margin: var(--spacing-sm) 0;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-border);
+  outline: none;
+  cursor: pointer;
+}
+
+.rangeInput::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  cursor: pointer;
+  border: 2px solid var(--color-surface);
+  box-shadow: var(--elevation-sm);
+}
+
+.rangeInput::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  cursor: pointer;
+  border: 2px solid var(--color-surface);
+  box-shadow: var(--elevation-sm);
+}
+
+.styleHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.fontPreview {
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  margin-top: var(--spacing-sm);
+  font-family: var(--font-family);
+  font-size: var(--typography-fontSize-base);
+  color: var(--color-text-primary);
+  text-align: center;
+  transition: font-family var(--transition-fast);
+}
+
+.fontScaleControl {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.scalePreview {
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  text-align: center;
+  color: var(--color-text-primary);
+}
+
+.scalePreview h1 {
+  font-size: 2.5rem;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.scalePreview h2 {
+  font-size: 2rem;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.scalePreview h3 {
+  font-size: 1.5rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.scalePreview p {
+  font-size: 1rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-sm);
+  }
+  
+  .section {
+    padding: var(--spacing-md);
+  }
+  
+  .fontScaleControl {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+}

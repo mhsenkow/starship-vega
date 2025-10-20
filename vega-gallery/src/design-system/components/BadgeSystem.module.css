@@ -1,0 +1,255 @@
+/* Badge/Tag System - Semantic rounded elements with icons */
+/* Based on semantic meaning: data types, categories, states, etc. */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-full);
+  font-size: var(--typography-fontSize-xs);
+  font-weight: var(--typography-fontWeight-medium);
+  line-height: 1;
+  white-space: nowrap;
+  transition: all var(--transition-duration-fast) var(--transition-easing-standard);
+  border: 1px solid transparent;
+}
+
+.badge:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Badge Sizes */
+.badge.small {
+  padding: var(--spacing-1) var(--spacing-2);
+  font-size: var(--typography-fontSize-xs);
+  min-height: 20px;
+}
+
+.badge.medium {
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--typography-fontSize-sm);
+  min-height: 24px;
+}
+
+.badge.large {
+  padding: var(--spacing-2) var(--spacing-4);
+  font-size: var(--typography-fontSize-base);
+  min-height: 28px;
+}
+
+/* Semantic Variants - Data Types */
+.badge.numeric {
+  background: var(--color-blue-50);
+  color: var(--color-blue-700);
+  border-color: var(--color-blue-200);
+}
+
+.badge.numeric.inverted {
+  background: var(--color-blue-600);
+  color: var(--color-text-on-primary);
+  border-color: var(--color-blue-600);
+}
+
+.badge.categorical {
+  background: var(--color-orange-50);
+  color: var(--color-orange-700);
+  border-color: var(--color-orange-200);
+}
+
+.badge.categorical.inverted {
+  background: var(--color-orange-600);
+  color: var(--color-text-on-primary);
+  border-color: var(--color-orange-600);
+}
+
+.badge.temporal {
+  background: var(--color-purple-50);
+  color: var(--color-purple-700);
+  border-color: var(--color-purple-200);
+}
+
+.badge.temporal.inverted {
+  background: var(--color-purple-600);
+  color: var(--color-text-on-primary);
+  border-color: var(--color-purple-600);
+}
+
+.badge.geographical {
+  background: var(--color-green-50);
+  color: var(--color-green-700);
+  border-color: var(--color-green-200);
+}
+
+.badge.geographical.inverted {
+  background: var(--color-green-600);
+  color: var(--color-text-on-primary);
+  border-color: var(--color-green-600);
+}
+
+/* Semantic Variants - States */
+.badge.success {
+  background: var(--color-success-light);
+  color: var(--color-success-dark);
+  border-color: var(--color-success);
+}
+
+.badge.success.inverted {
+  background: var(--color-success);
+  color: var(--color-text-on-primary);
+  border-color: var(--color-success);
+}
+
+.badge.warning {
+  background: var(--color-warning-light);
+  color: var(--color-warning-dark);
+  border-color: var(--color-warning);
+}
+
+.badge.warning.inverted {
+  background: var(--color-warning);
+  color: var(--color-text-on-primary);
+  border-color: var(--color-warning);
+}
+
+.badge.error {
+  background: var(--color-error-light);
+  color: var(--color-error-dark);
+  border-color: var(--color-error);
+}
+
+.badge.error.inverted {
+  background: var(--color-error);
+  color: var(--color-text-on-primary);
+  border-color: var(--color-error);
+}
+
+.badge.info {
+  background: var(--color-info-light);
+  color: var(--color-info-dark);
+  border-color: var(--color-info);
+}
+
+.badge.info.inverted {
+  background: var(--color-info);
+  color: var(--color-text-on-primary);
+  border-color: var(--color-info);
+}
+
+/* Semantic Variants - Categories */
+.badge.primary {
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  border-color: var(--color-primary);
+}
+
+.badge.primary.inverted {
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  border-color: var(--color-primary);
+}
+
+.badge.secondary {
+  background: var(--color-secondary-light);
+  color: var(--color-secondary-dark);
+  border-color: var(--color-secondary);
+}
+
+.badge.secondary.inverted {
+  background: var(--color-secondary);
+  color: var(--color-text-on-primary);
+  border-color: var(--color-secondary);
+}
+
+.badge.neutral {
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+
+.badge.neutral.inverted {
+  background: var(--color-text-secondary);
+  color: var(--color-surface);
+  border-color: var(--color-text-secondary);
+}
+
+/* Interactive States */
+.badge.clickable {
+  cursor: pointer;
+}
+
+.badge.clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.badge.clickable:active {
+  transform: translateY(0);
+}
+
+/* Icon Styling */
+.badge .icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.badge.small .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.badge.large .icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Badge Groups */
+.badgeGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-1);
+  align-items: center;
+}
+
+.badgeGroup.compact {
+  gap: var(--spacing-1);
+}
+
+.badgeGroup.spaced {
+  gap: var(--spacing-2);
+}
+
+/* Special Badge Types */
+.badge.outline {
+  background: transparent;
+  border-width: 1px;
+}
+
+.badge.ghost {
+  background: transparent;
+  border: none;
+}
+
+.badge.solid {
+  border: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .badge.medium {
+    padding: var(--spacing-1) var(--spacing-2);
+    font-size: var(--typography-fontSize-xs);
+    min-height: 20px;
+  }
+  
+  .badge.large {
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--typography-fontSize-sm);
+    min-height: 24px;
+  }
+}

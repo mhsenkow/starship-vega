@@ -1,0 +1,54 @@
+/* Tooltip Component Styles */
+.tooltipContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltipContainer:hover::after {
+  content: attr(data-title);
+  position: absolute;
+  z-index: 1000;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-surface-dark);
+  color: var(--color-text-primary);
+  font-size: var(--typography-fontSize-xs);
+  font-weight: var(--typography-fontWeight-medium);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--elevation-md);
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity var(--transition-duration-normal) var(--transition-easing-standard);
+  pointer-events: none;
+}
+
+.tooltipContainer.placementTop:hover::after {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: var(--spacing-1);
+}
+
+.tooltipContainer.placementBottom:hover::after {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: var(--spacing-1);
+}
+
+.tooltipContainer.placementLeft:hover::after {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: var(--spacing-1);
+}
+
+.tooltipContainer.placementRight:hover::after {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: var(--spacing-1);
+}
+
+.tooltipContainer.disabled:hover::after {
+  display: none;
+}

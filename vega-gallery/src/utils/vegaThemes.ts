@@ -176,7 +176,12 @@ const getThemeColorsFromCSS = () => {
   
   const colors = themeColorMappings[currentTheme] || themeColorMappings.light;
   
-  console.log(`[Theme Colors] Getting colors for theme: ${currentTheme}`, colors);
+  // Only log when theme changes to reduce console noise
+  const lastColors = (window as any).__lastThemeColors;
+  if (!lastColors || lastColors.theme !== currentTheme) {
+    // console.log(`[Theme Colors] Getting colors for theme: ${currentTheme}`, colors);
+    (window as any).__lastThemeColors = { theme: currentTheme };
+  }
   
   return colors;
 };
@@ -536,7 +541,14 @@ export const getCurrentVegaTheme = (): Config => {
   const currentTheme = document.documentElement.getAttribute('data-theme') as ThemeMode;
   const selectedColorSet = document.documentElement.getAttribute('data-color-set') as keyof SemanticColorSets | null;
   
-  console.log(`[Vega Themes] Getting current theme. Document theme: ${currentTheme}, Color set: ${selectedColorSet}`);
+  // Only log when theme actually changes to reduce console noise
+  const lastTheme = (window as any).__lastVegaTheme;
+  const themeChanged = !lastTheme || lastTheme.current !== currentTheme || lastTheme.colorSet !== selectedColorSet;
+  
+  if (themeChanged) {
+    // console.log(`[Vega Themes] Getting current theme. Document theme: ${currentTheme}, Color set: ${selectedColorSet}`);
+    (window as any).__lastVegaTheme = { current: currentTheme, colorSet: selectedColorSet };
+  }
   
   let theme: Config;
   if (currentTheme && ['light', 'dark', 'fluent', 'neon', 'material3', 'neumorphism', 'brutalist', 'retro'].includes(currentTheme)) {
@@ -567,12 +579,16 @@ export const getCurrentVegaTheme = (): Config => {
         }
       };
       
-      console.log(`[Vega Themes] Applied ${selectedColorSet} color set override. New colors:`, theme.range?.category);
+      if (themeChanged) {
+        console.log(`[Vega Themes] Applied ${selectedColorSet} color set override. New colors:`, theme.range?.category);
+      }
       return theme;
     }
   }
   
-  console.log(`[Vega Themes] Applied ${currentTheme || 'light'} theme. Colors:`, theme.range?.category);
+  if (themeChanged) {
+      // console.log(`[Vega Themes] Applied ${currentTheme || 'light'} theme. Colors:`, theme.range?.category);
+  }
   return theme;
 };
 
@@ -674,9 +690,9 @@ export const getThemeSpecificChartStyles = () => {
 export const applyThemeToSpec = (spec: any): any => {
   const theme = getCurrentVegaTheme();
   
-  console.log(`[Apply Theme] Applying theme to spec. Theme range:`, theme.range);
-  console.log(`[Apply Theme] Original spec config:`, spec.config);
-  console.log(`[Apply Theme] Theme mark color:`, theme.mark?.color);
+  // console.log(`[Apply Theme] Applying theme to spec. Theme range:`, theme.range);
+  // console.log(`[Apply Theme] Original spec config:`, spec.config);
+  // console.log(`[Apply Theme] Theme mark color:`, theme.mark?.color);
   
   // Create a deep copy to avoid mutation
   const result = JSON.parse(JSON.stringify(spec));
@@ -706,7 +722,7 @@ export const applyThemeToSpec = (spec: any): any => {
   // CRITICAL: For charts without explicit color encoding, ensure they use theme colors
   if (result.encoding && !result.encoding.color) {
     // If there's no color encoding, the chart should use the default mark color
-    console.log(`[Apply Theme] No color encoding found, ensuring mark uses theme color`);
+    // console.log(`[Apply Theme] No color encoding found, ensuring mark uses theme color`);
     
     const categoryColors = theme.range?.category as string[] || [];
     
@@ -734,16 +750,16 @@ export const applyThemeToSpec = (spec: any): any => {
       }
       
       if (!colorEncoding.scale.range) {
-        console.log(`[Apply Theme] Applying theme colors to categorical color encoding`);
+        // console.log(`[Apply Theme] Applying theme colors to categorical color encoding`);
         colorEncoding.scale.range = theme.range?.category;
       }
     }
   }
   
-  console.log(`[Apply Theme] Final spec config range:`, result.config.range);
-  console.log(`[Apply Theme] Final spec config mark:`, result.config.mark);
-  console.log(`[Apply Theme] Final spec mark:`, result.mark);
-  console.log(`[Apply Theme] Final spec color encoding:`, result.encoding?.color);
+  // console.log(`[Apply Theme] Final spec config range:`, result.config.range);
+  // console.log(`[Apply Theme] Final spec config mark:`, result.config.mark);
+  // console.log(`[Apply Theme] Final spec mark:`, result.mark);
+  // console.log(`[Apply Theme] Final spec color encoding:`, result.encoding?.color);
   
   return result;
 };
@@ -755,11 +771,11 @@ export const testCurrentTheme = () => {
   const currentTheme = document.documentElement.getAttribute('data-theme');
   const theme = getCurrentVegaTheme();
   
-  console.log(`=== THEME TEST ===`);
-  console.log(`Current document theme: ${currentTheme}`);
-  console.log(`Theme colors:`, theme.range?.category);
-  console.log(`Theme mark color:`, theme.mark?.color);
-  console.log(`==================`);
+  // console.log(`=== THEME TEST ===`);
+  // console.log(`Current document theme: ${currentTheme}`);
+  // console.log(`Theme colors:`, theme.range?.category);
+  // console.log(`Theme mark color:`, theme.mark?.color);
+  // console.log(`==================`);
   
   return {
     currentTheme,
@@ -827,7 +843,7 @@ export const applySemanticColors = (spec: any, colorSetName: keyof SemanticColor
   const semanticColors = getSemanticColorSets();
   const colorSet = semanticColors[colorSetName];
   
-  console.log(`[Semantic Colors] Applying ${colorSetName} color set:`, colorSet);
+  // console.log(`[Semantic Colors] Applying ${colorSetName} color set:`, colorSet);
   
   // Create a deep copy
   const result = JSON.parse(JSON.stringify(spec));
@@ -870,7 +886,7 @@ export const applySemanticColors = (spec: any, colorSetName: keyof SemanticColor
     }
   }
   
-  console.log(`[Semantic Colors] Applied ${colorSetName} colors to spec:`, result);
+  // console.log(`[Semantic Colors] Applied ${colorSetName} colors to spec:`, result);
   return result;
 };
 
@@ -883,9 +899,9 @@ export const forceApplyThemeColors = (spec: any): any => {
   const result = JSON.parse(JSON.stringify(spec));
   const categoryColors = theme.range?.category as string[] || [];
   
-  console.log(`[Force Apply] Input spec:`, spec);
-  console.log(`[Force Apply] Theme:`, theme);
-  console.log(`[Force Apply] Forcing theme colors onto chart. Colors:`, categoryColors);
+  // console.log(`[Force Apply] Input spec:`, spec);
+  // console.log(`[Force Apply] Theme:`, theme);
+  // console.log(`[Force Apply] Forcing theme colors onto chart. Colors:`, categoryColors);
   
   // Ensure config exists and force theme colors
   if (!result.config) {
@@ -915,7 +931,7 @@ export const forceApplyThemeColors = (spec: any): any => {
     }
     colorEncoding.scale.range = categoryColors;
     
-    console.log(`[Force Apply] Applied color encoding scale:`, colorEncoding.scale);
+    // console.log(`[Force Apply] Applied color encoding scale:`, colorEncoding.scale);
   }
   
   // If no color encoding but the chart should use colors, force it
@@ -932,11 +948,11 @@ export const forceApplyThemeColors = (spec: any): any => {
       };
     }
     
-    console.log(`[Force Apply] Applied mark color:`, result.mark);
+    // console.log(`[Force Apply] Applied mark color:`, result.mark);
   }
   
-  console.log(`[Force Apply] Final forced spec:`, result);
-  console.log(`[Force Apply] Final color range:`, result.config.range);
+  // console.log(`[Force Apply] Final forced spec:`, result);
+  // console.log(`[Force Apply] Final color range:`, result.config.range);
   return result;
 };
 
@@ -944,7 +960,7 @@ export const forceApplyThemeColors = (spec: any): any => {
  * Trigger a global chart refresh when color sets change
  */
 export const triggerGlobalChartRefresh = () => {
-  console.log('[Vega Themes] Triggering global chart refresh for color set change');
+  // console.log('[Vega Themes] Triggering global chart refresh for color set change');
   
   // Dispatch a custom event that charts can listen to
   const event = new CustomEvent('vega-color-set-changed', {

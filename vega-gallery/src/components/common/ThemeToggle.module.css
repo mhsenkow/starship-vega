@@ -1,0 +1,30 @@
+/* ThemeToggle Component Styles */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.toggleButton {
+  color: var(--color-text-primary);
+  transition: color var(--transition-fast);
+}
+
+.toggleButton:hover {
+  color: var(--color-primary);
+}

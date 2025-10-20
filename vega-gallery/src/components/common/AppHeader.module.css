@@ -1,0 +1,57 @@
+/* App Header Styles */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-3) var(--spacing-6);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+  transition: left var(--transition-duration-normal) var(--transition-easing-standard);
+}
+
+.header.withPanel {
+  left: 400px; /* Panel width when visible */
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-6);
+}
+
+.title {
+  font-size: var(--typography-fontSize-xl);
+  font-weight: var(--typography-fontWeight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+.backButton {
+  margin-left: var(--spacing-4);
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}

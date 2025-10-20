@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
-import styled from 'styled-components';
 import { createWorker } from 'tesseract.js';
-import { Button, CircularProgress, Typography, Tabs, Tab, Box } from '@mui/material';
-import ImageIcon from '@mui/icons-material/Image';
-import CloudIcon from '@mui/icons-material/Cloud';
-import TableChartIcon from '@mui/icons-material/TableChart';
+import { Button } from '../../design-system/components/ButtonSystem';
+import { CircularProgress, Typography, Box, LinearProgress } from '@mui/material';
+import { Tabs, TabPanel as DSTabPanel } from '../../design-system/components/Tabs';
+import { ImageIcon as ImageIconComponent, Cloud as CloudIcon, TableChart as TableChartIcon } from '../common/Icons';
 import { DatasetMetadata } from '../../types/dataset';
+import styles from './ImageDataExtractor.module.css';
 
 // PDF processing interface for Electron environment
 declare global {
@@ -17,99 +17,7 @@ declare global {
   }
 }
 
-const Container = styled.div`
-  background: var(--color-surface);
-  border-radius: 8px;
-  padding: 24px;
-  margin-bottom: 24px;
-  border: 1px solid var(--color-border);
-`;
-
-const ImageUploadArea = styled.div<{ $isDragging: boolean }>`
-  border: 2px dashed ${props => props.$isDragging ? 'var(--color-primary)' : 'var(--color-border)'};
-  border-radius: 8px;
-  padding: 32px;
-  text-align: center;
-  margin-bottom: 24px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  background: ${props => props.$isDragging ? `var(--color-primary)10` : '#f8f9fa'};
-  
-  &:hover {
-    border-color: var(--color-primary);
-    background: rgba(var(--color-primary-rgb), 0.1);
-  }
-`;
-
-const ImagePreview = styled.div`
-  max-width: 100%;
-  max-height: 300px;
-  margin: 16px auto;
-  text-align: center;
-  
-  img {
-    max-width: 100%;
-    max-height: 300px;
-    border-radius: 4px;
-    border: 1px solid var(--color-border);
-  }
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  gap: 12px;
-  margin-top: 16px;
-`;
-
-const ResultsContainer = styled.div`
-  margin-top: 24px;
-  border-top: 1px solid var(--color-border);
-  padding-top: 16px;
-`;
-
-const TabPanel = styled.div<{ $visible: boolean }>`
-  display: ${props => props.$visible ? 'block' : 'none'};
-  padding: 16px 0;
-`;
-
-const ResultPreview = styled.pre`
-  max-height: 300px;
-  overflow: auto;
-  padding: 16px;
-  background: var(--color-background);
-  border-radius: 4px;
-  border: 1px solid var(--color-border);
-  font-size: 0.85rem;
-  white-space: pre-wrap;
-  word-break: break-word;
-`;
-
-const ErrorMessage = styled.div`
-  color: red;
-  margin: 16px 0;
-  padding: 8px 16px;
-  background: #ffebee;
-  border-radius: 4px;
-  border-left: 4px solid #f44336;
-`;
-
-const StatusMessage = styled.div`
-  margin-top: 8px;
-  color: var(--color-text-secondary);
-  font-size: 0.9rem;
-`;
-
-const CloudApiKeyInput = styled.div`
-  margin-bottom: 16px;
-  
-  input {
-    width: 100%;
-    padding: 8px;
-    margin-top: 4px;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-  }
-`;
+// Styled components removed - using CSS modules instead
 
 interface ImageDataExtractorProps {
   onDataExtracted: (dataset: DatasetMetadata) => void;
@@ -193,8 +101,8 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
     }
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setExtractionMethod(newValue);
+  const handleTabChange = (newValue: string | number) => {
+    setExtractionMethod(Number(newValue));
   };
 
   // Process PDF content locally via Electron's Node.js integration
@@ -219,7 +127,7 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
         const filePath = URL.createObjectURL(image);
         
         // Use the Electron bridge to process the PDF
-        pdfText = await window.electron.processPdf(filePath);
+        pdfText = await (window as any).electron.processPdf(filePath);
       } else {
         // PDF parsing is not available in web environment
         setStatusMessage('PDF parsing not available in web environment...');
@@ -298,10 +206,8 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
     setProgress(10);
     
     try {
-      // Convert image to base64
-      const base64Image = await fileToBase64(image);
-      
       // API endpoint would be used in a production app
+      // const base64Image = await fileToBase64(image);
       // This is a mock implementation for demonstration
       setStatusMessage('Analyzing with Cloud Vision API...');
       setProgress(30);
@@ -353,14 +259,6 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
     }
   };
   
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
-  };
   
   const parseExtractedText = (text: string): any[] => {
     // Try to detect if this is a table or CSV format
@@ -458,16 +356,10 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
       values: data,
       dataTypes,
       source: isPdf ? 'PDF Document' : (extractionMethod === 0 ? 'Tesseract OCR' : 'Cloud Vision API'),
-      uploadDate: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
       rowCount,
       columnCount,
-      columns,
-      metadata: {
-        fields: columns.map(name => ({
-          name,
-          type: dataTypes[name]
-        }))
-      }
+      columns
     };
     
     onDataExtracted(newDataset);
@@ -475,18 +367,18 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
   };
   
   return (
-    <Container>
+    <div className={styles.container}>
       <Typography variant="h5" gutterBottom>Extract Data from Images & PDFs</Typography>
-      <Typography variant="body1" color="textSecondary" paragraph>
+      <Typography variant="body1" color="secondary" gutterBottom>
         Upload an image or PDF containing tabular data, charts, or text, and we'll extract the data for visualization.
       </Typography>
       
-      <ImageUploadArea 
+      <div 
+        className={`${styles.imageUploadArea} ${isDragging ? styles.dragging : ''}`}
         onClick={() => fileInputRef.current?.click()}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        $isDragging={isDragging}
       >
         <input 
           ref={fileInputRef}
@@ -495,29 +387,34 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
           style={{ display: 'none' }}
           onChange={handleFileSelect}
         />
-        <ImageIcon style={{ fontSize: 48, color: 'var(--color-text-secondary)', marginBottom: 16 }} />
+        <ImageIconComponent size={48} />
         <Typography variant="h6">Drop image or PDF here or click to browse</Typography>
-        <Typography variant="body2" color="textSecondary">
+        <Typography variant="body2" color="secondary">
           Supports JPEG, PNG, GIF and PDF files (max 10MB)
         </Typography>
-      </ImageUploadArea>
+      </div>
       
       {imagePreviewUrl && (
-        <ImagePreview>
+        <div className={styles.imagePreview}>
           <img src={imagePreviewUrl} alt="Preview" />
-        </ImagePreview>
+        </div>
       )}
       
       {isPdf && !imagePreviewUrl && image && (
-        <Box sx={{ textAlign: 'center', my: 2, p: 2, bgcolor: 'rgba(0,0,0,0.03)', borderRadius: 1 }}>
-          <Typography variant="subtitle1">PDF loaded: {image.name}</Typography>
-          <Typography variant="caption" color="textSecondary">
+        <Box 
+          textAlign="center" 
+          margin="16px 0" 
+          padding="16px" 
+          sx={{ backgroundColor: "rgba(0,0,0,0.03)", borderRadius: "8px" }}
+        >
+          <Typography variant="h6">PDF loaded: {image.name}</Typography>
+          <Typography variant="caption" color="secondary">
             Size: {(image.size / 1024).toFixed(1)} KB
           </Typography>
         </Box>
       )}
       
-      {error && <ErrorMessage>{error}</ErrorMessage>}
+      {error && <div className={`${styles.statusMessage} ${styles.error}`}>{error}</div>}
       
       {image && (
         <>
@@ -525,119 +422,109 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
             value={extractionMethod} 
             onChange={handleTabChange}
             variant="fullWidth"
-            sx={{ mb: 2 }}
-          >
-            <Tab 
-              icon={<TableChartIcon />} 
-              label={isPdf ? "Local PDF Processing" : "Tesseract OCR"} 
-              iconPosition="start"
-            />
-            <Tab 
-              icon={<CloudIcon />} 
-              label="Cloud API" 
-              iconPosition="start"
-            />
-          </Tabs>
+            tabs={[
+              {
+                label: isPdf ? "Local PDF Processing" : "Tesseract OCR",
+                value: 0,
+                icon: <TableChartIcon size={16} />,
+                iconPosition: "start"
+              },
+              {
+                label: "Cloud Vision API",
+                value: 1,
+                icon: <CloudIcon size={16} />,
+                iconPosition: "start"
+              }
+            ]}
+          />
           
-          <TabPanel $visible={extractionMethod === 0}>
-            <Typography variant="body2" paragraph>
+          <DSTabPanel currentValue={extractionMethod} value={0}>
+            <Typography variant="body2" gutterBottom>
               {isPdf ? 
                 "Extract data from PDF using local PDF parsing. This processes PDF text content directly without OCR." :
                 "Extract data using Tesseract.js, a pure JavaScript OCR engine that runs entirely in your browser. Best for simple tables and text."
               }
             </Typography>
-            <ButtonContainer>
+            <div className={styles.buttonContainer}>
               <Button 
-                variant="contained" 
-                color="primary" 
+                variant="primary" 
+                size="medium"
+                buttonStyle="floating"
                 onClick={processWithTesseract}
                 disabled={isProcessing || !image}
-                startIcon={isProcessing ? <CircularProgress size={20} color="inherit" /> : undefined}
               >
+                {isProcessing && <CircularProgress size={20} />}
                 {isProcessing ? 'Processing...' : isPdf ? 'Extract PDF Data' : 'Extract Data'}
               </Button>
-            </ButtonContainer>
-          </TabPanel>
+            </div>
+          </DSTabPanel>
           
-          <TabPanel $visible={extractionMethod === 1}>
-            <Typography variant="body2" paragraph>
+          <DSTabPanel currentValue={extractionMethod} value={1}>
+            <Typography variant="body2" gutterBottom>
               Extract data using Cloud Vision API for higher accuracy, especially with complex tables and forms.
               Requires an API key from Google Cloud Platform.
             </Typography>
-            <CloudApiKeyInput>
+            <div className={styles.methodDescription}>
               <Typography variant="body2">Cloud Vision API Key:</Typography>
               <input
                 type="password"
                 value={cloudApiKey}
                 onChange={(e) => setCloudApiKey(e.target.value)}
                 placeholder="Enter your API key"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  marginTop: '4px',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '4px'
+                }}
               />
-            </CloudApiKeyInput>
-            <ButtonContainer>
+            </div>
+            <div className={styles.buttonContainer}>
               <Button 
-                variant="contained" 
-                color="primary" 
+                variant="primary" 
+                size="medium"
+                buttonStyle="floating"
                 onClick={processWithCloudAPI}
                 disabled={isProcessing || !image || !cloudApiKey}
-                startIcon={isProcessing ? <CircularProgress size={20} color="inherit" /> : undefined}
               >
+                {isProcessing && <CircularProgress size={20} />}
                 {isProcessing ? 'Processing...' : 'Extract with Cloud API'}
               </Button>
-            </ButtonContainer>
-          </TabPanel>
+            </div>
+          </DSTabPanel>
           
           {isProcessing && (
-            <Box sx={{ width: '100%', mt: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Box sx={{ width: '100%', mr: 1 }}>
-                  <LinearProgress variant="determinate" value={progress} />
+            <Box width="100%" marginTop="16px">
+              <Box display="flex" alignItems="center">
+                <Box flexGrow={1} marginRight="8px">
+                  <LinearProgress value={progress} />
                 </Box>
-                <Box sx={{ minWidth: 35 }}>
-                  <Typography variant="body2" color="text.secondary">{`${Math.round(progress)}%`}</Typography>
+                <Box minWidth="35px">
+                  <Typography variant="body2" color="secondary">{`${Math.round(progress)}%`}</Typography>
                 </Box>
               </Box>
-              <StatusMessage>{statusMessage}</StatusMessage>
+              <div className={`${styles.statusMessage} ${styles.info}`}>{statusMessage}</div>
             </Box>
           )}
           
           {extractedText && (
-            <ResultsContainer>
+            <div className={styles.resultsContainer}>
               <Typography variant="h6" gutterBottom>Extracted Text</Typography>
-              <ResultPreview>{extractedText}</ResultPreview>
+              <pre className={styles.extractedText}>{extractedText}</pre>
               
               {extractedData && extractedData.length > 0 && (
                 <>
-                  <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>Structured Data</Typography>
-                  <ResultPreview>{JSON.stringify(extractedData, null, 2)}</ResultPreview>
+                  <Box marginTop="24px">
+                    <Typography variant="h6" gutterBottom>Structured Data</Typography>
+                  </Box>
+                  <pre className={styles.extractedText}>{JSON.stringify(extractedData, null, 2)}</pre>
                 </>
               )}
-            </ResultsContainer>
+            </div>
           )}
         </>
       )}
-    </Container>
-  );
-};
-
-// Missing import - define the LinearProgress component separately
-const LinearProgress = ({ variant, value }: { variant: string, value: number }) => {
-  const trackHeight = 4;
-  
-  return (
-    <div style={{ 
-      width: '100%', 
-      height: `${trackHeight}px`,
-      backgroundColor: 'var(--color-border)',
-      borderRadius: `${trackHeight}px`,
-      overflow: 'hidden'
-    }}>
-      <div style={{
-        height: '100%',
-        width: `${value}%`,
-        backgroundColor: 'var(--color-primary)',
-        borderRadius: `${trackHeight}px`,
-        transition: 'width 0.4s ease'
-      }} />
     </div>
   );
-}; 
+};

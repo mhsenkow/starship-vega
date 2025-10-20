@@ -1,13 +1,13 @@
 import { ReactNode, useMemo } from 'react';
 import { createTheme, ThemeProvider as MUIThemeProvider } from '@mui/material/styles';
-import { useTheme } from './ThemeProvider';
+import { useThemeContext } from './ThemeProvider';
 
 interface MuiThemeProviderProps {
   children: ReactNode;
 }
 
 export const MuiThemeProvider = ({ children }: MuiThemeProviderProps) => {
-  const { theme } = useTheme();
+  const { theme } = useThemeContext();
   
   // Create a Material UI theme based on our styled-components theme
   const muiTheme = useMemo(() => createTheme({

@@ -1,0 +1,51 @@
+/* ErrorBoundary Component Styles */
+.errorContainer {
+  padding: 20px;
+  margin: 20px 0;
+  border-radius: 8px;
+  background-color: #ffebee;
+  border: 1px solid #ffcdd2;
+}
+
+.errorTitle {
+  color: #c62828;
+  margin-top: 0;
+  font-size: var(--typography-fontSize-lg);
+  font-weight: var(--typography-fontWeight-semibold);
+}
+
+.errorMessage {
+  color: #b71c1c;
+  margin: var(--spacing-sm) 0;
+}
+
+.errorDetails {
+  background-color: #f5f5f5;
+  padding: 10px;
+  border-radius: 4px;
+  overflow: auto;
+  font-size: 12px;
+  max-height: 200px;
+  margin: var(--spacing-sm) 0;
+}
+
+.reloadButton {
+  background-color: #2196f3;
+  color: var(--color-surface);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  margin-top: 16px;
+  transition: background-color var(--transition-fast);
+}
+
+.reloadButton:hover {
+  background-color: var(--color-primary);
+}
+
+.reloadButton:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

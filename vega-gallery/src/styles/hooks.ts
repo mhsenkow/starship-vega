@@ -3,7 +3,7 @@
  */
 
 import { useTheme as useStyledTheme } from 'styled-components';
-import { useTheme as useCustomTheme } from './ThemeProvider';
+import { useThemeContext as useCustomTheme } from './ThemeProvider';
 import { Theme } from './theme';
 
 /**
@@ -29,7 +29,7 @@ export const useThemeValues = () => {
  * return <button onClick={toggleTheme}>Switch to {mode === 'light' ? 'dark' : 'light'} mode</button>;
  * ```
  */
-export const useThemeContext = () => {
+export const useThemeContextHook = () => {
   return useCustomTheme();
 };
 

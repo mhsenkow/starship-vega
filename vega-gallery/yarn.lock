@@ -817,6 +817,22 @@
     "@babel/helper-string-parser" "^7.27.1"
     "@babel/helper-validator-identifier" "^7.27.1"
 
+"@carbon/icon-helpers@^10.68.0":
+  version "10.68.0"
+  resolved "https://registry.yarnpkg.com/@carbon/icon-helpers/-/icon-helpers-10.68.0.tgz#8e80e48f52240de2bda1816338172a2563541d8a"
+  integrity sha512-fYor/Fs0RLtPMh2KRyPYR83JKoWbAmoQ7tCIW0QQcwYcIu82tvy7uT8vTNhda21w3uueOp70p6rYyY6vYjuRZA==
+  dependencies:
+    "@ibm/telemetry-js" "^1.5.0"
+
+"@carbon/icons-react@^11.69.0":
+  version "11.69.0"
+  resolved "https://registry.yarnpkg.com/@carbon/icons-react/-/icons-react-11.69.0.tgz#d9819b8e0e9002bd67920b61811740ed88cc9daa"
+  integrity sha512-4ourN8a6IZD/eCCbsFYMQytUkmsMfcVCk/SxX2QyCCgy1jQlMVl5pn9koRkylblpV8n/4yn86XYZqw1Ec3zuDA==
+  dependencies:
+    "@carbon/icon-helpers" "^10.68.0"
+    "@ibm/telemetry-js" "^1.5.0"
+    prop-types "^15.8.1"
+
 "@develar/schema-utils@~2.6.5":
   version "2.6.5"
   resolved "https://registry.yarnpkg.com/@develar/schema-utils/-/schema-utils-2.6.5.tgz#3ece22c5838402419a6e0425f85742b961d9b6c6"
@@ -1297,6 +1313,11 @@
   version "0.4.3"
   resolved "https://registry.yarnpkg.com/@humanwhocodes/retry/-/retry-0.4.3.tgz#c2b9d2e374ee62c586d3adbea87199b1d7a7a6ba"
   integrity sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==
+
+"@ibm/telemetry-js@^1.5.0":
+  version "1.10.2"
+  resolved "https://registry.yarnpkg.com/@ibm/telemetry-js/-/telemetry-js-1.10.2.tgz#6d4bfb5cce275b8a061c64199bcc9f1ad23477b2"
+  integrity sha512-F8+/NNUwtm8BuFz18O9KPvIFTFDo8GUSoyhPxPjEpk7nEyEzWGfhIiEPhL00B2NdHRLDSljh3AiCfSnL/tutiQ==
 
 "@isaacs/balanced-match@^4.0.1":
   version "4.0.1"
