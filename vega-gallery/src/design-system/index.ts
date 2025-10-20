@@ -20,6 +20,7 @@ export * from './components/Tabs.module';
 export * from './components/Loading';
 export * from './components/Box.module';
 export * from './components/Tooltip.module';
+export * from './components/BorderRadiusDemo';
 
 // Re-export commonly used component groups
 import { Button, ButtonGroup } from './components/ButtonSystem';

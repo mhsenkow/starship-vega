@@ -362,16 +362,87 @@ export const typography = {
   },
 } as const;
 
-// Border radius scale
+// Border radius scale - base values
 export const borderRadius = {
   none: '0px',
-  sm: '4px',
-  base: '8px',
-  md: '12px',
-  lg: '16px',
-  xl: '20px',
-  '2xl': '24px',
-  full: '9999px',
+  xs: '2px',    // Very subtle rounding
+  sm: '4px',    // Small elements like inputs
+  base: '6px',  // Default button radius
+  md: '8px',    // Cards and panels
+  lg: '12px',   // Larger containers
+  xl: '16px',   // Section containers
+  '2xl': '20px', // Hero sections
+  '3xl': '24px', // Large modal/overlay
+  full: '9999px', // Pills and circular elements
+} as const;
+
+// Border radius by component intent
+export const borderRadiusIntent = {
+  // Interactive elements - subtle but present
+  button: {
+    primary: borderRadius.base,     // 6px - main buttons
+    secondary: borderRadius.sm,     // 4px - secondary buttons  
+    pill: borderRadius.full,        // 9999px - pill buttons
+    icon: borderRadius.sm,          // 4px - icon buttons
+  },
+  
+  // Form elements - minimal rounding for usability
+  input: {
+    default: borderRadius.sm,       // 4px - text inputs
+    search: borderRadius.base,      // 6px - search bars
+    select: borderRadius.sm,        // 4px - dropdowns
+    checkbox: borderRadius.xs,      // 2px - checkboxes
+    radio: borderRadius.full,       // 9999px - radio buttons
+  },
+  
+  // Content containers - more pronounced
+  card: {
+    default: borderRadius.md,       // 8px - standard cards
+    elevated: borderRadius.lg,      // 12px - elevated cards
+    compact: borderRadius.sm,       // 4px - compact cards
+  },
+  
+  // Navigation and layout
+  navigation: {
+    tab: borderRadius.sm,           // 4px - tabs
+    breadcrumb: borderRadius.xs,    // 2px - breadcrumbs
+    menu: borderRadius.base,        // 6px - dropdown menus
+    header: borderRadius.none,      // 0px - headers typically
+  },
+  
+  // Feedback elements
+  badge: {
+    default: borderRadius.full,     // 9999px - pill badges
+    square: borderRadius.xs,        // 2px - square badges
+    rounded: borderRadius.base,     // 6px - rounded badges
+  },
+  
+  // Overlay elements
+  modal: {
+    default: borderRadius.lg,       // 12px - standard modals
+    large: borderRadius.xl,         // 16px - large modals
+    fullscreen: borderRadius.none,  // 0px - fullscreen modals
+  },
+  
+  // Layout sections
+  section: {
+    container: borderRadius.lg,     // 12px - main sections
+    panel: borderRadius.md,         // 8px - side panels
+    hero: borderRadius.xl,          // 16px - hero sections
+  },
+  
+  // Chart and visualization containers
+  chart: {
+    container: borderRadius.md,     // 8px - chart containers
+    card: borderRadius.base,        // 6px - chart cards
+    legend: borderRadius.sm,        // 4px - chart legends
+  },
+  
+  // Special elements
+  tooltip: borderRadius.sm,         // 4px - tooltips
+  toast: borderRadius.base,         // 6px - toast notifications
+  avatar: borderRadius.full,        // 9999px - avatars
+  progress: borderRadius.full,      // 9999px - progress bars
 } as const;
 
 // Shadow/elevation tokens following Material Design
@@ -442,7 +513,7 @@ export const transitions = {
   },
 } as const;
 
-// Component-specific tokens
+// Component-specific tokens using border radius intent
 export const components = {
   button: {
     height: {
@@ -455,7 +526,7 @@ export const components = {
       medium: `${spacing[3]} ${spacing[4]}`,
       large: `${spacing[4]} ${spacing[6]}`,
     },
-    borderRadius: borderRadius.base,
+    borderRadius: borderRadiusIntent.button.primary,
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
   },
@@ -463,32 +534,32 @@ export const components = {
   input: {
     height: '40px',
     padding: `0 ${spacing[3]}`,
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadiusIntent.input.default,
     fontSize: typography.fontSize.base,
     borderWidth: '1px',
   },
   
   card: {
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadiusIntent.card.default,
     padding: spacing[6],
     boxShadow: shadows.elevation2,
   },
   
   modal: {
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadiusIntent.modal.default,
     boxShadow: shadows.elevation8,
   },
   
-  // New component tokens
+  // Enhanced component tokens with intent-based border radius
   badge: {
-    borderRadius: borderRadius.full,
+    borderRadius: borderRadiusIntent.badge.default,
     padding: `${spacing[1]} ${spacing[2]}`,
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.medium,
   },
   
   tooltip: {
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadiusIntent.tooltip,
     padding: `${spacing[2]} ${spacing[3]}`,
     fontSize: typography.fontSize.sm,
     maxWidth: '200px',
@@ -496,7 +567,7 @@ export const components = {
   },
   
   dropdown: {
-    borderRadius: borderRadius.base,
+    borderRadius: borderRadiusIntent.navigation.menu,
     padding: spacing[2],
     boxShadow: shadows.elevation3,
     zIndex: zIndex.dropdown,
@@ -506,7 +577,48 @@ export const components = {
     padding: `${spacing[3]} ${spacing[4]}`,
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadiusIntent.navigation.tab,
+  },
+  
+  // Additional components with intent-based styling
+  searchInput: {
+    height: '40px',
+    padding: `0 ${spacing[3]}`,
+    borderRadius: borderRadiusIntent.input.search,
+    fontSize: typography.fontSize.base,
+    borderWidth: '1px',
+  },
+  
+  chartCard: {
+    borderRadius: borderRadiusIntent.chart.card,
+    padding: spacing[4],
+    boxShadow: shadows.elevation1,
+  },
+  
+  chartContainer: {
+    borderRadius: borderRadiusIntent.chart.container,
+    padding: spacing[2],
+    boxShadow: 'none',
+  },
+  
+  section: {
+    borderRadius: borderRadiusIntent.section.container,
+    padding: spacing[8],
+    boxShadow: 'none',
+  },
+  
+  panel: {
+    borderRadius: borderRadiusIntent.section.panel,
+    padding: spacing[6],
+    boxShadow: shadows.elevation2,
+  },
+  
+  toast: {
+    borderRadius: borderRadiusIntent.toast,
+    padding: `${spacing[3]} ${spacing[4]}`,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    boxShadow: shadows.elevation4,
   },
 } as const;
 
@@ -516,6 +628,7 @@ export const designTokens = {
   spacing,
   typography,
   borderRadius,
+  borderRadiusIntent,
   shadows,
   zIndex,
   breakpoints,

@@ -1,0 +1,262 @@
+/* Border Radius Demo Styles - Demonstrating Intent-Based Border Radius System */
+
+.container {
+  padding: var(--spacing-8);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section {
+  margin-bottom: var(--spacing-8);
+}
+
+.section h3 {
+  margin-bottom: var(--spacing-4);
+  color: var(--color-text-primary);
+}
+
+/* Interactive Elements */
+.buttonGroup {
+  display: flex;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-6);
+  flex-wrap: wrap;
+}
+
+.primaryButton {
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: var(--radius-intent-button-primary);
+  cursor: pointer;
+  font-weight: var(--typography-fontWeight-medium);
+}
+
+.secondaryButton {
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--color-secondary);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: var(--radius-intent-button-secondary);
+  cursor: pointer;
+  font-weight: var(--typography-fontWeight-medium);
+}
+
+.pillButton {
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--color-tertiary);
+  color: var(--color-text-primary);
+  border: none;
+  border-radius: var(--radius-intent-button-pill);
+  cursor: pointer;
+  font-weight: var(--typography-fontWeight-medium);
+}
+
+.iconButton {
+  width: 40px;
+  height: 40px;
+  background: var(--color-surface-secondary);
+  color: var(--color-text-primary);
+  border: none;
+  border-radius: var(--radius-intent-button-icon);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inputGroup {
+  display: flex;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+}
+
+.defaultInput {
+  padding: var(--spacing-3);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-intent-input-default);
+  background: var(--color-surface-primary);
+  color: var(--color-text-primary);
+}
+
+.searchInput {
+  padding: var(--spacing-3);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-intent-input-search);
+  background: var(--color-surface-primary);
+  color: var(--color-text-primary);
+}
+
+.selectInput {
+  padding: var(--spacing-3);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-intent-input-select);
+  background: var(--color-surface-primary);
+  color: var(--color-text-primary);
+}
+
+/* Content Containers */
+.cardGroup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-4);
+}
+
+.defaultCard {
+  padding: var(--spacing-6);
+  background: var(--color-surface-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-intent-card-default);
+  box-shadow: var(--shadow-elevation2);
+}
+
+.elevatedCard {
+  padding: var(--spacing-6);
+  background: var(--color-surface-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-intent-card-elevated);
+  box-shadow: var(--shadow-elevation4);
+}
+
+.compactCard {
+  padding: var(--spacing-4);
+  background: var(--color-surface-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-intent-card-compact);
+  box-shadow: var(--shadow-elevation1);
+}
+
+/* Feedback Elements */
+.badgeGroup {
+  display: flex;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-4);
+  flex-wrap: wrap;
+}
+
+.defaultBadge {
+  padding: var(--spacing-1) var(--spacing-2);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  border-radius: var(--radius-intent-badge-default);
+  font-size: var(--typography-fontSize-xs);
+  font-weight: var(--typography-fontWeight-medium);
+}
+
+.squareBadge {
+  padding: var(--spacing-1) var(--spacing-2);
+  background: var(--color-secondary-light);
+  color: var(--color-secondary-dark);
+  border-radius: var(--radius-intent-badge-square);
+  font-size: var(--typography-fontSize-xs);
+  font-weight: var(--typography-fontWeight-medium);
+}
+
+.roundedBadge {
+  padding: var(--spacing-1) var(--spacing-2);
+  background: var(--color-tertiary-light);
+  color: var(--color-tertiary-dark);
+  border-radius: var(--radius-intent-badge-rounded);
+  font-size: var(--typography-fontSize-xs);
+  font-weight: var(--typography-fontWeight-medium);
+}
+
+.overlayGroup {
+  display: flex;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+}
+
+.tooltip {
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-surface-tertiary);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-intent-tooltip);
+  font-size: var(--typography-fontSize-sm);
+  box-shadow: var(--shadow-elevation2);
+}
+
+.toast {
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--color-success);
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-intent-toast);
+  font-size: var(--typography-fontSize-sm);
+  font-weight: var(--typography-fontWeight-medium);
+  box-shadow: var(--shadow-elevation4);
+}
+
+/* Chart & Visualization */
+.chartGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.chartCard {
+  padding: var(--spacing-4);
+  background: var(--color-surface-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-intent-chart-card);
+  box-shadow: var(--shadow-elevation1);
+}
+
+.chartContainer {
+  padding: var(--spacing-2);
+  background: var(--color-background-secondary);
+  border-radius: var(--radius-intent-chart-container);
+  margin-bottom: var(--spacing-2);
+}
+
+.chartPlaceholder {
+  height: 120px;
+  background: var(--color-surface-secondary);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+}
+
+.chartLegend {
+  padding: var(--spacing-2);
+  background: var(--color-surface-secondary);
+  border-radius: var(--radius-intent-chart-legend);
+  font-size: var(--typography-fontSize-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Layout Sections */
+.layoutGroup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-4);
+}
+
+.sectionContainer {
+  padding: var(--spacing-8);
+  background: var(--color-surface-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-intent-section-container);
+  text-align: center;
+  font-weight: var(--typography-fontWeight-medium);
+}
+
+.panelContainer {
+  padding: var(--spacing-6);
+  background: var(--color-surface-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-intent-section-panel);
+  text-align: center;
+  font-weight: var(--typography-fontWeight-medium);
+}
+
+.heroContainer {
+  padding: var(--spacing-8);
+  background: linear-gradient(135deg, var(--color-primary-light), var(--color-secondary-light));
+  border-radius: var(--radius-intent-section-hero);
+  text-align: center;
+  font-weight: var(--typography-fontWeight-bold);
+  color: var(--color-text-primary);
+}

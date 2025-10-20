@@ -9,13 +9,15 @@ interface AppHeaderProps {
   isEditor?: boolean;
   onBackToGallery?: () => void;
   isEditorPanelVisible?: boolean;
+  onNavigate?: () => void;
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({ 
   onThemeToggle, 
   isEditor = false, 
   onBackToGallery,
-  isEditorPanelVisible = true
+  isEditorPanelVisible = true,
+  onNavigate
 }) => {
   const location = useLocation();
   
@@ -57,6 +59,13 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 to={item.path}
                 iconOnly
                 title={item.label}
+                onClick={() => {
+                  // If we're in editor mode and navigating away from the current path,
+                  // clear the selected chart to exit editor mode
+                  if (isEditor && location.pathname !== item.path) {
+                    onNavigate?.();
+                  }
+                }}
               >
                 {item.icon}
               </Button>

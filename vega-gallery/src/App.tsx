@@ -69,23 +69,38 @@ function App() {
               isEditor={!!selectedChart}
               onBackToGallery={() => setSelectedChart(null)}
               isEditorPanelVisible={isEditorPanelVisible}
+              onNavigate={() => setSelectedChart(null)}
             />
-            {selectedChart ? (
-              <EditorLayout 
-                chartId={selectedChart} 
-                onBack={() => setSelectedChart(null)}
-                onPanelVisibilityChange={setIsEditorPanelVisible}
-              />
-            ) : (
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<GalleryGrid onChartSelect={setSelectedChart} />} />
-                  <Route path="/data" element={<DataManagement isDbSeeded={isDbSeeded} />} />
-                  <Route path="/dashboard" element={<DashboardContainer />} />
-                  <Route path="/dropdown-test" element={<DropdownTest />} />
-                </Routes>
-              </Layout>
-            )}
+            <Routes>
+              <Route path="/" element={
+                selectedChart ? (
+                  <EditorLayout 
+                    chartId={selectedChart} 
+                    onBack={() => setSelectedChart(null)}
+                    onPanelVisibilityChange={setIsEditorPanelVisible}
+                  />
+                ) : (
+                  <Layout>
+                    <GalleryGrid onChartSelect={setSelectedChart} />
+                  </Layout>
+                )
+              } />
+              <Route path="/data" element={
+                <Layout>
+                  <DataManagement isDbSeeded={isDbSeeded} />
+                </Layout>
+              } />
+              <Route path="/dashboard" element={
+                <Layout>
+                  <DashboardContainer />
+                </Layout>
+              } />
+              <Route path="/dropdown-test" element={
+                <Layout>
+                  <DropdownTest />
+                </Layout>
+              } />
+            </Routes>
             
             {isErrorModalOpen && (
               <DatabaseErrorModal 
